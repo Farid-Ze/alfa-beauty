@@ -87,12 +87,6 @@ return [
             // Parse POSTGRES_URL from Supabase-Vercel integration
             $url = env('POSTGRES_URL', env('POSTGRES_PRISMA_URL'));
             
-            // PDO options for Supabase Transaction Pooler compatibility
-            // Disable prepared statements as PgBouncer doesn't support them
-            $pdoOptions = [
-                \PDO::ATTR_EMULATE_PREPARES => true,
-            ];
-            
             if ($url) {
                 $parsed = parse_url($url);
                 return [
@@ -107,11 +101,10 @@ return [
                     'prefix_indexes' => true,
                     'search_path' => 'public',
                     'sslmode' => 'require',
-                    'options' => $pdoOptions,
                 ];
             }
             
-            // Fallback to individual env vars
+            // Fallback to individual env vars (for Supabase direct connection)
             return [
                 'driver' => 'pgsql',
                 'host' => trim((string) env('POSTGRES_HOST', env('DB_HOST', '127.0.0.1'))),
@@ -124,7 +117,6 @@ return [
                 'prefix_indexes' => true,
                 'search_path' => 'public',
                 'sslmode' => trim((string) env('DB_SSLMODE', 'require')),
-                'options' => $pdoOptions,
             ];
         })(),
 
