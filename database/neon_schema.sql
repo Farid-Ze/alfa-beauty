@@ -1,7 +1,7 @@
 -- ================================================
--- Alfa Beauty PostgreSQL Schema for Neon
--- Generated from Laravel migrations
--- Run this in Neon SQL Editor
+-- Alfa Beauty PostgreSQL Schema
+-- Compatible with Supabase, Neon, or any PostgreSQL
+-- Run this in your database SQL Editor
 -- ================================================
 
 -- Migrations tracking table
