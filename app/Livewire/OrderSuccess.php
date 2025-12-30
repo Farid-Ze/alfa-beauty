@@ -12,9 +12,9 @@ class OrderSuccess extends Component
     public Order $order;
     public int $earnedPoints = 0;
 
-    public function mount($orderId)
+    public function mount($order)
     {
-        $this->order = Order::findOrFail($orderId);
+        $this->order = Order::findOrFail($order);
         
         // Get points earned from this order
         $pointTransaction = PointTransaction::where('order_id', $this->order->id)
