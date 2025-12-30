@@ -382,11 +382,11 @@ INSERT INTO loyalty_tiers (name, slug, min_spend, discount_percent, point_multip
 ON CONFLICT (slug) DO NOTHING;
 
 -- Brands
-INSERT INTO brands (name, slug, description, origin_country, is_own_brand, is_featured, sort_order, created_at, updated_at) VALUES
-('Salsa Cosmetic', 'salsa-cosmetic', 'Produk hair care profesional buatan Indonesia oleh PT. Alfa Beauty Cosmetica', 'Indonesia', TRUE, TRUE, 1, NOW(), NOW()),
-('Alfaparf Milano', 'alfaparf-milano', 'Italian professional hair care brand since 1980', 'Italy', FALSE, TRUE, 2, NOW(), NOW()),
-('Farmavita', 'farmavita', 'Professional hair color and care from Italy', 'Italy', FALSE, TRUE, 3, NOW(), NOW()),
-('Montibello', 'montibello', 'Premium Spanish professional hair care', 'Spain', FALSE, TRUE, 4, NOW(), NOW())
+INSERT INTO brands (name, slug, description, origin_country, is_own_brand, is_featured, sort_order, logo_url, created_at, updated_at) VALUES
+('Salsa Cosmetic', 'salsa-cosmetic', 'Produk hair care profesional buatan Indonesia oleh PT. Alfa Beauty Cosmetica', 'Indonesia', TRUE, TRUE, 1, 'images/brands/salsa-cosmetic.png', NOW(), NOW()),
+('Alfaparf Milano', 'alfaparf-milano', 'Italian professional hair care brand since 1980', 'Italy', FALSE, TRUE, 2, 'images/brands/alfaparf-milano.png', NOW(), NOW()),
+('Farmavita', 'farmavita', 'Professional hair color and care from Italy', 'Italy', FALSE, TRUE, 3, 'images/brands/farmavita.png', NOW(), NOW()),
+('Montibello', 'montibello', 'Premium Spanish professional hair care', 'Spain', FALSE, TRUE, 4, 'images/brands/montibello.png', NOW(), NOW())
 ON CONFLICT (slug) DO NOTHING;
 
 -- Categories
