@@ -85,9 +85,8 @@ return [
 
         'pgsql' => [
             'driver' => 'pgsql',
-            // Supabase-Vercel integration provides POSTGRES_URL
-            'url' => env('POSTGRES_URL', env('DATABASE_URL')),
-            // Fallback to individual env vars (Supabase uses POSTGRES_* prefix)
+            // DO NOT use 'url' - causes array_diff_key error with Supabase format
+            // Use individual POSTGRES_* env vars from Supabase-Vercel integration
             'host' => trim((string) env('POSTGRES_HOST', env('DB_HOST', '127.0.0.1'))),
             'port' => trim((string) env('POSTGRES_PORT', env('DB_PORT', '5432'))),
             'database' => trim((string) env('POSTGRES_DATABASE', env('DB_DATABASE', 'postgres'))),
