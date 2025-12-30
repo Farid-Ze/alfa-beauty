@@ -16,7 +16,7 @@ return [
     |
     */
 
-    'default' => env('DB_CONNECTION', 'sqlite'),
+    'default' => trim(env('DB_CONNECTION', 'sqlite')),
 
     /*
     |--------------------------------------------------------------------------
