@@ -83,23 +83,42 @@ return [
             ]) : [],
         ],
 
-        'pgsql' => [
-            'driver' => 'pgsql',
-            // DO NOT use 'url' - causes array_diff_key error with Supabase format
-            // Use individual POSTGRES_* env vars from Supabase-Vercel integration
-            'host' => trim((string) env('POSTGRES_HOST', env('DB_HOST', '127.0.0.1'))),
-            // Use port 6543 for Supabase pooler (required for serverless)
-            // Port 5432 direct connection fails with IPv6 errors
-            'port' => trim((string) env('POSTGRES_PORT', env('DB_PORT', '6543'))),
-            'database' => trim((string) env('POSTGRES_DATABASE', env('DB_DATABASE', 'postgres'))),
-            'username' => trim((string) env('POSTGRES_USER', env('DB_USERNAME', 'postgres'))),
-            'password' => trim((string) env('POSTGRES_PASSWORD', env('DB_PASSWORD', ''))),
-            'charset' => env('DB_CHARSET', 'utf8'),
-            'prefix' => '',
-            'prefix_indexes' => true,
-            'search_path' => 'public',
-            'sslmode' => trim((string) env('DB_SSLMODE', 'require')),
-        ],
+        'pgsql' => (function() {
+            // Parse POSTGRES_URL from Supabase-Vercel integration
+            $url = env('POSTGRES_URL', env('POSTGRES_PRISMA_URL'));
+            
+            if ($url) {
+                $parsed = parse_url($url);
+                return [
+                    'driver' => 'pgsql',
+                    'host' => $parsed['host'] ?? '127.0.0.1',
+                    'port' => (string) ($parsed['port'] ?? '5432'),
+                    'database' => ltrim($parsed['path'] ?? '/postgres', '/'),
+                    'username' => $parsed['user'] ?? 'postgres',
+                    'password' => urldecode($parsed['pass'] ?? ''),
+                    'charset' => 'utf8',
+                    'prefix' => '',
+                    'prefix_indexes' => true,
+                    'search_path' => 'public',
+                    'sslmode' => 'require',
+                ];
+            }
+            
+            // Fallback to individual env vars
+            return [
+                'driver' => 'pgsql',
+                'host' => trim((string) env('POSTGRES_HOST', env('DB_HOST', '127.0.0.1'))),
+                'port' => trim((string) env('POSTGRES_PORT', env('DB_PORT', '5432'))),
+                'database' => trim((string) env('POSTGRES_DATABASE', env('DB_DATABASE', 'postgres'))),
+                'username' => trim((string) env('POSTGRES_USER', env('DB_USERNAME', 'postgres'))),
+                'password' => trim((string) env('POSTGRES_PASSWORD', env('DB_PASSWORD', ''))),
+                'charset' => env('DB_CHARSET', 'utf8'),
+                'prefix' => '',
+                'prefix_indexes' => true,
+                'search_path' => 'public',
+                'sslmode' => trim((string) env('DB_SSLMODE', 'require')),
+            ];
+        })(),
 
         'sqlsrv' => [
             'driver' => 'sqlsrv',
