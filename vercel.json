@@ -2,7 +2,7 @@
     "version": 2,
     "framework": null,
     "installCommand": "npm install",
-    "buildCommand": "composer install --no-dev --prefer-dist --optimize-autoloader && php artisan optimize:clear && npm run build",
+    "buildCommand": "npm run build",
     "outputDirectory": "public",
     "functions": {
         "api/**/*.php": {
