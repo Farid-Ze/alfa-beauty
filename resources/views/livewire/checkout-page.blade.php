@@ -13,15 +13,13 @@
                 
                 <!-- Price Change Alert -->
                 @if(!empty($priceChanges))
-                    <div class="checkout-alert" style="background: var(--gray-100); padding: var(--space-md); border-radius: var(--radius-md); margin-bottom: var(--space-lg); border-left: 4px solid var(--orange);">
+                    <div class="alert-banner alert-banner--warning">
                         <strong>⚠️ Harga Telah Diperbarui</strong>
-                        <p style="margin-top: 8px; font-size: 0.875rem; color: var(--gray-600);">
-                            Beberapa harga telah disesuaikan dengan harga B2B terbaru.
-                        </p>
+                        <p>Beberapa harga telah disesuaikan dengan harga B2B terbaru.</p>
                     </div>
                 @endif
 
-                <form id="checkout-form">
+                <form id="checkout-form" novalidate>
                     <div class="form-group">
                         <label for="name" class="form-label">{{ __('checkout.name') }}</label>
                         <input type="text" id="name" wire:model="name" class="form-input @error('name') error @enderror">

@@ -13,7 +13,7 @@
                 <p class="form-brand-tagline">{{ __('auth.register_subtitle') }}</p>
             </div>
 
-            <form wire:submit.prevent="register">
+            <form wire:submit.prevent="register" novalidate>
                 <div class="form-grid">
                     <div class="form-group">
                         <label class="form-label">{{ __('auth.name') }}</label>

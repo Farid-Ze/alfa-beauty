@@ -13,7 +13,7 @@
                 <p class="form-brand-tagline">{{ __('nav.professional_hair_care') }}</p>
             </div>
 
-            <form wire:submit.prevent="login">
+            <form wire:submit.prevent="login" novalidate>
                 <div class="form-group">
                     <label class="form-label">{{ __('auth.email') }}</label>
                     <input type="email" wire:model="email" placeholder="you@salon.com" class="form-input @error('email') error @enderror">

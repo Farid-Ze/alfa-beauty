@@ -3002,6 +3002,40 @@ textarea.form-input {
     color: var(--red);
 }
 
+/* --- Alert Banners (Page-Level) --- */
+.alert-banner {
+    background: var(--gray-100);
+    padding: var(--space-md);
+    border-radius: var(--radius-md);
+    border-left: 4px solid var(--gray-400);
+    margin-bottom: var(--space-lg);
+}
+
+.alert-banner--warning {
+    border-left-color: var(--orange);
+}
+
+.alert-banner--error {
+    border-left-color: var(--red);
+    background: rgba(220, 38, 38, 0.03);
+}
+
+.alert-banner--success {
+    border-left-color: var(--green);
+}
+
+.alert-banner strong {
+    display: block;
+    font-size: 0.875rem;
+    color: var(--black);
+}
+
+.alert-banner p {
+    margin-top: 4px;
+    font-size: 0.8rem;
+    color: var(--gray-600);
+}
+
 /* --- Form Divider --- */
 .form-divider {
     display: flex;
