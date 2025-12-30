@@ -1,0 +1,31 @@
+<?php
+
+namespace App\Livewire;
+
+use App\Models\Order;
+use App\Models\PointTransaction;
+use Livewire\Attributes\Layout;
+use Livewire\Component;
+
+class OrderSuccess extends Component
+{
+    public Order $order;
+    public int $earnedPoints = 0;
+
+    public function mount($orderId)
+    {
+        $this->order = Order::findOrFail($orderId);
+        
+        // Get points earned from this order
+        $pointTransaction = PointTransaction::where('order_id', $this->order->id)
+            ->where('type', 'earn')
+            ->first();
+            
+        $this->earnedPoints = $pointTransaction?->amount ?? 0;
+    }
+
+    public function render()
+    {
+        return view('livewire.order-success');
+    }
+}
