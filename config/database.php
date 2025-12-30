@@ -85,12 +85,14 @@ return [
 
         'pgsql' => [
             'driver' => 'pgsql',
-            'url' => null, // Vercel uses individual DB_* env vars
-            'host' => trim((string) env('DB_HOST', '127.0.0.1')),
-            'port' => trim((string) env('DB_PORT', '5432')),
-            'database' => trim((string) env('DB_DATABASE', 'laravel')),
-            'username' => trim((string) env('DB_USERNAME', 'root')),
-            'password' => trim((string) env('DB_PASSWORD', '')),
+            // Supabase-Vercel integration provides POSTGRES_URL
+            'url' => env('POSTGRES_URL', env('DATABASE_URL')),
+            // Fallback to individual env vars (Supabase uses POSTGRES_* prefix)
+            'host' => trim((string) env('POSTGRES_HOST', env('DB_HOST', '127.0.0.1'))),
+            'port' => trim((string) env('POSTGRES_PORT', env('DB_PORT', '5432'))),
+            'database' => trim((string) env('POSTGRES_DATABASE', env('DB_DATABASE', 'postgres'))),
+            'username' => trim((string) env('POSTGRES_USER', env('DB_USERNAME', 'postgres'))),
+            'password' => trim((string) env('POSTGRES_PASSWORD', env('DB_PASSWORD', ''))),
             'charset' => env('DB_CHARSET', 'utf8'),
             'prefix' => '',
             'prefix_indexes' => true,
