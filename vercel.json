@@ -6,7 +6,9 @@
     "outputDirectory": "public",
     "functions": {
         "api/**/*.php": {
-            "runtime": "vercel-php@0.7.1"
+            "runtime": "vercel-php@0.7.1",
+            "memory": 1024,
+            "maxDuration": 10
         }
     },
     "routes": [
@@ -37,11 +39,12 @@
     ],
     "env": {
         "APP_ENV": "production",
-        "APP_DEBUG": "true",
+        "APP_DEBUG": "false",
         "LOG_CHANNEL": "stderr",
         "QUEUE_CONNECTION": "sync",
         "SESSION_DRIVER": "database",
-        "CACHE_STORE": "database"
+        "CACHE_STORE": "array",
+        "VIEW_COMPILED_PATH": "/tmp"
     },
     "crons": [
         {
