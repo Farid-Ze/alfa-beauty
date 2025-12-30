@@ -1,9 +1,9 @@
 {
     "version": 2,
     "framework": null,
-    "buildCommand": "npm install && npm run build && composer install --no-dev --optimize-autoloader && php artisan filament:optimize && php artisan config:cache && php artisan route:cache && php artisan view:cache",
+    "installCommand": "npm install",
+    "buildCommand": "npm run build",
     "outputDirectory": "public",
-    "installCommand": "composer install --no-dev --optimize-autoloader",
     "functions": {
         "api/**/*.php": {
             "runtime": "vercel-php@0.7.1"
@@ -25,15 +25,11 @@
     "crons": [
         {
             "path": "/api/cron/cleanup-orders",
-            "schedule": "0 * * * *"
+            "schedule": "0 1 * * *"
         },
         {
             "path": "/api/cron/sync-inventory",
             "schedule": "0 3 * * *"
-        },
-        {
-            "path": "/api/cron/update-expiry",
-            "schedule": "0 2 * * *"
         }
     ]
 }
