@@ -42,7 +42,7 @@
     ],
     "env": {
         "APP_ENV": "production",
-        "APP_DEBUG": "true",
+        "APP_DEBUG": "false",
         "DB_CONNECTION": "pgsql",
         "LOG_CHANNEL": "stderr",
         "QUEUE_CONNECTION": "sync",
