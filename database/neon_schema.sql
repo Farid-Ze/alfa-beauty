@@ -409,6 +409,44 @@ INSERT INTO products (sku, name, slug, brand_id, category_id, base_price, stock,
 ('FMV-SHA-001', 'Farmavita HD Life Shampoo', 'farmavita-hd-life-shampoo', 3, 4, 165000, 80, 'Sulfate-free professional shampoo', TRUE, 'NA18201200201', TRUE, TRUE, '["products/product-serum.png"]', NOW(), NOW())
 ON CONFLICT (sku) DO NOTHING;
 
+-- ================================================
+-- ADDITIONAL TABLES (Added for B2B features)
+-- ================================================
+
+-- Product Price Tiers (volume-based pricing)
+CREATE TABLE IF NOT EXISTS product_price_tiers (
+    id BIGSERIAL PRIMARY KEY,
+    product_id BIGINT NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+    min_quantity INTEGER NOT NULL,
+    max_quantity INTEGER,
+    unit_price DECIMAL(15,2),
+    discount_percent DECIMAL(5,2),
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS product_price_tiers_product_id_min_quantity_index 
+    ON product_price_tiers(product_id, min_quantity);
+
+-- Carts
+CREATE TABLE IF NOT EXISTS carts (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT REFERENCES users(id) ON DELETE CASCADE,
+    session_id VARCHAR(255),
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Cart Items
+CREATE TABLE IF NOT EXISTS cart_items (
+    id BIGSERIAL PRIMARY KEY,
+    cart_id BIGINT NOT NULL REFERENCES carts(id) ON DELETE CASCADE,
+    product_id BIGINT NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+    quantity INTEGER DEFAULT 1,
+    price_at_add DECIMAL(15,2),
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
 -- Done!
 SELECT 'Schema and seed data created successfully!' AS status;
 
