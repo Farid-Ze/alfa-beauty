@@ -87,11 +87,12 @@ return [
             // Parse POSTGRES_URL from Supabase-Vercel integration
             $url = env('POSTGRES_URL', env('POSTGRES_PRISMA_URL'));
             
-            // PDO options for Supabase Pooler compatibility (Transaction & Session)
-            // Enable emulated prepares to avoid "prepared statement does not exist" errors
-            // NOTE: Requires "CREATE CAST (integer AS boolean) ..." in database for boolean queries
+            // PDO options
+            // With Session Pooler (port 5432), we can support prepared statements.
+            // keeping emulate_prepares FALSE allows Laravel to bind booleans correctly.
+            // If checking for "prepared statement does not exist" error, ensure you are using port 5432 (Session) not 6543 (Transaction).
             $pdoOptions = [
-                \PDO::ATTR_EMULATE_PREPARES => true,
+                \PDO::ATTR_EMULATE_PREPARES => false,
             ];
             
             if ($url) {
@@ -112,7 +113,7 @@ return [
                 ];
             }
             
-            // Fallback to individual env vars (for Supabase direct connection)
+            // Fallback to individual env vars (for Supabase direct connection or Session Pooler)
             return [
                 'driver' => 'pgsql',
                 'host' => trim((string) env('POSTGRES_HOST', env('DB_HOST', '127.0.0.1'))),
