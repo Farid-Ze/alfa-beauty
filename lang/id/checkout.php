@@ -8,8 +8,9 @@ return [
     // Form Labels
     'customer_info' => 'Informasi Pelanggan',
     'name' => 'Nama Lengkap',
-    'phone' => 'Nomor Telepon',
+    'phone' => 'WhatsApp',
     'address' => 'Alamat Pengiriman',
+    'address_placeholder' => 'Masukkan alamat lengkap pengiriman...',
     'notes' => 'Catatan (Opsional)',
     'notes_placeholder' => 'Instruksi khusus untuk pengiriman...',
     
@@ -31,6 +32,8 @@ return [
     'place_order' => 'Buat Pesanan',
     'processing' => 'Memproses...',
     'whatsapp_checkout' => 'Checkout via WhatsApp',
+    'checkout_whatsapp' => 'Checkout via WhatsApp',
+    'or' => 'atau',
     
     // Success Page
     'order_success' => 'Pesanan Berhasil!',

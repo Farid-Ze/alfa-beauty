@@ -10,6 +10,7 @@
                 <em>{{ __('home.hero_title_2') }}</em>
             </h1>
             <p class="hero-tagline">{{ __('home.hero_tagline') }}</p>
+            <p class="hero-tagline-bold">{{ __('home.hero_tagline_bold') }}</p>
         </div>
         <!-- Scroll Indicator - V3 Spec: No CTA in hero for premium feel -->
         <div class="hero-scroll">
@@ -31,7 +32,7 @@
         <livewire:product-list />
     </section>
 
-    <!-- Brands Section - Premium Asymmetric Design -->
+    <!-- Our Brands Section - Original Layout with Logos -->
     <section class="brands" id="brands">
         <div class="brands-header">
             <h2 class="section-title">{{ __('home.our_brands') }}</h2>
@@ -39,7 +40,13 @@
         <div class="brands-list">
             @foreach($brands as $index => $brand)
             <a href="{{ route('brands.show', $brand->slug) }}" class="brand-item" data-index="{{ str_pad($index + 1, 2, '0', STR_PAD_LEFT) }}">
-                <span class="brand-name">{{ $brand->name }}</span>
+                @if($brand->logo_url)
+                    <div class="brand-logo-display">
+                        <img src="{{ url('storage/' . $brand->logo_url) }}" alt="{{ $brand->name }}">
+                    </div>
+                @else
+                    <span class="brand-name">{{ $brand->name }}</span>
+                @endif
                 <span class="brand-meta">{{ $brand->origin_country }} · {{ $brand->is_own_brand ? __('home.our_brand') : __('home.partner') }}</span>
                 <div class="brand-hover-info">
                     <div class="brand-hover-stat">
@@ -67,12 +74,12 @@
             
             <!-- Desktop Headline: Structural Split -->
             <div class="company-headline-desktop">
-                <span class="text-white">Partner</span>
-                <span class="text-black">Terpercaya</span>
+                <span class="text-white">{{ __('home.trusted_partner') }}</span>
+                <span class="text-black">{{ __('home.partner_terpercaya') }}</span>
             </div>
 
             <!-- Mobile Headline: Simple Stack -->
-            <h2 class="company-headline-mobile">{{ __('home.trusted_partner') }}</h2>
+            <h2 class="company-headline-mobile">{{ __('home.trusted_partner') }} {{ __('home.partner_terpercaya') }}</h2>
         </div>
         <div class="company-details">
             <p class="company-desc">{{ __('home.company_desc') }}</p>
@@ -84,118 +91,222 @@
         </div>
     </section>
 
-    <!-- Partner Testimonials -->
-    <section class="testimonials-section" 
+    <!-- Partner Testimonials - Clean Card Style -->
+    <section class="testimonials-clean" 
         x-data="{ 
-            active: 0,
+            active: 1,
             paused: false,
             interval: null,
+            enableTransition: true,
+            isAnimating: false,
             testimonials: [
-                { quote: 'Kualitas produk konsisten, pengiriman cepat. Quick Order sangat membantu kesibukan salon saya.', name: 'Siti Rahayu', salon: 'Salon Cantik Bunda, Surabaya', tier: 'Gold', since: '2019', image: '{{ asset('images/testimonial-siti.png') }}' },
-                { quote: 'Harga kompetitif untuk produk premium. Support tim sangat responsif lewat WhatsApp.', name: 'Budi Santoso', salon: 'Urban Cuts Barbershop, Jakarta', tier: 'Silver', since: '2021', image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&h=80&fit=crop&crop=face' },
-                { quote: 'Platform paling lengkap untuk kebutuhan salon profesional. Loyalty points sangat menguntungkan.', name: 'Maya Putri', salon: 'Glow Beauty Studio, Bandung', tier: 'Gold', since: '2020', image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80&h=80&fit=crop&crop=face' }
+                { 
+                    quote: 'Beralih ke Alfa adalah keputusan logis murni. Kami memangkas limbah inventaris hingga 20% berkat katalog terkurasi mereka. Sangat masuk akal.',
+                    company: 'SCB Signature Salon',
+                    location: 'Jakarta',
+                    initials: 'SC',
+                    color: '#E91E63'
+                },
+                { 
+                    quote: 'Struktur harganya memungkinkan kami menjaga margin sehat tanpa mengorbankan kualitas teknis. Pilihan logis untuk bisnis yang sedang berkembang.',
+                    company: 'Urban Cuts Collective',
+                    location: 'Surabaya',
+                    initials: 'UC',
+                    color: '#9C27B0'
+                },
+                { 
+                    quote: 'Akhirnya, distributor yang paham bahwa Mendesak artinya Sekarang. Keandalannya tanpa cela.',
+                    company: 'Glow Beauty Studio',
+                    location: 'Bandung',
+                    initials: 'GB',
+                    color: '#673AB7'
+                }
             ],
-            next() { this.active = (this.active + 1) % this.testimonials.length },
-            prev() { this.active = (this.active - 1 + this.testimonials.length) % this.testimonials.length },
-            goTo(index) { this.active = index },
-            startAutoplay() {
-                this.interval = setInterval(() => { if (!this.paused) this.next() }, 5000)
+            items: [],
+            originalLength: 0,
+            touchStartX: 0,
+            touchEndX: 0,
+            swipeThreshold: 50,
+            init() {
+                this.originalLength = this.testimonials.length;
+                // Triple duplicate for robust buffering using concat for safety
+                this.items = this.testimonials.concat(this.testimonials, this.testimonials);
+                
+                // Start at beginning of Set 2
+                this.active = this.originalLength;
+                this.startAutoplay();
+            },
+            handleTouchStart(e) {
+                this.touchStartX = e.changedTouches[0].screenX;
+            },
+            handleTouchEnd(e) {
+                this.touchEndX = e.changedTouches[0].screenX;
+                if (this.touchEndX < this.touchStartX - this.swipeThreshold) {
+                    this.startAutoplay();
+                    this.next();
+                }
+                if (this.touchEndX > this.touchStartX + this.swipeThreshold) {
+                    this.startAutoplay();
+                    this.prev();
+                }
+            },
+            next(isManual = false) {
+                if (isManual) this.startAutoplay();
+                if (this.isAnimating) return;
+                this.isAnimating = true;
+                this.active++;
+                
+                // Logic: Allow animation to finish, then normalize position if needed
+                setTimeout(() => {
+                    this.isAnimating = false;
+                    // If we are in Set 3 (Index >= 2 * L), jump back to Set 2
+                    if (this.active >= this.originalLength * 2) {
+                        this.enableTransition = false;
+                        this.active = this.active - this.originalLength;
+                        setTimeout(() => { this.enableTransition = true; }, 40);
+                    }
+                }, 500);
+            },
+            prev() {
+                this.startAutoplay();
+                if (this.isAnimating) return;
+                this.isAnimating = true;
+                this.active--;
+                
+                // Logic: Allow animation to finish, then normalize position if needed
+                setTimeout(() => {
+                    this.isAnimating = false;
+                    // If we are in Set 1 (Index < L), jump forward to Set 2
+                    if (this.active < this.originalLength) {
+                        this.enableTransition = false;
+                        this.active = this.active + this.originalLength;
+                        setTimeout(() => { this.enableTransition = true; }, 40);
+                    }
+                }, 500);
             },
             stopAutoplay() {
-                if (this.interval) clearInterval(this.interval)
+                if (this.interval) clearInterval(this.interval);
+            },
+            startAutoplay() {
+                if (this.interval) clearInterval(this.interval);
+                this.interval = setInterval(() => { this.next() }, 5000);
             }
         }"
-        x-init="startAutoplay()"
-        x-on:mouseenter="paused = true"
-        x-on:mouseleave="paused = false"
-        @touchstart.passive="touchStart = $event.touches[0].clientX"
-        @touchend.passive="
-            const diff = $event.changedTouches[0].clientX - touchStart;
-            if (Math.abs(diff) > 50) diff > 0 ? prev() : next()
-        "
+        x-init="$nextTick(() => init())"
+        @mouseenter="stopAutoplay()"
+        @mouseleave="startAutoplay()"
+        @touchstart="stopAutoplay()"
+        @touchend="startAutoplay()"
     >
-        <div class="testimonials-container">
-            <!-- Section Header -->
-            <div class="testimonials-header">
-                <h2 class="section-title">{{ __('home.partner_stories') }}</h2>
-            </div>
-
-            <!-- Carousel -->
-            <div class="testimonials-carousel">
-                <!-- Quote Mark -->
-                <div class="testimonials-quote-mark">"</div>
-
-                <!-- Cards Stack -->
-                <div class="testimonials-stack">
-                    <template x-for="(t, index) in testimonials" :key="index">
-                        <div 
-                            class="testimonial-card"
-                            :class="{ 
-                                'active': active === index,
-                                'prev': active === (index + 1) % testimonials.length,
-                                'next': active === (index - 1 + testimonials.length) % testimonials.length
-                            }"
-                            @click="active = index"
-                        >
-                            <blockquote x-text="t.quote"></blockquote>
-                            <div class="testimonial-author">
-                                <img :src="t.image" :alt="t.name">
-                                <div class="author-info">
-                                    <strong x-text="t.name"></strong>
-                                    <span x-text="t.salon"></span>
-                                    <span class="tier-badge" :class="t.tier.toLowerCase()">
-                                        <span x-text="t.tier"></span> · {{ __('home.since') }} <span x-text="t.since"></span>
-                                    </span>
+        <div class="testimonials-clean-container">
+            <!-- Cards Carousel -->
+            <div class="testimonials-clean-track" 
+                 @touchstart="handleTouchStart($event)"
+                 @touchend="handleTouchEnd($event)"
+                 :style="'transform: translateX(calc(50vw - (' + active + ' * (var(--card-width) + var(--card-gap))) - (var(--card-width) / 2))); transition: ' + (enableTransition ? 'transform 0.5s cubic-bezier(0.25, 1, 0.5, 1)' : 'none')">
+                <template x-for="(t, index) in items" :key="index">
+                    <div 
+                        class="testimonial-clean-card"
+                        :class="{ 
+                            'active': active === index,
+                            'adjacent': index === active - 1 || index === active + 1
+                        }"
+                        :style="'transition: ' + (enableTransition ? 'opacity 0.5s ease-out, filter 0.5s ease-out' : 'none')"
+                        @click="active = index"
+                    >
+                        <div class="testimonials__item">
+                            <div class="testimonials__quote text-start">
+                                <!-- Rating Star -->
+                                <div class="rating-star mb-6" style="color: var(--gold); font-size: 16px; letter-spacing: 2px; margin-bottom: 24px;">
+                                    ★★★★★
+                                </div>
+                                
+                                <!-- Quote Text -->
+                                <div class="testimonials__quote-text body-1" style="font-family: var(--font-body); font-size: 1.15rem; line-height: 1.6; color: var(--black); margin-bottom: 40px;">
+                                    <blockquote x-text="t.quote" style="border:none; padding:0; margin:0;"></blockquote>
+                                </div>
+                                
+                                <!-- Bio -->
+                                <div class="testimonials__quote-bio flex flex-row items-center justify-start mt-10 gap-x-8" style="display: flex; align-items: center; gap: 32px; margin-top: 40px;">
+                                    <!-- Avatar -->
+                                    <div class="testimonials__quote-avatar">
+                                        <div class="testimonial-avatar-container" :style="'background-color: ' + t.color">
+                                            <span x-text="t.initials"></span>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Info -->
+                                    <div class="testimonials__quote-info text-left">
+                                        <div class="testimonials__quote-name" x-text="t.company"></div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
+                    </div>
+                </template>
+            </div>
+            
+            <!-- Navigation Dots -->
+            <div class="testimonials-clean-nav">
+                <button class="testimonials-clean-arrow" @click="prev()">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                    </svg>
+                </button>
+                <div class="testimonials-clean-dots">
+                    <template x-for="(t, index) in testimonials" :key="'dot-'+index">
+                        <button 
+                            class="testimonial-dot" 
+                            :class="{ 'active': (active % originalLength) === index }"
+                            @click="active = index + originalLength"
+                        ></button>
                     </template>
                 </div>
-
-                <!-- Controls: Dots (left) + Arrows (right) -->
-                <div class="testimonials-controls">
-                    <div class="testimonials-nav">
-                        <template x-for="(t, index) in testimonials" :key="'dot-'+index">
-                            <button 
-                                class="nav-dot" 
-                                :class="{ 'active': active === index }"
-                                @click="active = index"
-                            ></button>
-                        </template>
-                    </div>
-                    <div class="testimonials-arrows">
-                        <button class="testimonials-arrow" @click="prev()">
-                            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
-                            </svg>
-                        </button>
-                        <button class="testimonials-arrow" @click="next()">
-                            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                            </svg>
-                        </button>
-                    </div>
-                </div>
+                <button class="testimonials-clean-arrow" @click="next()">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                </button>
             </div>
         </div>
     </section>
 
-    <!-- CTA Section - Elegant Minimalist -->
-    <section class="cta-elegant">
-        <div class="cta-container">
-            <h2 class="cta-headline">
-                <span>Mulai</span>
-                <em>Bermitra</em>
-            </h2>
-            <p class="cta-steps">
-                <span>{{ __('home.register_step') }}</span>
-                <span class="cta-dot">·</span>
-                <span>{{ __('home.verify_step') }}</span>
-                <span class="cta-dot">·</span>
-                <span>{{ __('home.wholesale_access') }}</span>
-            </p>
-            <a href="/register" class="cta-button">{{ __('home.register_now') }}</a>
+    <!-- CTA Section - Get in Touch (matches footer background) -->
+    <section class="cta-contact">
+        <div class="cta-contact-container">
+            <h2 class="cta-contact-title">{{ __('home.get_in_touch') }}</h2>
+            <p class="cta-contact-subtitle">{{ __('home.contact_subtitle') }}</p>
+            
+            <form class="cta-contact-form" action="#" method="POST">
+                @csrf
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="contact-name">{{ __('checkout.name') }}</label>
+                        <input type="text" id="contact-name" name="name" placeholder="{{ __('checkout.name') }}">
+                    </div>
+                    <div class="form-group">
+                        <label for="contact-email">EMAIL *</label>
+                        <input type="email" id="contact-email" name="email" placeholder="Email" required>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="contact-subject">SUBJECT</label>
+                    <input type="text" id="contact-subject" name="subject" placeholder="Subject">
+                </div>
+                
+                <div class="form-group">
+                    <label for="contact-phone">{{ __('checkout.phone') }}</label>
+                    <input type="tel" id="contact-phone" name="phone" placeholder="{{ __('checkout.phone') }}">
+                </div>
+                
+                <div class="form-group">
+                    <label for="contact-message">COMMENT</label>
+                    <textarea id="contact-message" name="message" rows="4" placeholder="Comment"></textarea>
+                </div>
+                
+                <button type="submit" class="cta-contact-btn">{{ __('home.send_message') }}</button>
+            </form>
         </div>
     </section>
 </div>
-

@@ -227,6 +227,9 @@ class CartService
     /**
      * Validate that all cart items have sufficient stock.
      * 
+     * NOTE: Only validates global stock (product->stock) for simplicity.
+     * Batch-level validation is handled at order creation time.
+     * 
      * @return array Array of stock errors, empty if all valid
      */
     public function validateStock(): array
@@ -235,7 +238,6 @@ class CartService
         if (!$cart) return [];
 
         $errors = [];
-        $inventoryService = app(InventoryService::class);
 
         // Bulk load products for efficiency
         $productIds = $cart->items->pluck('product_id')->toArray();
@@ -245,22 +247,14 @@ class CartService
             $product = $products[$item->product_id] ?? null;
             if (!$product) continue;
             
-            // Check both global stock AND batch-level availability
-            $globalStockOk = $item->quantity <= $product->stock;
-            $batchStockOk = $inventoryService->hasAvailableStock($product->id, $item->quantity);
-            
-            if (!$globalStockOk || !$batchStockOk) {
-                // Get batch availability for detailed message
-                $batchInfo = $inventoryService->getAvailableBatches($product->id);
-                
+            // Only check global stock - batch allocation happens at order time
+            if ($item->quantity > $product->stock) {
                 $errors[] = [
                     'item_id' => $item->id,
                     'product_id' => $product->id,
                     'product_name' => $product->name,
                     'requested' => $item->quantity,
-                    'available' => min($product->stock, $batchInfo['total_available']),
-                    'global_stock' => $product->stock,
-                    'batch_stock' => $batchInfo['total_available'],
+                    'available' => $product->stock,
                 ];
             }
         }

@@ -31,33 +31,34 @@ class CartItem extends Model
 
     /**
      * Check if price has changed since item was added.
+     * Note: price_at_add stores B2B price, so we compare with it.
+     * True price comparison requires PricingService context (user, quantity).
      */
     public function getPriceChangedAttribute(): bool
     {
+        // This is a simplified check - true B2B price change detection
+        // happens in CartService::refreshPrices()
         if (!$this->price_at_add) {
             return false;
         }
 
-        return $this->price_at_add != $this->product->base_price;
+        // Compare with stored price - changes detected by refreshPrices()
+        return false; // Let CartService handle price change detection
     }
 
     /**
-     * Get the current effective price (latest from product).
+     * Get the stored price at time of add (includes B2B pricing).
      */
-    public function getCurrentPriceAttribute(): float
+    public function getStoredPriceAttribute(): float
     {
-        return $this->product->base_price;
+        return (float) ($this->price_at_add ?? $this->product->base_price);
     }
 
     /**
-     * Get price difference (positive = price increased).
+     * Get line total using stored B2B price.
      */
-    public function getPriceDifferenceAttribute(): float
+    public function getLineTotalAttribute(): float
     {
-        if (!$this->price_at_add) {
-            return 0;
-        }
-
-        return $this->product->base_price - $this->price_at_add;
+        return $this->stored_price * $this->quantity;
     }
 }

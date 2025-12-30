@@ -17,6 +17,9 @@ class CheckoutPage extends Component
     public $address;
     public $notes;
     public array $stockErrors = [];
+    public array $priceChanges = [];
+
+    protected CartService $cartService;
 
     protected $rules = [
         'name' => 'required|min:3',
@@ -25,9 +28,14 @@ class CheckoutPage extends Component
         'notes' => 'nullable|string',
     ];
 
-    public function mount(CartService $cartService)
+    public function boot(CartService $cartService)
     {
-        if ($cartService->getItemCount() === 0) {
+        $this->cartService = $cartService;
+    }
+
+    public function mount()
+    {
+        if ($this->cartService->getItemCount() === 0) {
             return redirect('/');
         }
 
@@ -38,16 +46,19 @@ class CheckoutPage extends Component
             $this->phone = $user->phone ?? '';
         }
 
+        // Refresh prices using B2B pricing (CRITICAL: prevents stale retail prices)
+        $this->priceChanges = $this->cartService->refreshPrices();
+        
         // Check stock on page load
-        $this->stockErrors = $cartService->validateStock();
+        $this->stockErrors = $this->cartService->validateStock();
     }
 
     /**
      * Validate stock before checkout
      */
-    protected function validateStockBeforeCheckout(CartService $cartService): bool
+    protected function validateStockBeforeCheckout(): bool
     {
-        $this->stockErrors = $cartService->validateStock();
+        $this->stockErrors = $this->cartService->validateStock();
         
         if (!empty($this->stockErrors)) {
             $productNames = collect($this->stockErrors)->pluck('product_name')->join(', ');
@@ -61,17 +72,17 @@ class CheckoutPage extends Component
     /**
      * Standard order placement (legacy flow)
      */
-    public function placeOrder(CartService $cartService, OrderService $orderService)
+    public function placeOrder(OrderService $orderService)
     {
         $this->validate();
 
-        $cart = $cartService->getCart();
+        $cart = $this->cartService->getCart();
         if (!$cart || $cart->items->isEmpty()) {
             return redirect('/');
         }
 
         // Validate stock before proceeding
-        if (!$this->validateStockBeforeCheckout($cartService)) {
+        if (!$this->validateStockBeforeCheckout()) {
             return;
         }
 
@@ -93,12 +104,16 @@ class CheckoutPage extends Component
             }
 
             // Clear Cart and Dispatch
-            $cartService->clearCart();
+            $this->cartService->clearCart();
             $this->dispatch('cart-updated');
 
-            return redirect()->route('checkout.success', ['order' => $order->id]);
+            return $this->redirectRoute('checkout.success', ['order' => $order->id]);
 
         } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Checkout placeOrder failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
             session()->flash('error', __('checkout.order_error') . ': ' . $e->getMessage());
         }
     }
@@ -109,17 +124,17 @@ class CheckoutPage extends Component
      * Creates order with pending_payment status and redirects to WhatsApp
      * with pre-filled order message.
      */
-    public function checkoutViaWhatsApp(CartService $cartService, OrderService $orderService)
+    public function checkoutViaWhatsApp(OrderService $orderService)
     {
         $this->validate();
 
-        $cart = $cartService->getCart();
+        $cart = $this->cartService->getCart();
         if (!$cart || $cart->items->isEmpty()) {
             return redirect('/');
         }
 
         // Validate stock before proceeding
-        if (!$this->validateStockBeforeCheckout($cartService)) {
+        if (!$this->validateStockBeforeCheckout()) {
             return;
         }
 
@@ -139,23 +154,38 @@ class CheckoutPage extends Component
             session()->put('whatsapp_order_number', $result['order']->order_number);
 
             // Clear Cart
-            $cartService->clearCart();
+            $this->cartService->clearCart();
             $this->dispatch('cart-updated');
 
-            // Redirect to WhatsApp
-            return redirect()->away($result['whatsapp_url']);
+            // Redirect to WhatsApp (external URL, use navigate: false)
+            return $this->redirect($result['whatsapp_url'], navigate: false);
 
         } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Checkout via WhatsApp failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
             session()->flash('error', __('checkout.whatsapp_error') . ': ' . $e->getMessage());
         }
     }
 
-    public function render(CartService $cartService)
+    public function render()
     {
+        // Get detailed cart with B2B pricing
+        $cartData = $this->cartService->getDetailedCart();
+        
+        // Calculate savings from B2B pricing
+        $totalSavings = collect($cartData['items'])
+            ->filter(fn($item) => isset($item['discount_percent']) && $item['discount_percent'] > 0)
+            ->sum(fn($item) => ($item['original_price'] - $item['unit_price']) * $item['quantity']);
+
         return view('livewire.checkout-page', [
-            'cartItems' => $cartService->getCart()->items,
-            'subtotal' => $cartService->getSubtotal(),
+            'cartItems' => $cartData['items'],
+            'subtotal' => $cartData['subtotal'],
             'stockErrors' => $this->stockErrors,
+            'priceChanges' => $this->priceChanges,
+            'totalSavings' => $totalSavings,
         ]);
     }
 }
+

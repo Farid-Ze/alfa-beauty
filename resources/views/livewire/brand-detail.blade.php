@@ -92,7 +92,13 @@
         <div class="nav-brands">
             @foreach($otherBrands as $other)
             <a href="{{ route('brands.show', $other->slug) }}" class="nav-brand-item">
-                <span class="nav-brand-name">{{ $other->name }}</span>
+                @if($other->logo_url)
+                    <div class="nav-brand-logo">
+                        <img src="{{ url('storage/' . $other->logo_url) }}" alt="{{ $other->name }}">
+                    </div>
+                @else
+                    <span class="nav-brand-name">{{ $other->name }}</span>
+                @endif
                 <span class="nav-brand-origin">{{ $other->origin_country }}</span>
             </a>
             @endforeach

@@ -42,6 +42,19 @@ return [
     'brand' => 'Brand',
     'stock' => 'Stok',
     'unit' => 'unit',
+    'quantity' => 'Kuantitas',
+    'best_seller' => 'Best Seller',
+    'download_specs' => 'Download Spesifikasi',
+    'specs_note' => 'Tersedia spesifikasi teknis dan MSDS',
+    
+    // B2B Pricing
+    'volume_discounts' => 'Diskon Kuantitas',
+    'special_price' => 'Harga Khusus',
+    'customer_price' => 'Harga Pelanggan',
+    'you_save' => 'Anda hemat',
+    'buy_more_save_more' => 'Beli lebih banyak, hemat lebih besar',
+    'min_order' => 'Minimal order: :qty unit',
+    'price_valid_until' => 'Harga berlaku sampai :date',
     
     // Results
     'showing_results' => 'Menampilkan :count produk',
@@ -52,3 +65,4 @@ return [
     'our_products' => 'Produk Kami',
     'featured_products' => 'Produk Unggulan',
 ];
+

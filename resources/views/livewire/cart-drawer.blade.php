@@ -16,7 +16,7 @@
     <div class="cart-drawer-backdrop" @click="open = false"></div>
     <aside class="cart-drawer" x-show="open" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="translate-x-full" x-transition:enter-end="translate-x-0" x-transition:leave="transition ease-in duration-200" x-transition:leave-start="translate-x-0" x-transition:leave-end="translate-x-full">
         <div class="cart-header">
-            <h2>{{ __('cart.shopping_cart') }} <span class="cart-count">({{ $items->sum('quantity') }})</span></h2>
+            <h2>{{ __('cart.shopping_cart') }} <span class="cart-count">({{ $itemCount ?? count($items) }})</span></h2>
             <button class="close-btn" @click="open = false" aria-label="{{ __('general.close') }}">
                 <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
@@ -26,11 +26,16 @@
 
         <div class="cart-items">
             @forelse($items as $item)
-                <div class="cart-item" wire:key="cart-item-{{ $item->id }}">
+                @php
+                    $hasDiscount = isset($item['discount_percent']) && $item['discount_percent'] > 0;
+                    $product = $item['product'];
+                    $productImages = is_array($product->images) ? $product->images : (is_object($product->images) ? $product->images->toArray() : []);
+                @endphp
+                <div class="cart-item" wire:key="cart-item-{{ $item['id'] }}">
                     <!-- Image -->
                     <div class="cart-item-image">
-                        @if($item->product->images && count($item->product->images) > 0)
-                            <img src="{{ url('storage/' . $item->product->images[0]) }}" alt="{{ $item->product->name }}">
+                        @if(count($productImages) > 0)
+                            <img src="{{ url('storage/' . $productImages[0]) }}" alt="{{ $product->name }}">
                         @else
                             <div class="cart-item-placeholder">
                                 <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -38,36 +43,58 @@
                                 </svg>
                             </div>
                         @endif
+                        
+                        <!-- B2B Discount Badge -->
+                        @if($hasDiscount)
+                            <span class="cart-item-badge">
+                                -{{ number_format($item['discount_percent'], 0) }}%
+                            </span>
+                        @endif
                     </div>
                     
                     <!-- Content -->
                     <div class="cart-item-content">
-                        <h4 class="cart-item-name">{{ $item->product->name }}</h4>
+                        <h4 class="cart-item-name">{{ $product->name }}</h4>
+                        
+                        <!-- Price Source Badge (B2B indicator) -->
+                        @if(isset($item['price_source']) && $item['price_source'] === 'customer_price_list')
+                            <span class="price-source-tag">Harga Khusus</span>
+                        @elseif(isset($item['price_source']) && $item['price_source'] === 'volume_tier')
+                            <span class="price-source-tag">Diskon Volume</span>
+                        @endif
+
                         <div class="cart-item-meta">
                             <div class="cart-item-pricing">
-                                <span class="cart-item-price">Rp {{ number_format($item->product->price * $item->quantity, 0, ',', '.') }}</span>
-                                <span class="cart-item-pts">+{{ $item->product->points * $item->quantity }} {{ __('general.pts') }}</span>
+                                @if($hasDiscount)
+                                    <span class="cart-item-price-original">
+                                        Rp {{ number_format($item['original_price'] * $item['quantity'], 0, ',', '.') }}
+                                    </span>
+                                @endif
+                                <span class="cart-item-price {{ $hasDiscount ? 'price-current-discounted' : '' }}">
+                                    Rp {{ number_format($item['line_total'], 0, ',', '.') }}
+                                </span>
+                                <span class="cart-item-pts">+{{ $product->points * $item['quantity'] }} {{ __('general.pts') }}</span>
                             </div>
                             <div class="cart-item-actions">
                                 <div class="cart-item-qty">
                                     <button 
-                                        wire:click="updateQuantity({{ $item->id }}, {{ $item->quantity - 1 }})"
+                                        wire:click="decrementItem({{ $item['id'] }})"
                                         wire:loading.attr="disabled"
-                                        wire:target="updateQuantity"
-                                        {{ $item->quantity <= 1 ? 'disabled' : '' }}
+                                        wire:target="decrementItem"
+                                        {{ $item['quantity'] <= 1 ? 'disabled' : '' }}
                                     >−</button>
-                                    <span>{{ $item->quantity }}</span>
+                                    <span>{{ $item['quantity'] }}</span>
                                     <button 
-                                        wire:click="updateQuantity({{ $item->id }}, {{ $item->quantity + 1 }})"
+                                        wire:click="incrementItem({{ $item['id'] }})"
                                         wire:loading.attr="disabled"
-                                        wire:target="updateQuantity"
+                                        wire:target="incrementItem"
                                     >+</button>
                                 </div>
                                 <button 
                                     class="cart-item-remove" 
-                                    wire:click="removeItem({{ $item->id }})"
+                                    wire:click="removeItem({{ $item['id'] }})"
                                     wire:loading.class="opacity-50"
-                                    wire:target="removeItem({{ $item->id }})"
+                                    wire:target="removeItem({{ $item['id'] }})"
                                 >{{ __('cart.remove') }}</button>
                             </div>
                         </div>
@@ -84,11 +111,21 @@
             @endforelse
         </div>
 
-        @if($items->count() > 0)
+        @if(count($items) > 0)
         @php
-            $totalPoints = $items->sum(fn($item) => $item->product->points * $item->quantity);
+            $totalPoints = collect($items)->sum(fn($item) => $item['product']->points * $item['quantity']);
+            $totalSavings = collect($items)->filter(fn($item) => isset($item['discount_percent']) && $item['discount_percent'] > 0)
+                ->sum(fn($item) => ($item['original_price'] - $item['unit_price']) * $item['quantity']);
         @endphp
         <div class="cart-footer">
+            @if($totalSavings > 0)
+            <div class="savings-banner">
+                <span class="savings-banner-text">🎉 Anda hemat </span>
+                <span class="savings-banner-amount">Rp {{ number_format($totalSavings, 0, ',', '.') }}</span>
+                <span class="savings-banner-text"> dengan harga B2B!</span>
+            </div>
+            @endif
+            
             <div class="cart-subtotal">
                 <div class="subtotal-left">
                     <span class="subtotal-label">{{ __('cart.subtotal') }}</span>
@@ -99,9 +136,17 @@
                 </div>
             </div>
 
-            <a href="/checkout" class="btn btn-block">{{ __('cart.checkout') }}</a>
+            <a 
+                href="/checkout" 
+                class="btn btn-block checkout-btn"
+                x-data="{ loading: false }"
+                x-on:click="loading = true"
+                :class="{ 'btn-loading': loading }"
+            >
+                <span x-show="!loading">{{ __('cart.checkout') }}</span>
+                <span x-show="loading" x-cloak>{{ __('general.loading') }}...</span>
+            </a>
         </div>
         @endif
     </aside>
 </div>
-

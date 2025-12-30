@@ -8,8 +8,9 @@ return [
     // Form Labels
     'customer_info' => 'Customer Information',
     'name' => 'Full Name',
-    'phone' => 'Phone Number',
+    'phone' => 'WhatsApp',
     'address' => 'Shipping Address',
+    'address_placeholder' => 'Enter your complete shipping address...',
     'notes' => 'Notes (Optional)',
     'notes_placeholder' => 'Special delivery instructions...',
     
@@ -31,6 +32,8 @@ return [
     'place_order' => 'Place Order',
     'processing' => 'Processing...',
     'whatsapp_checkout' => 'Checkout via WhatsApp',
+    'checkout_whatsapp' => 'Checkout via WhatsApp',
+    'or' => 'or',
     
     // Success Page
     'order_success' => 'Order Successful!',

@@ -8,10 +8,13 @@
             
             <div class="buy-again-grid">
                 @foreach($products as $product)
+                    @php
+                        $productImages = is_array($product->images) ? $product->images : [];
+                    @endphp
                     <div class="buy-again-card">
                         <a href="{{ route('products.show', $product->slug) }}" class="buy-again-image">
-                            @if($product->images && count($product->images) > 0)
-                                <img src="{{ url('storage/' . $product->images[0]) }}" alt="{{ $product->name }}">
+                            @if(count($productImages) > 0)
+                                <img src="{{ url('storage/' . $productImages[0]) }}" alt="{{ $product->name }}">
                             @else
                                 <div class="placeholder-image">
                                     <svg width="40" height="40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -19,6 +22,13 @@
                                     </svg>
                                 </div>
                             @endif
+                            
+                            <!-- B2B Indicator (if user has B2B pricing) -->
+                            @auth
+                                @if(Auth::user()->has_b2b_pricing)
+                                    <span class="cart-item-badge">B2B</span>
+                                @endif
+                            @endauth
                         </a>
                         
                         <div class="buy-again-info">
@@ -26,7 +36,14 @@
                             <h3 class="buy-again-name">
                                 <a href="{{ route('products.show', $product->slug) }}">{{ $product->name }}</a>
                             </h3>
-                            <p class="buy-again-price">Rp {{ number_format($product->price, 0, ',', '.') }}</p>
+                            <p class="buy-again-price">
+                                Rp {{ number_format($product->base_price, 0, ',', '.') }}
+                                @auth
+                                    @if(Auth::user()->has_b2b_pricing)
+                                        <span class="price-source-tag">Lihat Harga Khusus</span>
+                                    @endif
+                                @endauth
+                            </p>
                         </div>
                         
                         <button 

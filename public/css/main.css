@@ -1,7 +1,7 @@
 /* ============================================================
    ALFA BEAUTY - MAIN STYLESHEET
    Architecture: ITCSS (Inverted Triangle CSS)
-   Version: 2.0 | Last Updated: 2025-12-29
+   Version: 2.3 | Last Updated: 2025-12-30
    ============================================================
 
    TABLE OF CONTENTS
@@ -22,6 +22,12 @@
    14. BRAND LANDING   - CTA-focused brand page
    15. BRAND EDITORIAL - Storytelling with asymmetric layouts
    16. BRAND HERO      - Editorial hero matching Hi-Fi mockup
+   17. B2B PRICING     - Volume tiers, customer pricing, discount badges
+   18. ORDER SUCCESS   - Order confirmation page
+   19. BRANDS LOGOS    - Clean brand logo grid display
+   20. CLEAN TESTIMONIALS - Mooncup-style testimonial cards
+   21. CTA CONTACT     - Get in touch form with teal background
+   22. MOONCUP FOOTER  - Multi-column layout, same bg as CTA
 
    ============================================================ */
 
@@ -457,7 +463,9 @@ img {
 
 /* --- Buttons --- */
 .btn {
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     padding: 1rem 2rem;
     font-size: 0.875rem;
     font-weight: 500;
@@ -467,6 +475,50 @@ img {
     background: var(--black);
     border: none;
     cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+}
+
+.btn:hover {
+    background: #333;
+}
+
+.btn-block {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-whatsapp {
+    background: var(--black);
+    color: var(--white);
+}
+
+/* Ensure icon and text are properly aligned */
+.btn.btn-whatsapp.btn-block {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.btn-whatsapp svg {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+}
+
+.btn-secondary {
+    background: var(--black);
+    color: var(--white);
+}
+
+/* Button Loading State */
+.btn-loading {
+    opacity: 0.7;
+    pointer-events: none;
+    cursor: wait;
 }
 
 .btn-quick-add {
@@ -579,11 +631,23 @@ img {
 }
 
 .price-points {
+    font-family: var(--font-body);
     font-size: 0.7rem;
     font-weight: 500;
     color: var(--gray-400);
     text-transform: uppercase;
-    letter-spacing: 0.02em;
+    letter-spacing: 0.05em;
+}
+
+/* Subtotal Points - Same styling as price-points */
+.subtotal-points {
+    font-family: var(--font-body);
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--gray-400);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-left: var(--space-sm);
 }
 
 /* --- Toast Notification --- */
@@ -709,9 +773,19 @@ img {
     font-weight: 400;
     color: var(--white);
     opacity: 0.8;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    line-height: 1.5;
+    letter-spacing: 0.05em;
+    text-transform: none;
+    line-height: 1.6;
+    max-width: 500px;
+}
+
+.hero-tagline-bold {
+    font-family: var(--font-body);
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--white);
+    letter-spacing: 0.02em;
+    margin-top: var(--space-sm);
 }
 
 .hero-scroll {
@@ -3090,7 +3164,26 @@ textarea.form-input {
     font-family: var(--font-display);
     font-size: 1.5rem;
     font-weight: 400;
+    font-style: normal;
     margin-bottom: var(--space-md);
+}
+
+/* Checkout Divider - "or" separator */
+.checkout-divider {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    margin: var(--space-md) 0;
+    color: var(--gray-500);
+    font-size: 0.875rem;
+}
+
+.checkout-divider::before,
+.checkout-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--gray-200);
 }
 
 .checkout-summary {
@@ -3147,16 +3240,21 @@ textarea.form-input {
     flex: 1;
 }
 
-/* Summary Item Text - Utility Classes */
+/* Summary Item Text - Design System Compliant */
 .summary-item-name {
+    font-family: var(--font-body);
     font-weight: 500;
-    font-size: 0.95rem;
+    font-size: 0.9rem;
     color: var(--black);
+    line-height: 1.3;
 }
 
 .summary-item-price {
-    color: var(--gray-600);
-    font-size: 0.85rem;
+    font-family: var(--font-display);
+    font-style: normal;
+    font-size: 0.95rem;
+    color: var(--black);
+    margin-top: 4px;
 }
 
 .summary-totals {
@@ -3169,10 +3267,21 @@ textarea.form-input {
     display: flex;
     justify-content: space-between;
     margin-bottom: var(--space-xs);
+    align-items: baseline;
 }
 
 .summary-row-label {
+    font-family: var(--font-body);
+    font-size: 0.875rem;
     color: var(--gray-600);
+}
+
+/* Price values in summary rows */
+.summary-row>span:last-child {
+    font-family: var(--font-display);
+    font-style: normal;
+    font-size: 1rem;
+    color: var(--black);
 }
 
 .summary-row-shipping-free {
@@ -3194,11 +3303,29 @@ textarea.form-input {
 }
 
 .summary-total {
+    margin-top: var(--space-sm);
+    border-top: 1px solid var(--gray-300);
+    padding-top: var(--space-md);
+}
+
+.summary-total .summary-row {
+    margin-bottom: 0;
+}
+
+.summary-total .summary-row span:first-child {
+    font-family: var(--font-body);
+    font-size: 0.875rem;
     font-weight: 600;
-    font-size: 1.25rem;
-    margin-top: var(--space-xs);
-    border-top: 1px solid var(--gray-200);
-    padding-top: var(--space-sm);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--gray-600);
+}
+
+.summary-total .summary-row span:last-child {
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    font-weight: 400;
+    color: var(--black);
 }
 
 /* --- Orders --- */
@@ -3915,9 +4042,9 @@ textarea.form-input {
 
     /* Brands stays consistent with larger breakpoints */
     .brands-list {
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: 1fr;
         gap: 1px;
-        /* Same as default */
+        /* Forced 1 column for tablet/mobile */
     }
 
     /* Section Padding Overrides */
@@ -4154,9 +4281,9 @@ textarea.form-input {
         gap: var(--space-lg);
     }
 
-    /* Brands - 4 cols → 2 cols at 600px */
+    /* Brands - 4 cols → 1 col at 600px (Consistent with 768px) */
     .brands-list {
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: 1fr;
     }
 
     .brand-item {
@@ -6839,5 +6966,1308 @@ textarea.form-input {
 
     .editorial-product-center {
         max-width: 260px;
+    }
+}
+
+/* ============================================================
+   17. B2B PRICING
+   Customer-specific pricing, volume tiers, discount badges
+   ============================================================ */
+
+/* --- B2B Price Display --- */
+.b2b-price-wrapper {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+
+.price-original-strikethrough {
+    text-decoration: line-through;
+    color: var(--gray-400);
+    font-size: 0.9rem;
+}
+
+.price-current-discounted {
+    color: var(--green);
+    font-weight: 600;
+}
+
+.price-discount-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    background: var(--green);
+    color: var(--white);
+    font-size: 0.75rem;
+    font-weight: 500;
+    border-radius: var(--radius-sm);
+}
+
+/* --- Volume Pricing Section --- */
+.volume-pricing-section {
+    background: var(--gray-100);
+    padding: var(--space-md);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--space-lg);
+}
+
+.volume-pricing-title {
+    font-size: 0.875rem;
+    font-weight: 600;
+    margin-bottom: var(--space-sm);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--black);
+}
+
+.volume-tiers {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: 8px;
+}
+
+.volume-tier {
+    text-align: center;
+    padding: 12px;
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-md);
+    background: var(--white);
+    transition: all 0.2s ease;
+}
+
+.volume-tier.active {
+    border-color: var(--green);
+    background: rgba(16, 185, 129, 0.05);
+}
+
+.volume-tier-qty {
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: var(--black);
+}
+
+.volume-tier-price {
+    font-size: 0.8rem;
+    color: var(--green);
+    font-weight: 500;
+}
+
+.volume-tier-discount {
+    font-size: 0.7rem;
+    color: var(--gray-500);
+}
+
+/* --- Customer Pricing Badge --- */
+.customer-price-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: linear-gradient(135deg, var(--green) 0%, #059669 100%);
+    color: var(--white);
+    font-size: 0.75rem;
+    font-weight: 500;
+    border-radius: var(--radius-full);
+}
+
+.customer-price-banner {
+    background: linear-gradient(135deg, var(--green) 0%, #059669 100%);
+    color: var(--white);
+    padding: 12px 16px;
+    border-radius: var(--radius-md);
+    margin-bottom: var(--space-lg);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.customer-price-banner svg {
+    flex-shrink: 0;
+}
+
+.customer-price-banner-title {
+    font-weight: 600;
+    font-size: 0.875rem;
+}
+
+.customer-price-banner-subtitle {
+    font-size: 0.75rem;
+    opacity: 0.9;
+}
+
+/* --- Price Source Indicator (in Cart) --- */
+.price-source-tag {
+    display: inline-block;
+    font-size: 0.65rem;
+    color: var(--green);
+    background: rgba(16, 185, 129, 0.1);
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+    margin-bottom: 4px;
+}
+
+/* --- Cart Item B2B Styles --- */
+.cart-item-badge {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    background: var(--green);
+    color: var(--white);
+    font-size: 0.65rem;
+    padding: 2px 4px;
+    border-radius: var(--radius-sm);
+    font-weight: 500;
+}
+
+.cart-item-price-original {
+    text-decoration: line-through;
+    color: var(--gray-400);
+    font-size: 0.75rem;
+    margin-right: 4px;
+}
+
+/* --- Savings Banner --- */
+.savings-banner {
+    background: linear-gradient(135deg, var(--green) 0%, #059669 100%);
+    color: var(--white);
+    padding: 8px 12px;
+    border-radius: var(--radius-md);
+    margin-bottom: 12px;
+    text-align: center;
+}
+
+.savings-banner-text {
+    font-size: 0.75rem;
+}
+
+.savings-banner-amount {
+    font-weight: 600;
+}
+
+/* --- Product Detail B2B Enhancements --- */
+.pdp-special-badge {
+    position: absolute;
+    top: var(--space-md);
+    left: var(--space-md);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.pdp-badge {
+    padding: 8px 16px;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-weight: 500;
+}
+
+.pdp-badge-featured {
+    background: var(--black);
+    color: var(--white);
+}
+
+.pdp-badge-b2b {
+    background: var(--green);
+    color: var(--white);
+}
+
+/* --- Quantity Section B2B Mode --- */
+.quantity-section {
+    background: var(--white);
+    padding: var(--space-md) 0;
+}
+
+.quantity-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--space-md);
+}
+
+.quantity-label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--gray-600);
+}
+
+.quantity-controls {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+}
+
+.quantity-btn {
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--white);
+    border: none;
+    font-size: 1.25rem;
+    cursor: pointer;
+    color: var(--gray-600);
+    transition: all 0.2s ease;
+}
+
+.quantity-btn:hover:not(:disabled) {
+    background: var(--gray-100);
+    color: var(--black);
+}
+
+.quantity-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.quantity-input {
+    width: 60px;
+    height: 44px;
+    text-align: center;
+    border: none;
+    border-left: 1px solid var(--gray-200);
+    border-right: 1px solid var(--gray-200);
+    font-size: 1rem;
+    font-weight: 500;
+    color: var(--black);
+}
+
+.quantity-input:focus {
+    outline: none;
+    background: var(--gray-50);
+}
+
+/* Remove spinner for number input */
+.quantity-input::-webkit-outer-spin-button,
+.quantity-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    appearance: none;
+    margin: 0;
+}
+
+.quantity-input[type=number] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+}
+
+/* --- Subtotal Row --- */
+.subtotal-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-md) 0;
+    border-top: 1px solid var(--gray-200);
+    margin-bottom: var(--space-md);
+}
+
+.subtotal-label {
+    font-size: 0.875rem;
+    color: var(--gray-600);
+}
+
+.subtotal-value {
+    text-align: right;
+}
+
+.subtotal-price {
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    color: var(--black);
+    display: block;
+}
+
+.subtotal-points {
+    font-size: 0.75rem;
+    color: var(--gray-500);
+}
+
+/* --- Add to Cart Button --- */
+.add-to-cart-btn {
+    width: 100%;
+    padding: 1rem 2rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--white);
+    background: var(--black);
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.add-to-cart-btn:hover:not(:disabled) {
+    background: var(--gray-600);
+}
+
+.add-to-cart-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* --- Responsive B2B Elements --- */
+@media (max-width: 768px) {
+    .volume-tiers {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .volume-tier {
+        padding: 8px;
+    }
+
+    .volume-tier-qty {
+        font-size: 0.75rem;
+    }
+
+    .volume-tier-price {
+        font-size: 0.7rem;
+    }
+
+    .customer-price-banner {
+        flex-direction: column;
+        text-align: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .volume-tiers {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .quantity-btn {
+        width: 40px;
+        height: 40px;
+    }
+
+    .quantity-input {
+        width: 50px;
+        height: 40px;
+    }
+}
+
+/* ============================================================
+   17. PRODUCTS GRID
+   Best Sellers section layout
+   ============================================================ */
+
+.products-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 32px;
+    width: 100%;
+    margin-bottom: var(--space-xl);
+}
+
+.product-card {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+@media (max-width: 900px) {
+    .products-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+    }
+}
+
+/* ============================================================
+   18. ORDER SUCCESS
+   Order confirmation page styles
+   ============================================================ */
+
+.order-success-icon {
+    color: var(--green);
+    width: 80px;
+    height: 80px;
+    margin: 0 auto var(--space-md);
+}
+
+.order-success-icon svg {
+    width: 100%;
+    height: 100%;
+}
+
+.order-success-container {
+    max-width: 600px;
+    text-align: center;
+}
+
+.order-success-card {
+    padding: var(--space-xl);
+}
+
+.order-number-badge {
+    background: var(--gray-100);
+    padding: 12px 24px;
+    border-radius: var(--radius-md);
+    font-family: monospace;
+    font-weight: 600;
+    margin-bottom: var(--space-lg);
+    display: inline-block;
+    letter-spacing: 1px;
+}
+
+.order-points-earned {
+    background: linear-gradient(135deg, var(--gold) 0%, #E5D9A8 100%);
+    color: var(--black);
+    padding: 16px 24px;
+    border-radius: var(--radius-md);
+    margin-bottom: var(--space-lg);
+}
+
+.points-earned-label {
+    font-size: 0.875rem;
+    opacity: 0.8;
+    margin-bottom: 4px;
+}
+
+.points-earned-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.order-success-message {
+    color: var(--gray-600);
+    margin-bottom: var(--space-xl);
+    line-height: 1.6;
+}
+
+.order-success-actions {
+    display: flex;
+    gap: var(--space-md);
+    justify-content: center;
+}
+
+@media (max-width: 480px) {
+    .order-success-actions {
+        flex-direction: column;
+    }
+
+    .order-success-actions .btn {
+        width: 100%;
+    }
+}
+
+/* ============================================================
+   19. BRANDS LOGOS SECTION
+   Clean brand logo grid display
+   ============================================================ */
+
+.brands-logos {
+    padding: var(--space-xl) 0;
+    background: var(--white);
+}
+
+.brands-logos-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 var(--space-lg);
+    text-align: center;
+}
+
+.brands-logos-title {
+    font-family: var(--font-body);
+    font-size: 0.875rem;
+    font-weight: 500;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--gray-600);
+    margin-bottom: var(--space-xl);
+}
+
+.brands-logos-grid {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-xl);
+    flex-wrap: wrap;
+    margin-bottom: var(--space-lg);
+}
+
+.brand-logo-item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 120px;
+    min-height: 60px;
+    opacity: 0.7;
+    transition: opacity 0.3s ease;
+}
+
+.brand-logo-item:hover {
+    opacity: 1;
+}
+
+.brand-logo-img {
+    max-width: 150px;
+    max-height: 50px;
+    object-fit: contain;
+    filter: grayscale(100%);
+    transition: filter 0.3s ease;
+}
+
+.brand-logo-item:hover .brand-logo-img {
+    filter: grayscale(0%);
+}
+
+.brand-logo-text {
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--black);
+}
+
+.brands-logos-underline {
+    width: 60px;
+    height: 2px;
+    background: var(--black);
+    margin: 0 auto;
+}
+
+/* Brand Logo Display within Brand Cards */
+.brand-logo-display {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: var(--space-xs);
+    height: 60px;
+}
+
+.brand-logo-display img {
+    max-width: 120px;
+    max-height: 50px;
+    object-fit: contain;
+    filter: grayscale(100%);
+    opacity: 0.8;
+    transition: all 0.3s ease;
+}
+
+.brand-item:hover .brand-logo-display img {
+    filter: grayscale(0%);
+    opacity: 1;
+}
+
+/* Testimonial Initials */
+.testimonial-initials {
+    font-family: var(--font-body);
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--white);
+    text-transform: uppercase;
+}
+
+/* ============================================================
+/* ============================================================
+   20. CLEAN TESTIMONIALS (MOONCUP REF. STYLE)
+   Wide landscape cards, blur on distinct inactive items
+   ============================================================ */
+
+.testimonials-clean {
+    /* Define variables for centering logic */
+    --card-width: 600px;
+    --card-gap: 60px;
+
+    padding: 80px 0;
+    background: var(--white);
+    overflow: hidden;
+    position: relative;
+    width: 100vw;
+    left: 50%;
+    right: 50%;
+    margin-left: -50vw;
+    margin-right: -50vw;
+}
+
+.testimonials-clean-container {
+    width: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+.testimonials-clean-track {
+    display: flex;
+    align-items: center;
+    gap: var(--card-gap);
+    padding: 20px 0;
+    width: max-content;
+    margin: 0 auto;
+}
+
+/* Wide Landscape Card */
+.testimonial-clean-card {
+    flex: 0 0 var(--card-width);
+    /* Wide card landscape */
+    background: var(--white);
+    padding: 0;
+    border: none;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    transition: opacity 0.5s ease-out, filter 0.5s ease-out;
+    opacity: 0.3;
+    filter: blur(3px);
+    /* TRANSFORM REMOVED for flat layout */
+    position: relative;
+    /* No shadow on inactive */
+}
+
+.testimonial-clean-card.active {
+    opacity: 1;
+    filter: blur(0);
+    transform: scale(1);
+    z-index: 10;
+}
+
+/* Internal Layout */
+.testimonial-stars {
+    color: #A6E3E9;
+    font-size: 16px;
+    letter-spacing: 2px;
+    margin-bottom: 24px;
+}
+
+.testimonial-quote-text blockquote {
+    font-family: var(--font-body);
+    font-size: 1.15rem;
+    line-height: 1.6;
+    color: var(--black);
+    margin: 0 0 40px 0;
+    font-weight: 400;
+}
+
+/* Bio Section */
+.testimonial-bio {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    margin-top: auto;
+    /* Push to bottom if height fixed, though currently auto */
+}
+
+.testimonial-avatar {
+    width: 80px;
+    /* Larger avatar like reference */
+    height: 80px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    overflow: hidden;
+}
+
+.testimonial-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.testimonial-initials {
+    color: var(--white);
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.testimonial-info {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    text-align: left;
+}
+
+.testimonial-name {
+    font-family: var(--font-body);
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--black);
+    margin-bottom: 4px;
+}
+
+.testimonial-location {
+    font-size: 0.875rem;
+    color: var(--gray-500);
+}
+
+/* Navigation */
+.testimonials-clean-nav {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-lg);
+    margin-top: 32px;
+}
+
+.testimonials-clean-arrow {
+    width: 40px;
+    height: 40px;
+    border: 1px solid var(--gray-200);
+    background: transparent;
+    border-radius: 0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.testimonials-clean-arrow:hover {
+    background: var(--gray-100);
+}
+
+.testimonials-clean-dots {
+    display: flex;
+    gap: 8px;
+}
+
+.testimonial-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--gray-200);
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.testimonial-dot.active {
+    background: var(--black);
+}
+
+/* ============================================================
+   21. CTA CONTACT FORM
+   Get in touch section with teal background
+   ============================================================ */
+
+.cta-contact {
+    padding: var(--space-2xl) 0 var(--space-3xl);
+    background: linear-gradient(to bottom, #1c1c1e 0%, #0a0a0a 70%, #000000 100%);
+    /* Elegant gradient melting into footer */
+}
+
+.cta-contact-container {
+    max-width: 700px;
+    margin: 0 auto;
+    padding: 0 var(--space-lg);
+    text-align: center;
+}
+
+.cta-contact-title {
+    font-family: var(--font-display);
+    font-size: clamp(2rem, 5vw, 3rem);
+    font-weight: 400;
+    color: var(--white);
+    margin-bottom: var(--space-md);
+}
+
+.cta-contact-subtitle {
+    font-family: var(--font-body);
+    font-size: 1rem;
+    color: var(--gray-400);
+    margin-bottom: var(--space-xl);
+}
+
+.cta-contact-form {
+    text-align: left;
+}
+
+.cta-contact-form .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-md);
+}
+
+.cta-contact-form .form-group {
+    margin-bottom: var(--space-md);
+}
+
+.cta-contact-form label {
+    display: block;
+    font-family: var(--font-body);
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--gray-400);
+    margin-bottom: 8px;
+}
+
+.cta-contact-form input,
+.cta-contact-form textarea {
+    width: 100%;
+    padding: 14px 16px;
+    font-family: var(--font-body);
+    font-size: 0.9375rem;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: var(--radius-sm);
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--white);
+    transition: all 0.2s ease;
+}
+
+.cta-contact-form input::placeholder,
+.cta-contact-form textarea::placeholder {
+    color: var(--gray-500);
+}
+
+.cta-contact-form input:focus,
+.cta-contact-form textarea:focus {
+    outline: none;
+    border-color: rgba(255, 255, 255, 0.5);
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.cta-contact-form textarea {
+    resize: vertical;
+    min-height: 100px;
+}
+
+.cta-contact-btn {
+    display: block;
+    width: auto;
+    margin: var(--space-lg) auto 0;
+    padding: 14px 40px;
+    font-family: var(--font-body);
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--black);
+    background: var(--white);
+    border: none;
+    border-radius: 0;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.cta-contact-btn:hover {
+    background: var(--gray-200);
+    transform: translateY(-1px);
+}
+
+@media (max-width: 600px) {
+    .cta-contact-form .form-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ============================================================
+   22. MOONCUP-STYLE FOOTER
+   Multi-column layout with Black theme
+   ============================================================ */
+
+.footer-mooncup {
+    background: var(--black);
+    /* Same as CTA */
+    padding-top: 0;
+    /* No gap between CTA and footer */
+}
+
+.footer-main-grid {
+    position: relative;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: var(--space-2xl) var(--space-lg);
+    display: grid;
+    grid-template-columns: 1.5fr 1.5fr 1fr 1fr 1fr;
+    gap: var(--space-xl);
+}
+
+/* Elegant gradient divider - replaces hard border */
+.footer-main-grid::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80%;
+    height: 1px;
+    background: linear-gradient(90deg,
+            transparent 0%,
+            rgba(255, 255, 255, 0.15) 20%,
+            rgba(255, 255, 255, 0.3) 50%,
+            rgba(255, 255, 255, 0.15) 80%,
+            transparent 100%);
+}
+
+/* Add subtle glow blur effect */
+.footer-main-grid::after {
+    content: '';
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60%;
+    height: 20px;
+    background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.05) 0%, transparent 70%);
+    filter: blur(8px);
+    pointer-events: none;
+}
+
+.footer-col h4 {
+    font-family: var(--font-body);
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--white);
+    margin-bottom: var(--space-md);
+}
+
+/* Subscribe Column */
+.footer-col-subscribe p {
+    font-size: 0.875rem;
+    color: var(--gray-400);
+    line-height: 1.6;
+    margin-bottom: var(--space-md);
+}
+
+.footer-subscribe-form {
+    display: flex;
+    gap: 8px;
+    margin-bottom: var(--space-sm);
+}
+
+.footer-subscribe-form input {
+    flex: 1;
+    padding: 12px 16px;
+    font-size: 0.875rem;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: var(--radius-sm);
+    background: var(--white);
+}
+
+.footer-subscribe-form button {
+    padding: 12px 16px;
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: 1rem;
+    color: var(--white);
+    transition: all 0.2s ease;
+}
+
+.footer-subscribe-form button:hover {
+    background: var(--white);
+    color: var(--black);
+    border-color: var(--white);
+}
+
+.footer-legal-text {
+    font-size: 0.75rem;
+    color: var(--gray-500);
+    margin-bottom: var(--space-md);
+}
+
+.footer-legal-text a {
+    color: var(--gray-400);
+    text-decoration: underline;
+}
+
+.footer-legal-text a:hover {
+    color: var(--white);
+}
+
+/* Global footer link reset - override default browser colors */
+.footer-mooncup a {
+    color: var(--gray-400);
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.footer-mooncup a:hover {
+    color: var(--white);
+}
+
+.footer-mooncup a:visited {
+    color: var(--gray-400);
+}
+
+.footer-social {
+    display: flex;
+    gap: var(--space-md);
+}
+
+.footer-social a {
+    color: var(--white);
+    opacity: 0.7;
+    transition: opacity 0.2s ease;
+}
+
+.footer-social a:hover {
+    opacity: 1;
+}
+
+/* Brand Column */
+.footer-col-brand {
+    padding-left: var(--space-lg);
+    border-left: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.footer-brand-name {
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    font-weight: 500;
+    color: var(--white);
+}
+
+.footer-brand-desc {
+    font-size: 0.875rem;
+    color: var(--gray-400);
+    line-height: 1.7;
+    margin-top: var(--space-md);
+}
+
+/* Links Columns */
+.footer-col-links ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.footer-col-links li {
+    margin-bottom: 10px;
+}
+
+.footer-col-links a {
+    font-size: 0.875rem;
+    color: var(--gray-400);
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.footer-col-links a:hover {
+    color: var(--white);
+}
+
+/* Bottom Bar */
+.footer-bottom {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: var(--space-lg);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    font-size: 0.75rem;
+    color: var(--gray-500);
+}
+
+.footer-bottom-right {
+    display: flex;
+    gap: var(--space-lg);
+}
+
+.footer-bottom-right a {
+    color: var(--gray-500);
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.footer-bottom-right a:hover {
+    color: var(--white);
+}
+
+/* Responsive Footer */
+@media (max-width: 992px) {
+    .footer-main-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: var(--space-xl);
+    }
+
+    .footer-col-brand {
+        padding-left: 0;
+        border-left: none;
+        grid-column: 1 / -1;
+        text-align: center;
+        padding-top: var(--space-lg);
+        border-top: 1px solid rgba(0, 0, 0, 0.1);
+    }
+
+    .footer-col-subscribe {
+        grid-column: 1 / -1;
+    }
+}
+
+@media (max-width: 600px) {
+    .footer-main-grid {
+        grid-template-columns: 1fr;
+        text-align: center;
+    }
+
+    .footer-social {
+        justify-content: center;
+    }
+
+    .footer-bottom {
+        flex-direction: column;
+        gap: var(--space-md);
+        text-align: center;
+    }
+
+    .footer-bottom-right {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+}
+
+
+
+/* ============================================================
+   23. BRAND NAVIGATOR LOGOS
+   Display brand logos in the other brands navigator
+   ============================================================ */
+
+.nav-brand-logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 40px;
+    margin-bottom: 4px;
+}
+
+.nav-brand-logo img {
+    max-width: 100px;
+    max-height: 36px;
+    object-fit: contain;
+    transition: opacity 0.3s ease;
+}
+
+.nav-brand-item:hover .nav-brand-logo img {
+    opacity: 0.8;
+}
+
+/* Improved Testimonials - Match Mooncup Style */
+.testimonial-company {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    margin-top: auto;
+    padding-top: var(--space-md);
+}
+
+.testimonial-company-logo {
+    width: 48px;
+    height: 48px;
+    border-radius: var(--radius-full);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.testimonial-company-name {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--black);
+}
+
+.testimonial-clean-card blockquote {
+    font-family: var(--font-body);
+    font-size: 0.95rem;
+    font-style: normal;
+    line-height: 1.7;
+    color: var(--gray-600);
+    margin: 0 0 var(--space-md) 0;
+    flex-grow: 1;
+}
+
+.testimonial-stars {
+    color: var(--gold);
+    font-size: 0.9rem;
+    letter-spacing: 2px;
+    margin-bottom: var(--space-sm);
+}
+
+/* Testimonial Cards Layout */
+
+
+.testimonials-clean-arrow:hover {
+    border-color: var(--black);
+    color: var(--black);
+}
+
+/* New Testimonial Element Styles */
+.testimonial-avatar-container {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--white);
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.testimonials__quote-name {
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 1rem;
+    color: var(--black);
+}
+
+/* Specific Mobile/Tablet Overrides */
+@media (max-width: 900px) {
+    .testimonials-clean {
+        --card-width: min(85vw, 400px);
+        --card-gap: 20px;
+    }
+
+    /* Track inherits desktop styles (JS Transform) */
+
+    .testimonial-clean-card {
+        flex: 0 0 var(--card-width);
+        opacity: 0.5;
+        filter: blur(2px);
+        transform: scale(1);
+    }
+
+    .testimonial-clean-card.active {
+        opacity: 1;
+        filter: none;
+    }
+
+    .testimonial-avatar-container {
+        width: 50px;
+        height: 50px;
+        font-size: 1rem;
+    }
+
+    .testimonials__quote-name {
+        font-size: 0.9rem;
+    }
+
+    .testimonials-clean-nav {
+        display: flex;
+        /* Show navigation */
+        gap: 16px;
+    }
+
+    .testimonials-clean-arrow {
+        width: 36px;
+        height: 36px;
+    }
+
+    /* Mobile Internal Overrides */
+    .testimonial-avatar {
+        width: 60px;
+        height: 60px;
+    }
+
+    .testimonial-initials {
+        font-size: 1.25rem;
+    }
+
+    .testimonial-quote-text blockquote {
+        font-size: 1rem;
+        margin-bottom: 24px;
+    }
+
+    .testimonial-stars {
+        margin-bottom: 16px;
     }
 }

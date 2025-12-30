@@ -114,21 +114,34 @@
         </svg>
     </button>
 
-    <!-- Footer - Editorial Split Layout -->
-    <footer class="footer-editorial">
-        <div class="footer-main">
-            <!-- Left: Brand Statement -->
-            <div class="footer-brand">
-                <h2 class="footer-headline">
-                    <span>Alfa</span>
-                    <em>Beauty</em>
-                </h2>
-                <p class="footer-desc">{{ __('nav.professional_hair_care') }}</p>
+    <!-- Footer - Multi-column Layout (same bg as CTA) -->
+    <footer class="footer-mooncup">
+        <div class="footer-main-grid">
+            <!-- Column 1: Subscribe -->
+            <div class="footer-col footer-col-subscribe">
+                <h4>{{ __('nav.subscribe') }}</h4>
+                <p>{{ __('nav.subscribe_desc') }}</p>
+                <form class="footer-subscribe-form" action="#" method="POST">
+                    @csrf
+                    <input type="email" placeholder="Email" required>
+                    <button type="submit">→</button>
+                </form>
+                <p class="footer-legal-text">{{ __('nav.subscribe_terms') }}</p>
                 <div class="footer-social">
+                    <a href="https://facebook.com/alfabeauty" target="_blank" rel="noopener" aria-label="Facebook">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/>
+                        </svg>
+                    </a>
                     <a href="https://instagram.com/alfabeauty" target="_blank" rel="noopener" aria-label="Instagram">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
                             <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
+                        </svg>
+                    </a>
+                    <a href="https://tiktok.com/@alfabeauty" target="_blank" rel="noopener" aria-label="TikTok">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/>
                         </svg>
                     </a>
                     <a href="https://wa.me/6281234567890" target="_blank" rel="noopener" aria-label="WhatsApp">
@@ -139,44 +152,56 @@
                 </div>
             </div>
 
-            <!-- Right: Navigation -->
-            <div class="footer-nav">
-                <div class="footer-links-row">
-                    <a href="{{ route('products.index') }}">{{ __('nav.products') }}</a>
-                    <span class="footer-dot">·</span>
-                    <a href="{{ route('home') }}#brands">{{ __('nav.brands') }}</a>
-                    <span class="footer-dot">·</span>
-                    <a href="{{ route('home') }}#about">{{ __('nav.about') }}</a>
-                    <span class="footer-dot">·</span>
-                    <a href="/faq">{{ __('nav.faq') }}</a>
+            <!-- Column 2: Brand -->
+            <div class="footer-col footer-col-brand">
+                <div class="footer-brand-logo">
+                    <span class="footer-brand-name">Alfa Beauty</span>
                 </div>
-                <div class="footer-links-row footer-links-secondary">
-                    <a href="/shipping">{{ __('nav.shipping') }}</a>
-                    <span class="footer-dot">·</span>
-                    <a href="/returns">{{ __('nav.returns') }}</a>
-                    <span class="footer-dot">·</span>
-                    <a href="/privacy">{{ __('nav.privacy') }}</a>
-                    <span class="footer-dot">·</span>
-                    <a href="/terms">{{ __('nav.terms') }}</a>
-                </div>
-                <div class="footer-contact-line">
-                    <a href="mailto:info@alfabeauty.co.id">info@alfabeauty.co.id</a>
-                    <span class="footer-dot">·</span>
-                    <span>+62 812 3456 7890</span>
-                </div>
+                <p class="footer-brand-desc">{{ __('nav.footer_desc') }}</p>
+            </div>
+
+            <!-- Column 3: About Links -->
+            <div class="footer-col footer-col-links">
+                <h4>{{ __('nav.about') }}</h4>
+                <ul>
+                    <li><a href="{{ route('home') }}#about">{{ __('nav.our_story') }}</a></li>
+                    <li><a href="/blog">{{ __('nav.blog') }}</a></li>
+                    <li><a href="{{ route('home') }}#about">{{ __('nav.our_impact') }}</a></li>
+                </ul>
+            </div>
+
+            <!-- Column 4: Contact Links -->
+            <div class="footer-col footer-col-links">
+                <h4>{{ __('nav.contact') }}</h4>
+                <ul>
+                    <li><a href="{{ route('register') }}">{{ __('nav.become_partner') }}</a></li>
+                    <li><a href="/careers">{{ __('nav.careers') }}</a></li>
+                    <li><a href="/contact">{{ __('nav.get_in_touch') }}</a></li>
+                </ul>
+            </div>
+
+            <!-- Column 5: Help Links -->
+            <div class="footer-col footer-col-links">
+                <h4>{{ __('nav.help') }}</h4>
+                <ul>
+                    <li><a href="/faq">{{ __('nav.faq') }}</a></li>
+                    <li><a href="/shipping">{{ __('nav.shipping') }}</a></li>
+                    <li><a href="/returns">{{ __('nav.returns') }}</a></li>
+                    <li><a href="{{ route('login') }}">{{ __('nav.business_login') }}</a></li>
+                </ul>
             </div>
         </div>
 
-        <!-- Trust + Copyright Bar -->
-        <div class="footer-bottom-bar">
-            <div class="footer-trust-inline">
-                <span>{{ __('products.bpom') }}</span>
-                <span class="footer-dot">·</span>
-                <span>{{ __('products.halal') }}</span>
-                <span class="footer-dot">·</span>
-                <span>{{ __('nav.official_distributor') }}</span>
+        <!-- Bottom Bar -->
+        <div class="footer-bottom">
+            <div class="footer-bottom-left">
+                <span>© {{ date('Y') }} Alfa Beauty</span>
             </div>
-            <span class="footer-copyright">{{ __('nav.copyright', ['year' => date('Y')]) }}</span>
+            <div class="footer-bottom-right">
+                <a href="/refund">{{ __('nav.refund_policy') }}</a>
+                <a href="/privacy">{{ __('nav.privacy') }}</a>
+                <a href="/terms">{{ __('nav.terms') }}</a>
+            </div>
         </div>
     </footer>
 

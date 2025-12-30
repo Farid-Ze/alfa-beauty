@@ -10,14 +10,28 @@ class CartDrawer extends Component
 {
     public $isOpen = false;
 
-    #[On('cart-updated')]
-    public function render(CartService $cartService)
+    protected CartService $cartService;
+
+    public function boot(CartService $cartService)
     {
-        $cart = $cartService->getCart();
+        $this->cartService = $cartService;
+    }
+
+    #[On('cart-updated')]
+    public function refresh() 
+    {
+        // This triggers re-render
+    }
+
+    public function render()
+    {
+        // Use detailed cart for B2B pricing info
+        $cartData = $this->cartService->getDetailedCart();
         
         return view('livewire.cart-drawer', [
-            'items' => $cart?->items ?? collect(),
-            'subtotal' => $cartService->getSubtotal(),
+            'items' => $cartData['items'],
+            'subtotal' => $cartData['subtotal'],
+            'itemCount' => $cartData['item_count'],
         ]);
     }
 
@@ -27,15 +41,36 @@ class CartDrawer extends Component
         $this->isOpen = !$this->isOpen;
     }
 
-    public function removeItem(CartService $cartService, int $itemId)
+    public function removeItem(int $itemId)
     {
-        $cartService->removeItem($itemId);
+        $this->cartService->removeItem($itemId);
         $this->dispatch('cart-updated');
     }
 
-    public function updateQuantity(CartService $cartService, int $itemId, int $quantity)
+    public function updateQuantity(int $itemId, int $quantity)
     {
-        $cartService->updateQuantity($itemId, $quantity);
+        $this->cartService->updateQuantity($itemId, $quantity);
         $this->dispatch('cart-updated');
     }
+
+    public function incrementItem(int $itemId)
+    {
+        $cart = $this->cartService->getCart();
+        $item = $cart?->items()->find($itemId);
+        
+        if ($item) {
+            $this->updateQuantity($itemId, $item->quantity + 1);
+        }
+    }
+
+    public function decrementItem(int $itemId)
+    {
+        $cart = $this->cartService->getCart();
+        $item = $cart?->items()->find($itemId);
+        
+        if ($item && $item->quantity > 1) {
+            $this->updateQuantity($itemId, $item->quantity - 1);
+        }
+    }
 }
+

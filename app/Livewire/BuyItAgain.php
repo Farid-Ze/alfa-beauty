@@ -2,12 +2,20 @@
 
 namespace App\Livewire;
 
+use App\Services\CartService;
 use Livewire\Component;
 use Illuminate\Support\Facades\Auth;
 use App\Models\OrderItem;
 
 class BuyItAgain extends Component
 {
+    protected CartService $cartService;
+
+    public function boot(CartService $cartService)
+    {
+        $this->cartService = $cartService;
+    }
+
     public function addToCart($productId)
     {
         $product = \App\Models\Product::find($productId);
@@ -15,26 +23,13 @@ class BuyItAgain extends Component
         if (!$product) {
             return;
         }
-        
-        // Get or create cart
-        $cart = session()->get('cart', []);
-        
-        if (isset($cart[$productId])) {
-            $cart[$productId]['quantity']++;
-        } else {
-            $cart[$productId] = [
-                'id' => $product->id,
-                'name' => $product->name,
-                'price' => $product->price,
-                'quantity' => 1,
-                'image' => $product->images[0] ?? null,
-            ];
-        }
-        
-        session()->put('cart', $cart);
+
+        // Use CartService with B2B pricing integration
+        $this->cartService->addItem($productId);
         
         $this->dispatch('cart-updated');
-        $this->dispatch('product-added', name: $product->name);
+        $this->dispatch('product-added-to-cart', name: $product->name);
+        $this->dispatch('toggle-cart'); // Open cart drawer
     }
     
     public function render()
@@ -50,6 +45,7 @@ class BuyItAgain extends Component
             ->with('product.brand')
             ->get()
             ->pluck('product')
+            ->filter() // Remove nulls if product was deleted
             ->unique('id')
             ->take(6); // Limit to 6 products for display
         }

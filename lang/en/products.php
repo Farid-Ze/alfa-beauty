@@ -42,6 +42,10 @@ return [
     'brand' => 'Brand',
     'stock' => 'Stock',
     'unit' => 'units',
+    'quantity' => 'Quantity',
+    'best_seller' => 'Best Seller',
+    'download_specs' => 'Download Specifications',
+    'specs_note' => 'Technical specifications and MSDS available',
     
     // Results
     'showing_results' => 'Showing :count products',
