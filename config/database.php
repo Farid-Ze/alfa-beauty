@@ -85,7 +85,7 @@ return [
 
         'pgsql' => [
             'driver' => 'pgsql',
-            'url' => null, // env('DATABASE_URL'),
+            'url' => null, // Vercel uses individual DB_* env vars
             'host' => trim((string) env('DB_HOST', '127.0.0.1')),
             'port' => trim((string) env('DB_PORT', '5432')),
             'database' => trim((string) env('DB_DATABASE', 'laravel')),

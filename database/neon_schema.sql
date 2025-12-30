@@ -376,10 +376,39 @@ INSERT INTO migrations (migration, batch) VALUES
 
 -- Default loyalty tiers
 INSERT INTO loyalty_tiers (name, slug, min_spend, discount_percent, point_multiplier, free_shipping, badge_color, created_at, updated_at) VALUES
-('Guest', 'guest', 0, 0, 1, FALSE, '#808080', NOW(), NOW()),
-('Silver', 'silver', 5000000, 5, 1.5, FALSE, '#C0C0C0', NOW(), NOW()),
-('Gold', 'gold', 25000000, 10, 2, TRUE, '#C9A962', NOW(), NOW()),
-('Platinum', 'platinum', 100000000, 15, 3, TRUE, '#E5E4E2', NOW(), NOW());
+('Guest', 'guest', 0, 0, 1, FALSE, '#6B7280', NOW(), NOW()),
+('Silver', 'silver', 5000000, 5, 1, FALSE, '#94A3B8', NOW(), NOW()),
+('Gold', 'gold', 25000000, 10, 1.5, TRUE, '#C9A962', NOW(), NOW())
+ON CONFLICT (slug) DO NOTHING;
+
+-- Brands
+INSERT INTO brands (name, slug, description, origin_country, is_own_brand, is_featured, sort_order, created_at, updated_at) VALUES
+('Salsa Cosmetic', 'salsa-cosmetic', 'Produk hair care profesional buatan Indonesia oleh PT. Alfa Beauty Cosmetica', 'Indonesia', TRUE, TRUE, 1, NOW(), NOW()),
+('Alfaparf Milano', 'alfaparf-milano', 'Italian professional hair care brand since 1980', 'Italy', FALSE, TRUE, 2, NOW(), NOW()),
+('Farmavita', 'farmavita', 'Professional hair color and care from Italy', 'Italy', FALSE, TRUE, 3, NOW(), NOW()),
+('Montibello', 'montibello', 'Premium Spanish professional hair care', 'Spain', FALSE, TRUE, 4, NOW(), NOW())
+ON CONFLICT (slug) DO NOTHING;
+
+-- Categories
+INSERT INTO categories (name, slug, description, sort_order, created_at, updated_at) VALUES
+('Colouring', 'colouring', 'Hair color, bleach, toner, developer', 1, NOW(), NOW()),
+('Treatment', 'treatment', 'Keratin, botox, repair treatments', 2, NOW(), NOW()),
+('Styling', 'styling', 'Gel, wax, spray, mousse', 3, NOW(), NOW()),
+('Care', 'care', 'Shampoo, conditioner, serum, mask', 4, NOW(), NOW())
+ON CONFLICT (slug) DO NOTHING;
+
+-- Products (brand_id and category_id references the IDs created above)
+INSERT INTO products (sku, name, slug, brand_id, category_id, base_price, stock, description, is_halal, bpom_number, is_active, is_featured, images, created_at, updated_at) VALUES
+('AFP-SDL-001', 'Semi Di Lino Diamond Illuminating Serum', 'semi-di-lino-diamond-serum', 2, 4, 350000, 50, 'Serum untuk rambut berkilau seperti berlian', TRUE, 'NA18201200123', TRUE, TRUE, '["products/product-serum.png"]', NOW(), NOW()),
+('AFP-LIS-001', 'Lisse Design Keratin Therapy', 'lisse-design-keratin-therapy', 2, 2, 850000, 25, 'Keratin treatment untuk rambut lurus sempurna', TRUE, 'NA18201200124', TRUE, TRUE, '["products/product-keratin.png"]', NOW(), NOW()),
+('SLS-SHP-001', 'Salsa Professional Keratin Shampoo', 'salsa-keratin-shampoo', 1, 4, 125000, 100, 'Shampoo keratin profesional buatan Indonesia', TRUE, 'NA18201200001', TRUE, TRUE, '["products/product-serum.png"]', NOW(), NOW()),
+('FMV-COL-001', 'Farmavita Suprema Color', 'farmavita-suprema-color', 3, 1, 95000, 200, 'Hair color professional dari Italia', FALSE, 'NA18201200200', TRUE, FALSE, '["products/product-color.png"]', NOW(), NOW()),
+('MTB-OLE-001', 'Montibello Oleo Intense', 'montibello-oleo-intense', 4, 4, 275000, 45, 'Premium oil treatment from Spain', TRUE, 'NA18201200301', TRUE, TRUE, '["products/alfaparf-serum.png"]', NOW(), NOW()),
+('SLS-TRT-001', 'Salsa Keratin Treatment', 'salsa-keratin-treatment', 1, 2, 185000, 75, 'Professional keratin smoothing treatment', TRUE, 'NA18201200002', TRUE, TRUE, '["products/product-keratin.png"]', NOW(), NOW()),
+('AFP-COL-001', 'Alfaparf Evolution Color', 'alfaparf-evolution-color', 2, 1, 125000, 150, 'Premium permanent hair color', TRUE, 'NA18201200125', TRUE, FALSE, '["products/product-color.png"]', NOW(), NOW()),
+('FMV-SHA-001', 'Farmavita HD Life Shampoo', 'farmavita-hd-life-shampoo', 3, 4, 165000, 80, 'Sulfate-free professional shampoo', TRUE, 'NA18201200201', TRUE, TRUE, '["products/product-serum.png"]', NOW(), NOW())
+ON CONFLICT (sku) DO NOTHING;
 
 -- Done!
-SELECT 'Schema and default data created successfully!' AS status;
+SELECT 'Schema and seed data created successfully!' AS status;
+
