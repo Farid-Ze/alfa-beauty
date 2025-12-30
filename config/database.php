@@ -88,7 +88,9 @@ return [
             // DO NOT use 'url' - causes array_diff_key error with Supabase format
             // Use individual POSTGRES_* env vars from Supabase-Vercel integration
             'host' => trim((string) env('POSTGRES_HOST', env('DB_HOST', '127.0.0.1'))),
-            'port' => trim((string) env('POSTGRES_PORT', env('DB_PORT', '5432'))),
+            // Use port 6543 for Supabase pooler (required for serverless)
+            // Port 5432 direct connection fails with IPv6 errors
+            'port' => trim((string) env('POSTGRES_PORT', env('DB_PORT', '6543'))),
             'database' => trim((string) env('POSTGRES_DATABASE', env('DB_DATABASE', 'postgres'))),
             'username' => trim((string) env('POSTGRES_USER', env('DB_USERNAME', 'postgres'))),
             'password' => trim((string) env('POSTGRES_PASSWORD', env('DB_PASSWORD', ''))),
