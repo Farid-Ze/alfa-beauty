@@ -44,13 +44,15 @@ class CheckoutPage extends Component
             $user = Auth::user();
             $this->name = $user->name;
             $this->phone = $user->phone ?? '';
+            
+            // Only refresh B2B prices for logged-in users
+            // This is the expensive call - skip for guests
+            $this->priceChanges = $this->cartService->refreshPrices();
         }
-
-        // Refresh prices using B2B pricing (CRITICAL: prevents stale retail prices)
-        $this->priceChanges = $this->cartService->refreshPrices();
         
-        // Check stock on page load
-        $this->stockErrors = $this->cartService->validateStock();
+        // Skip stock validation on mount - will validate before checkout
+        // This saves multiple database queries on initial load
+        $this->stockErrors = [];
     }
 
     /**
