@@ -16,13 +16,18 @@ use Illuminate\Support\Facades\Log;
 class OrderService
 {
     protected InventoryService $inventoryService;
+    protected PricingService $pricingService;
 
-    public function __construct(InventoryService $inventoryService)
+    public function __construct(InventoryService $inventoryService, PricingService $pricingService)
     {
         $this->inventoryService = $inventoryService;
+        $this->pricingService = $pricingService;
     }
+
     /**
      * Create a new order from a cart instance.
+     * 
+     * Uses B2B pricing via PricingService for customer-specific prices.
      *
      * @param Cart $cart
      * @param array $customerDetails ['name', 'phone', 'address', 'notes']
@@ -33,19 +38,55 @@ class OrderService
     public function createFromCart(Cart $cart, array $customerDetails, ?int $userId = null): Order
     {
         return DB::transaction(function () use ($cart, $customerDetails, $userId) {
-            // Calculate subtotal
-            $subtotal = $cart->items->sum(function ($item) {
-                return $item->quantity * $item->product->base_price;
+            $user = $userId ? User::find($userId) : null;
+            
+            // Get B2B prices for all cart items in bulk (single query)
+            $productQuantities = $cart->items->pluck('quantity', 'product_id')->toArray();
+            $products = \App\Models\Product::whereIn('id', array_keys($productQuantities))->get();
+            
+            $productsWithQty = $products->map(function ($product) use ($productQuantities) {
+                $product->quantity = $productQuantities[$product->id] ?? 1;
+                return $product;
             });
+            
+            $prices = $this->pricingService->getBulkPrices($productsWithQty, $user);
+            $productsById = $products->keyBy('id');
 
-            // Apply tier discount if user is logged in
+            // Calculate subtotal using B2B prices
+            $subtotal = 0;
+            $lineItems = [];
+            
+            foreach ($cart->items as $item) {
+                $priceInfo = $prices[$item->product_id] ?? ['price' => $item->product->base_price];
+                $unitPrice = $priceInfo['price'];
+                $lineTotal = $item->quantity * $unitPrice;
+                $subtotal += $lineTotal;
+                
+                $lineItems[$item->product_id] = [
+                    'quantity' => $item->quantity,
+                    'unit_price' => $unitPrice,
+                    'line_total' => $lineTotal,
+                    'price_source' => $priceInfo['source'] ?? 'base_price',
+                    'original_price' => $priceInfo['original_price'] ?? $unitPrice,
+                ];
+            }
+
+            // B2B pricing already includes discounts from customer price lists
+            // Only apply additional tier discount if not already using customer-specific pricing
             $discountPercent = 0;
             $discountAmount = 0;
             
-            if ($userId) {
-                $user = User::find($userId);
-                $discountPercent = $user?->loyaltyTier?->discount_percent ?? 0;
-                $discountAmount = $subtotal * ($discountPercent / 100);
+            // Check if any item used customer-specific pricing
+            $hasCustomerPricing = collect($lineItems)->contains(function ($item) {
+                return in_array($item['price_source'] ?? '', ['customer_price_list', 'volume_tier']);
+            });
+            
+            // If using base prices with loyalty tier, apply tier discount
+            if (!$hasCustomerPricing && $user?->loyaltyTier) {
+                $discountPercent = $user->loyaltyTier->discount_percent ?? 0;
+                if ($discountPercent > 0) {
+                    $discountAmount = $subtotal * ($discountPercent / 100);
+                }
             }
             
             $totalAmount = $subtotal - $discountAmount;
@@ -69,6 +110,8 @@ class OrderService
 
             // Create Order Items with FEFO batch allocation
             foreach ($cart->items as $item) {
+                $lineItem = $lineItems[$item->product_id];
+                
                 // Allocate stock from batches using FEFO algorithm
                 try {
                     $allocations = $this->inventoryService->allocateStock(
@@ -88,18 +131,15 @@ class OrderService
                 $order->items()->create([
                     'product_id' => $item->product_id,
                     'quantity' => $item->quantity,
-                    'unit_price' => $item->product->base_price,
-                    'total_price' => $item->quantity * $item->product->base_price,
+                    'unit_price' => $lineItem['unit_price'],
+                    'total_price' => $lineItem['line_total'],
                     'batch_allocations' => $allocations, // Store FEFO allocations for BPOM
                 ]);
             }
 
             // Send order confirmation notification (queued)
-            if ($userId) {
-                $user = User::find($userId);
-                if ($user) {
-                    $user->notify(new OrderConfirmation($order));
-                }
+            if ($user) {
+                $user->notify(new OrderConfirmation($order));
             }
 
             return $order;
@@ -110,6 +150,7 @@ class OrderService
      * Create order for WhatsApp checkout flow.
      * 
      * Creates order with pending_payment status and logs the WhatsApp payment intent.
+     * Uses B2B pricing via PricingService.
      *
      * @param Cart $cart
      * @param array $customerDetails
@@ -119,19 +160,51 @@ class OrderService
     public function createWhatsAppOrder(Cart $cart, array $customerDetails, ?int $userId = null): array
     {
         return DB::transaction(function () use ($cart, $customerDetails, $userId) {
-            // Calculate subtotal
-            $subtotal = $cart->items->sum(function ($item) {
-                return $item->quantity * $item->product->base_price;
+            $user = $userId ? User::find($userId) : null;
+            
+            // Get B2B prices for all cart items in bulk (single query)
+            $productQuantities = $cart->items->pluck('quantity', 'product_id')->toArray();
+            $products = \App\Models\Product::whereIn('id', array_keys($productQuantities))->get();
+            
+            $productsWithQty = $products->map(function ($product) use ($productQuantities) {
+                $product->quantity = $productQuantities[$product->id] ?? 1;
+                return $product;
             });
+            
+            $prices = $this->pricingService->getBulkPrices($productsWithQty, $user);
 
-            // Apply tier discount if user is logged in
+            // Calculate subtotal using B2B prices
+            $subtotal = 0;
+            $lineItems = [];
+            
+            foreach ($cart->items as $item) {
+                $priceInfo = $prices[$item->product_id] ?? ['price' => $item->product->base_price];
+                $unitPrice = $priceInfo['price'];
+                $lineTotal = $item->quantity * $unitPrice;
+                $subtotal += $lineTotal;
+                
+                $lineItems[$item->product_id] = [
+                    'quantity' => $item->quantity,
+                    'unit_price' => $unitPrice,
+                    'line_total' => $lineTotal,
+                ];
+            }
+
+            // B2B pricing already includes discounts
             $discountPercent = 0;
             $discountAmount = 0;
             
-            if ($userId) {
-                $user = User::find($userId);
-                $discountPercent = $user?->loyaltyTier?->discount_percent ?? 0;
-                $discountAmount = $subtotal * ($discountPercent / 100);
+            // Check if using customer-specific pricing
+            $hasCustomerPricing = collect($prices)->contains(function ($priceInfo) {
+                return in_array($priceInfo['source'] ?? '', ['customer_price_list', 'volume_tier']);
+            });
+            
+            // Apply loyalty tier discount only if no B2B pricing
+            if (!$hasCustomerPricing && $user?->loyaltyTier) {
+                $discountPercent = $user->loyaltyTier->discount_percent ?? 0;
+                if ($discountPercent > 0) {
+                    $discountAmount = $subtotal * ($discountPercent / 100);
+                }
             }
             
             $totalAmount = $subtotal - $discountAmount;
@@ -155,6 +228,8 @@ class OrderService
 
             // Create Order Items with FEFO batch allocation
             foreach ($cart->items as $item) {
+                $lineItem = $lineItems[$item->product_id];
+                
                 // Allocate stock from batches using FEFO algorithm
                 try {
                     $allocations = $this->inventoryService->allocateStock(
@@ -174,8 +249,8 @@ class OrderService
                 $order->items()->create([
                     'product_id' => $item->product_id,
                     'quantity' => $item->quantity,
-                    'unit_price' => $item->product->base_price,
-                    'total_price' => $item->quantity * $item->product->base_price,
+                    'unit_price' => $lineItem['unit_price'],
+                    'total_price' => $lineItem['line_total'],
                     'batch_allocations' => $allocations, // Store FEFO allocations for BPOM
                 ]);
             }

@@ -53,4 +53,36 @@ class Product extends Model
     {
         return $this->belongsTo(Category::class);
     }
+
+    /**
+     * Get volume price tiers.
+     */
+    public function priceTiers()
+    {
+        return $this->hasMany(ProductPriceTier::class)->orderBy('min_quantity');
+    }
+
+    /**
+     * Get batch inventory records.
+     */
+    public function batches()
+    {
+        return $this->hasMany(BatchInventory::class);
+    }
+
+    /**
+     * Get active batch inventory.
+     */
+    public function activeBatches()
+    {
+        return $this->batches()->active();
+    }
+
+    /**
+     * Check if product has volume pricing.
+     */
+    public function getHasVolumePricingAttribute(): bool
+    {
+        return $this->priceTiers()->exists();
+    }
 }

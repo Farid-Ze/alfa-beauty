@@ -67,4 +67,45 @@ class User extends Authenticatable
     {
         return $this->hasMany(Order::class);
     }
+
+    /**
+     * Get customer payment terms.
+     */
+    public function paymentTerm()
+    {
+        return $this->hasOne(CustomerPaymentTerm::class);
+    }
+
+    /**
+     * Get customer-specific price lists.
+     */
+    public function priceLists()
+    {
+        return $this->hasMany(CustomerPriceList::class);
+    }
+
+    /**
+     * Check if user has B2B pricing.
+     */
+    public function getHasB2bPricingAttribute(): bool
+    {
+        return $this->priceLists()->valid()->exists();
+    }
+
+    /**
+     * Check if user can use credit terms.
+     */
+    public function getCanUseCreditAttribute(): bool
+    {
+        return $this->paymentTerm?->is_approved 
+            && $this->paymentTerm?->term_type !== CustomerPaymentTerm::TERM_COD;
+    }
+
+    /**
+     * Get available credit amount.
+     */
+    public function getAvailableCreditAttribute(): float
+    {
+        return $this->paymentTerm?->available_credit ?? 0;
+    }
 }
