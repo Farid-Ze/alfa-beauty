@@ -42,7 +42,7 @@
         "APP_DEBUG": "false",
         "LOG_CHANNEL": "stderr",
         "QUEUE_CONNECTION": "sync",
-        "SESSION_DRIVER": "database",
+        "SESSION_DRIVER": "cookie",
         "CACHE_STORE": "array",
         "VIEW_COMPILED_PATH": "/tmp"
     },
