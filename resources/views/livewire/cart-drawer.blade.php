@@ -35,7 +35,7 @@
                     <!-- Image -->
                     <div class="cart-item-image">
                         @if(count($productImages) > 0)
-                            <img src="{{ url('storage/' . $productImages[0]) }}" alt="{{ $product->name }}">
+                            <img src="{{ url($productImages[0]) }}" alt="{{ $product->name }}">
                         @else
                             <div class="cart-item-placeholder">
                                 <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">

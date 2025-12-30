@@ -90,7 +90,7 @@
                         @endphp
                         <div class="summary-item">
                             <div class="summary-img">
-                                <img src="{{ isset($productImages[0]) ? url('storage/' . $productImages[0]) : asset('images/product-color.png') }}" alt="{{ $product->name }}">
+                                <img src="{{ isset($productImages[0]) ? url($productImages[0]) : asset('images/product-color.png') }}" alt="{{ $product->name }}">
                                 <span class="summary-qty">{{ $item['quantity'] }}</span>
                             </div>
                             <div class="summary-details">

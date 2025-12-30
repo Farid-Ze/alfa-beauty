@@ -40,7 +40,7 @@
                             @foreach($order->items as $item)
                                 <div class="order-item">
                                     <div class="order-item-image">
-                                        <img src="{{ isset($item->product->images[0]) ? url('storage/' . $item->product->images[0]) : asset('images/product-color.png') }}" alt="{{ $item->product->name }}">
+                                        <img src="{{ isset($item->product->images[0]) ? url($item->product->images[0]) : asset('images/product-color.png') }}" alt="{{ $item->product->name }}">
                                     </div>
                                     <div class="order-item-info">
                                         <h4 class="order-item-name">{{ $item->product->name }}</h4>

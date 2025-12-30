@@ -42,7 +42,7 @@
             <a href="{{ route('brands.show', $brand->slug) }}" class="brand-item" data-index="{{ str_pad($index + 1, 2, '0', STR_PAD_LEFT) }}">
                 @if($brand->logo_url)
                     <div class="brand-logo-display">
-                        <img src="{{ url('storage/' . $brand->logo_url) }}" alt="{{ $brand->name }}">
+                        <img src="{{ url($brand->logo_url) }}" alt="{{ $brand->name }}">
                     </div>
                 @else
                     <span class="brand-name">{{ $brand->name }}</span>

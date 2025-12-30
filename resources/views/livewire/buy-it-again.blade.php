@@ -14,7 +14,7 @@
                     <div class="buy-again-card">
                         <a href="{{ route('products.show', $product->slug) }}" class="buy-again-image">
                             @if(count($productImages) > 0)
-                                <img src="{{ url('storage/' . $productImages[0]) }}" alt="{{ $product->name }}">
+                                <img src="{{ url($productImages[0]) }}" alt="{{ $product->name }}">
                             @else
                                 <div class="placeholder-image">
                                     <svg width="40" height="40" fill="none" stroke="currentColor" viewBox="0 0 24 24">

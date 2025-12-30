@@ -1,6 +1,6 @@
 <article class="product-card">
     <a href="{{ route('products.show', $product->slug) }}" class="product-image">
-        <img src="{{ isset($product->images[0]) ? url('storage/' . $product->images[0]) : asset('images/product-color.png') }}" alt="{{ $product->name }}">
+        <img src="{{ isset($product->images[0]) ? url($product->images[0]) : asset('images/product-color.png') }}" alt="{{ $product->name }}">
         
         <!-- B2B/Volume Pricing Indicator -->
         @auth

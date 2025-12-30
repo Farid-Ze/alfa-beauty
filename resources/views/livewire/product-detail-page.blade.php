@@ -17,7 +17,7 @@
         <div class="product-gallery">
             <div class="product-main-image">
                 @if($product->images && count($product->images) > 0)
-                    <img src="{{ url('storage/' . $product->images[0]) }}" alt="{{ $product->name }}">
+                    <img src="{{ url($product->images[0]) }}" alt="{{ $product->name }}">
                 @else
                     <div style="display: flex; align-items: center; justify-content: center; height: 100%; color: var(--gray-400);">
                         <svg width="80" height="80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -42,7 +42,7 @@
                 <div class="product-thumbnails">
                     @foreach($product->images as $index => $image)
                         <div class="product-thumbnail {{ $index === 0 ? 'active' : '' }}">
-                            <img src="{{ url('storage/' . $image) }}" alt="{{ $product->name }}">
+                            <img src="{{ url($image) }}" alt="{{ $product->name }}">
                         </div>
                     @endforeach
                 </div>
