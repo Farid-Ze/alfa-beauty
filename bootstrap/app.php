@@ -18,4 +18,9 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
-    })->create();
+    })
+    // Ignore dev-only providers in production
+    ->ignorePackageProviders([
+        'Laravel\Pail\PailServiceProvider',
+    ])
+    ->create();
