@@ -88,11 +88,12 @@ return [
             $url = env('POSTGRES_URL', env('POSTGRES_PRISMA_URL'));
             
             // PDO options
-            // With Session Pooler (port 5432), we can support prepared statements.
-            // keeping emulate_prepares FALSE allows Laravel to bind booleans correctly.
-            // If checking for "prepared statement does not exist" error, ensure you are using port 5432 (Session) not 6543 (Transaction).
+            // USE EMULATED PREPARES FOR STABILITY on Serverless/Poolers.
+            // This prevents "prepared statement does not exist" errors.
+            // CAUTION: This causes Laravel to bind booleans as integers (1/0).
+            // Code must use whereRaw('col = true') instead of where('col', true) to avoid "operator does not exist: boolean = integer" error.
             $pdoOptions = [
-                \PDO::ATTR_EMULATE_PREPARES => false,
+                \PDO::ATTR_EMULATE_PREPARES => true,
             ];
             
             if ($url) {

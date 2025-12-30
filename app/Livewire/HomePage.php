@@ -12,16 +12,16 @@ class HomePage extends Component
 
     public function mount()
     {
-        $this->brands = Brand::where('is_featured', true)
+        $this->brands = Brand::whereRaw('is_featured = true')
             ->orderBy('sort_order')
             ->take(4)
             ->get()
             ->map(function ($brand) {
                 $brand->product_count = Product::where('brand_id', $brand->id)
-                    ->where('is_active', true)
+                    ->whereRaw('is_active = true')
                     ->count();
                 $brand->total_stock = Product::where('brand_id', $brand->id)
-                    ->where('is_active', true)
+                    ->whereRaw('is_active = true')
                     ->sum('stock');
                 return $brand;
             });

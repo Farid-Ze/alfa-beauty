@@ -17,7 +17,7 @@ class ProductController extends Controller
     {
         $query = Product::query()
             ->with(['brand', 'category'])
-            ->where('is_active', true);
+            ->whereRaw('is_active = true');
 
         // Search
         if ($request->has('search')) {
@@ -41,7 +41,7 @@ class ProductController extends Controller
 
         // Filter by featured
         if ($request->boolean('featured')) {
-            $query->where('is_featured', true);
+            $query->whereRaw('is_featured = true');
         }
 
         // Filter by stock availability
@@ -79,7 +79,7 @@ class ProductController extends Controller
     {
         $product = Product::with(['brand', 'category'])
             ->where('slug', $slug)
-            ->where('is_active', true)
+            ->whereRaw('is_active = true')
             ->firstOrFail();
 
         return new ProductResource($product);

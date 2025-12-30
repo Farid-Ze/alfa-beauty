@@ -9,7 +9,7 @@ class ProductList extends Component
     public function render()
     {
         $products = \App\Models\Product::with('brand')
-            ->where('is_featured', true)
+            ->whereRaw('is_featured = true')
             ->limit(4)
             ->get();
 
