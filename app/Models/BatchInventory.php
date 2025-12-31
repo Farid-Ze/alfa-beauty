@@ -4,7 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Carbon\Carbon;
 
@@ -16,31 +15,22 @@ use Carbon\Carbon;
  */
 class BatchInventory extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory;
 
-    protected $table = 'batch_inventory';
+    protected $table = 'batch_inventories';
 
     protected $fillable = [
         'product_id',
         'batch_number',
-        'lot_number',
         'quantity_received',
         'quantity_available',
-        'quantity_sold',
-        'quantity_damaged',
+        'quantity_reserved',
+        'cost_price',
         'manufactured_at',
         'expires_at',
         'received_at',
-        'cost_price',
-        'near_expiry_discount_percent',
-        'is_active',
         'is_near_expiry',
-        'is_expired',
-        'warehouse_id',
-        'supplier_name',
-        'country_of_origin',
         'notes',
-        'metadata',
     ];
 
     protected $casts = [
@@ -48,11 +38,7 @@ class BatchInventory extends Model
         'expires_at' => 'date',
         'received_at' => 'date',
         'cost_price' => 'decimal:2',
-        'near_expiry_discount_percent' => 'decimal:2',
-        'is_active' => 'boolean',
         'is_near_expiry' => 'boolean',
-        'is_expired' => 'boolean',
-        'metadata' => 'array',
     ];
 
     /**
@@ -69,13 +55,13 @@ class BatchInventory extends Model
     }
 
     /**
-     * Scope for active batches only
+     * Scope for active batches only (has available stock and not expired)
+     * Note: Database doesn't have is_active/is_expired columns, so we check by quantity and expiry date
      */
     public function scopeActive($query)
     {
-        return $query->whereRaw('is_active = true')
-                     ->whereRaw('is_expired = false')
-                     ->where('quantity_available', '>', 0);
+        return $query->where('quantity_available', '>', 0)
+                     ->where('expires_at', '>', now());
     }
 
     /**
@@ -84,7 +70,7 @@ class BatchInventory extends Model
     public function scopeNearExpiry($query)
     {
         return $query->whereRaw('is_near_expiry = true')
-                     ->whereRaw('is_expired = false');
+                     ->where('expires_at', '>', now());
     }
 
     /**
@@ -92,7 +78,7 @@ class BatchInventory extends Model
      */
     public function scopeExpired($query)
     {
-        return $query->whereRaw('is_expired = true');
+        return $query->where('expires_at', '<=', now());
     }
 
     /**
