@@ -109,7 +109,7 @@ class ProductListPage extends Component
         }
 
         // Only active/in-stock logic if needed? For B2B, usually show all but mark OOS.
-        $query->where('is_active', true);
+        $query->whereRaw('is_active = true');
 
         return view('livewire.product-list-page', [
             'products' => $query->paginate($this->perPage),

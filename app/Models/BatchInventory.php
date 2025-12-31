@@ -73,8 +73,8 @@ class BatchInventory extends Model
      */
     public function scopeActive($query)
     {
-        return $query->where('is_active', true)
-                     ->where('is_expired', false)
+        return $query->whereRaw('is_active = true')
+                     ->whereRaw('is_expired = false')
                      ->where('quantity_available', '>', 0);
     }
 
@@ -83,8 +83,8 @@ class BatchInventory extends Model
      */
     public function scopeNearExpiry($query)
     {
-        return $query->where('is_near_expiry', true)
-                     ->where('is_expired', false);
+        return $query->whereRaw('is_near_expiry = true')
+                     ->whereRaw('is_expired = false');
     }
 
     /**
@@ -92,7 +92,7 @@ class BatchInventory extends Model
      */
     public function scopeExpired($query)
     {
-        return $query->where('is_expired', true);
+        return $query->whereRaw('is_expired = true');
     }
 
     /**
