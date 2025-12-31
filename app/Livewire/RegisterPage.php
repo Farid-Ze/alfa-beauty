@@ -11,7 +11,7 @@ use Livewire\Component;
 class RegisterPage extends Component
 {
     public $name;
-    public $company_name;
+    public $business_name;
     public $email;
     public $phone;
     public $password;
@@ -19,7 +19,7 @@ class RegisterPage extends Component
 
     protected $rules = [
         'name' => 'required|min:3',
-        'company_name' => 'required|min:3',
+        'business_name' => 'required|min:3',
         'email' => 'required|email|unique:users,email',
         'phone' => 'required|numeric|min_digits:10',
         'password' => 'required|min:6|confirmed',
@@ -34,7 +34,7 @@ class RegisterPage extends Component
 
         $user = User::create([
             'name' => $this->name,
-            'company_name' => $this->company_name,
+            'business_name' => $this->business_name,
             'email' => $this->email,
             'phone' => $this->phone,
             'password' => Hash::make($this->password),
