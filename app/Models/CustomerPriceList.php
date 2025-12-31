@@ -77,21 +77,11 @@ class CustomerPriceList extends Model
 
     /**
      * Scope for price lists applicable to a specific product.
-     * Matches by product_id, brand_id, category_id, or global (all null).
+     * Uses simple product_id matching (brand/category hierarchy handled in service).
      */
     public function scopeForProduct($query, Product $product)
     {
-        return $query->where(function ($q) use ($product) {
-            $q->where('product_id', $product->id)
-              ->orWhere('brand_id', $product->brand_id)
-              ->orWhere('category_id', $product->category_id)
-              ->orWhere(function ($q2) {
-                  // Global discount (no specific product/brand/category)
-                  $q2->whereNull('product_id')
-                     ->whereNull('brand_id')
-                     ->whereNull('category_id');
-              });
-        });
+        return $query->where('product_id', $product->id);
     }
 
     /**

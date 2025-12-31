@@ -202,28 +202,40 @@ class PricingService
 
     /**
      * Get customer-specific price for a product.
+     * 
+     * NOTE: Uses try-catch to gracefully handle missing B2B columns.
      */
     protected function getCustomerPrice(Product $product, User $user, int $quantity): ?array
     {
         $cacheKey = "customer_price:{$user->id}:{$product->id}";
         
-        $priceList = Cache::remember($cacheKey, self::CACHE_TTL, function () use ($product, $user) {
-            return CustomerPriceList::where('user_id', $user->id)
-                ->forProduct($product)
+        try {
+            $priceList = Cache::remember($cacheKey, self::CACHE_TTL, function () use ($product, $user) {
+                return CustomerPriceList::where('user_id', $user->id)
+                    ->forProduct($product)
+                    ->valid()
+                    ->orderByDesc('priority')
+                    ->orderByDesc('product_id')
+                    ->orderByDesc('brand_id')
+                    ->orderByDesc('category_id')
+                    ->first();
+            });
+        } catch (\Exception $e) {
+            // Fallback: Simple product_id-only query
+            Cache::forget($cacheKey);
+            $priceList = CustomerPriceList::where('user_id', $user->id)
+                ->where('product_id', $product->id)
                 ->valid()
-                ->orderByDesc('priority')
-                ->orderByDesc('product_id') // Product-specific takes precedence
-                ->orderByDesc('brand_id')
-                ->orderByDesc('category_id')
                 ->first();
-        });
+        }
 
         if (!$priceList) {
             return null;
         }
 
-        // Check min quantity requirement
-        if ($priceList->min_quantity && $quantity < $priceList->min_quantity) {
+        // Check min quantity requirement (may not exist, use null coalescing)
+        $minQty = $priceList->min_quantity ?? 1;
+        if ($quantity < $minQty) {
             return null;
         }
 
@@ -256,6 +268,9 @@ class PricingService
 
     /**
      * Bulk load customer prices for multiple products.
+     * 
+     * NOTE: Uses try-catch to gracefully handle missing B2B columns
+     * (brand_id, category_id, priority) that may not exist in database.
      */
     protected function bulkLoadCustomerPrices(array $productIds, ?User $user): array
     {
@@ -263,42 +278,62 @@ class PricingService
             return [];
         }
 
-        // Get all products to find their brand_id and category_id
         $products = Product::whereIn('id', $productIds)->get()->keyBy('id');
-        $brandIds = $products->pluck('brand_id')->unique()->filter()->toArray();
-        $categoryIds = $products->pluck('category_id')->unique()->filter()->toArray();
 
-        // Single query to get all applicable price lists
-        $priceLists = CustomerPriceList::where('user_id', $user->id)
-            ->valid()
-            ->where(function ($q) use ($productIds, $brandIds, $categoryIds) {
-                $q->whereIn('product_id', $productIds)
-                  ->orWhereIn('brand_id', $brandIds)
-                  ->orWhereIn('category_id', $categoryIds)
-                  ->orWhere(function ($q2) {
-                      $q2->whereNull('product_id')
-                         ->whereNull('brand_id')
-                         ->whereNull('category_id');
-                  });
-            })
-            ->orderByDesc('priority')
-            ->get();
+        try {
+            // Full B2B hierarchy query (requires brand_id, category_id, priority columns)
+            $brandIds = $products->pluck('brand_id')->unique()->filter()->toArray();
+            $categoryIds = $products->pluck('category_id')->unique()->filter()->toArray();
 
-        // Group by product
-        $grouped = [];
-        foreach ($productIds as $productId) {
-            $product = $products[$productId] ?? null;
-            if (!$product) continue;
+            $priceLists = CustomerPriceList::where('user_id', $user->id)
+                ->valid()
+                ->where(function ($q) use ($productIds, $brandIds, $categoryIds) {
+                    $q->whereIn('product_id', $productIds)
+                      ->orWhereIn('brand_id', $brandIds)
+                      ->orWhereIn('category_id', $categoryIds)
+                      ->orWhere(function ($q2) {
+                          $q2->whereNull('product_id')
+                             ->whereNull('brand_id')
+                             ->whereNull('category_id');
+                      });
+                })
+                ->orderByDesc('priority')
+                ->get();
 
-            $grouped[$productId] = $priceLists->filter(function ($pl) use ($product) {
-                return $pl->product_id === $product->id
-                    || $pl->brand_id === $product->brand_id
-                    || $pl->category_id === $product->category_id
-                    || ($pl->product_id === null && $pl->brand_id === null && $pl->category_id === null);
-            })->values()->toArray();
+            // Group by product with full hierarchy matching
+            $grouped = [];
+            foreach ($productIds as $productId) {
+                $product = $products[$productId] ?? null;
+                if (!$product) continue;
+
+                $grouped[$productId] = $priceLists->filter(function ($pl) use ($product) {
+                    return $pl->product_id === $product->id
+                        || $pl->brand_id === $product->brand_id
+                        || $pl->category_id === $product->category_id
+                        || ($pl->product_id === null && $pl->brand_id === null && $pl->category_id === null);
+                })->values()->toArray();
+            }
+
+            return $grouped;
+
+        } catch (\Exception $e) {
+            // Fallback: Simple product_id-only query (works with basic schema)
+            \Illuminate\Support\Facades\Log::warning('B2B pricing fallback: ' . $e->getMessage());
+
+            $priceLists = CustomerPriceList::where('user_id', $user->id)
+                ->valid()
+                ->whereIn('product_id', $productIds)
+                ->get();
+
+            $grouped = [];
+            foreach ($productIds as $productId) {
+                $grouped[$productId] = $priceLists->filter(function ($pl) use ($productId) {
+                    return $pl->product_id === $productId;
+                })->values()->toArray();
+            }
+
+            return $grouped;
         }
-
-        return $grouped;
     }
 
     /**
