@@ -116,7 +116,8 @@ class CheckoutPage extends Component
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
-            session()->flash('error', __('checkout.order_error') . ': ' . $e->getMessage());
+            // Rethrow to show error in debug mode
+            throw $e;
         }
     }
 
@@ -167,7 +168,8 @@ class CheckoutPage extends Component
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
-            session()->flash('error', __('checkout.whatsapp_error') . ': ' . $e->getMessage());
+            // Rethrow to show error in debug mode
+            throw $e;
         }
     }
 
