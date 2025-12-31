@@ -38,18 +38,11 @@ class ProductPriceTier extends Model
 
     /**
      * Check if this tier applies to a given quantity.
+     * Note: Only checks min_quantity since max_quantity column doesn't exist.
      */
     public function appliesTo(int $quantity): bool
     {
-        if ($quantity < $this->min_quantity) {
-            return false;
-        }
-
-        if ($this->max_quantity !== null && $quantity > $this->max_quantity) {
-            return false;
-        }
-
-        return true;
+        return $quantity >= $this->min_quantity;
     }
 
     /**
@@ -70,13 +63,10 @@ class ProductPriceTier extends Model
 
     /**
      * Scope to find the applicable tier for a quantity.
+     * Note: Only uses min_quantity since max_quantity column doesn't exist in database.
      */
     public function scopeForQuantity($query, int $quantity)
     {
-        return $query->where('min_quantity', '<=', $quantity)
-            ->where(function ($q) use ($quantity) {
-                $q->whereNull('max_quantity')
-                  ->orWhere('max_quantity', '>=', $quantity);
-            });
+        return $query->where('min_quantity', '<=', $quantity);
     }
 }
