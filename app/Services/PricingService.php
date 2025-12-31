@@ -211,19 +211,10 @@ class PricingService
             return CustomerPriceList::where('user_id', $user->id)
                 ->forProduct($product)
                 ->valid()
-                ->orderByDesc('priority')
-                ->orderByDesc('product_id') // Product-specific takes precedence
-                ->orderByDesc('brand_id')
-                ->orderByDesc('category_id')
                 ->first();
         });
 
         if (!$priceList) {
-            return null;
-        }
-
-        // Check min quantity requirement
-        if ($quantity < $priceList->min_quantity) {
             return null;
         }
 
@@ -271,17 +262,7 @@ class PricingService
         // Single query to get all applicable price lists
         $priceLists = CustomerPriceList::where('user_id', $user->id)
             ->valid()
-            ->where(function ($q) use ($productIds, $brandIds, $categoryIds) {
-                $q->whereIn('product_id', $productIds)
-                  ->orWhereIn('brand_id', $brandIds)
-                  ->orWhereIn('category_id', $categoryIds)
-                  ->orWhere(function ($q2) {
-                      $q2->whereNull('product_id')
-                         ->whereNull('brand_id')
-                         ->whereNull('category_id');
-                  });
-            })
-            ->orderByDesc('priority')
+            ->whereIn('product_id', $productIds)
             ->get();
 
         // Group by product
@@ -291,10 +272,7 @@ class PricingService
             if (!$product) continue;
 
             $grouped[$productId] = $priceLists->filter(function ($pl) use ($product) {
-                return $pl->product_id === $product->id
-                    || $pl->brand_id === $product->brand_id
-                    || $pl->category_id === $product->category_id
-                    || ($pl->product_id === null && $pl->brand_id === null && $pl->category_id === null);
+                return $pl->product_id === $product->id;
             })->values()->toArray();
         }
 
