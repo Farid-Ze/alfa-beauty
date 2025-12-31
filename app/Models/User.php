@@ -108,4 +108,140 @@ class User extends Authenticatable
     {
         return $this->paymentTerm?->available_credit ?? 0;
     }
+
+    // ======================================================
+    // LOYALTY POINTS SYSTEM METHODS
+    // ======================================================
+
+    /**
+     * Calculate points earned from a purchase amount.
+     * Rule: 1 point per Rp 10,000
+     * 
+     * @param float $amount Purchase amount in IDR
+     * @return int Points to earn
+     */
+    public function calculatePointsForPurchase(float $amount): int
+    {
+        $multiplier = $this->loyaltyTier?->point_multiplier ?? 1.0;
+        $basePoints = floor($amount / 10000);
+        return (int) floor($basePoints * $multiplier);
+    }
+
+    /**
+     * Add points to user account.
+     * Creates transaction record for audit trail.
+     * 
+     * @param int $points Points to add
+     * @param string $type Transaction type (purchase, bonus, review, etc.)
+     * @param int|null $orderId Related order ID
+     * @param string|null $description Optional description
+     * @return PointTransaction
+     */
+    public function addPoints(int $points, string $type, ?int $orderId = null, ?string $description = null): PointTransaction
+    {
+        $this->increment('points', $points);
+
+        return $this->pointTransactions()->create([
+            'type' => $type,
+            'amount' => $points,
+            'order_id' => $orderId,
+            'description' => $description ?? "Earned {$points} points",
+            'balance_after' => $this->fresh()->points,
+        ]);
+    }
+
+    /**
+     * Spend/redeem points from user account.
+     * 
+     * @param int $points Points to spend
+     * @param string $type Transaction type (redemption, etc.)
+     * @param int|null $orderId Related order ID
+     * @return PointTransaction|false Returns false if insufficient points
+     */
+    public function spendPoints(int $points, string $type, ?int $orderId = null): PointTransaction|false
+    {
+        if ($this->points < $points) {
+            return false;
+        }
+
+        $this->decrement('points', $points);
+
+        return $this->pointTransactions()->create([
+            'type' => $type,
+            'amount' => -$points, // Negative for spend
+            'order_id' => $orderId,
+            'description' => "Spent {$points} points",
+            'balance_after' => $this->fresh()->points,
+        ]);
+    }
+
+    /**
+     * Update user tier based on total_spend.
+     * Called after order completion.
+     * 
+     * Tiers (from proposal):
+     * - Bronze: Rp 0 (default)
+     * - Silver: Rp 5,000,000+
+     * - Gold: Rp 15,000,000+
+     * 
+     * @param float|null $additionalSpend Amount to add to total_spend first
+     * @return LoyaltyTier|null The new tier (null if no change)
+     */
+    public function updateTier(?float $additionalSpend = null): ?LoyaltyTier
+    {
+        // Update total_spend if additional amount provided
+        if ($additionalSpend !== null && $additionalSpend > 0) {
+            $this->increment('total_spend', $additionalSpend);
+            $this->refresh();
+        }
+
+        // Find the appropriate tier based on total_spend
+        $newTier = LoyaltyTier::where('min_spend', '<=', $this->total_spend)
+            ->orderByDesc('min_spend')
+            ->first();
+
+        if ($newTier && $newTier->id !== $this->loyalty_tier_id) {
+            $oldTier = $this->loyaltyTier;
+            $this->update(['loyalty_tier_id' => $newTier->id]);
+            
+            // Log tier upgrade for analytics
+            \Illuminate\Support\Facades\Log::info('User tier upgraded', [
+                'user_id' => $this->id,
+                'old_tier' => $oldTier?->name,
+                'new_tier' => $newTier->name,
+                'total_spend' => $this->total_spend,
+            ]);
+
+            return $newTier;
+        }
+
+        return null;
+    }
+
+    /**
+     * Get the discount percentage for current tier.
+     * 
+     * @return float Discount percent (0 to 100)
+     */
+    public function getTierDiscountAttribute(): float
+    {
+        return $this->loyaltyTier?->discount_percent ?? 0;
+    }
+
+    /**
+     * Get display name for tier badge.
+     */
+    public function getTierBadgeAttribute(): string
+    {
+        return $this->loyaltyTier?->name ?? 'Guest';
+    }
+
+    /**
+     * Get badge color for tier.
+     */
+    public function getTierColorAttribute(): string
+    {
+        return $this->loyaltyTier?->badge_color ?? '#808080';
+    }
 }
+

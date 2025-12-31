@@ -14,8 +14,9 @@ class PointTransaction extends Model
         'user_id',
         'order_id',
         'amount',
-        'type', // 'earn', 'redeem', 'adjust'
+        'type', // 'earn', 'redeem', 'adjust', 'purchase', 'bonus', 'review'
         'description',
+        'balance_after', // Balance after this transaction
     ];
 
     public function user(): BelongsTo

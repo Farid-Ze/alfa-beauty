@@ -128,6 +128,9 @@ WHERE NOT EXISTS (SELECT 1 FROM loyalty_tiers WHERE slug = 'gold');
 -- ALTER TABLE point_transactions RENAME COLUMN points TO amount;
 -- Or add if missing:
 ALTER TABLE point_transactions ADD COLUMN IF NOT EXISTS amount INTEGER;
+ALTER TABLE point_transactions ADD COLUMN IF NOT EXISTS balance_after INTEGER;
+ALTER TABLE point_transactions ADD COLUMN IF NOT EXISTS type VARCHAR(50);
+ALTER TABLE point_transactions ADD COLUMN IF NOT EXISTS description TEXT;
 
 -- If you have 'points' column but code expects 'amount':
 -- UPDATE point_transactions SET amount = points WHERE amount IS NULL;
