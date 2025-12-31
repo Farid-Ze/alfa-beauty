@@ -147,13 +147,39 @@ ALTER TABLE point_transactions ADD COLUMN IF NOT EXISTS description TEXT;
 -- SELECT column_name FROM information_schema.columns WHERE table_name = 'orders';
 
 -- ============================================
+-- 9. REVIEWS TABLE (Testimonials - Fase 2)
+-- ============================================
+
+-- Create reviews table for product testimonials
+CREATE TABLE IF NOT EXISTS reviews (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    product_id BIGINT NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+    order_id BIGINT REFERENCES orders(id) ON DELETE SET NULL,
+    rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
+    title VARCHAR(255),
+    content TEXT,
+    is_verified BOOLEAN DEFAULT false,  -- Verified buyer
+    is_approved BOOLEAN DEFAULT false,  -- Admin moderated
+    points_awarded BOOLEAN DEFAULT false, -- Track if +50 bonus given
+    approved_at TIMESTAMP,
+    approved_by BIGINT REFERENCES users(id) ON DELETE SET NULL,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Create index for faster product reviews lookup
+CREATE INDEX IF NOT EXISTS idx_reviews_product_approved ON reviews(product_id, is_approved);
+CREATE INDEX IF NOT EXISTS idx_reviews_user ON reviews(user_id);
+
+-- ============================================
 -- NOTES
 -- ============================================
 -- 
 -- After running this script:
 -- 1. Run the verification queries above to confirm columns exist
 -- 2. The application code may need to be reverted to original versions
--- 3. Test each feature: Register, Cart, Checkout, B2B Pricing
+-- 3. Test each feature: Register, Cart, Checkout, B2B Pricing, Reviews
 --
 -- If any ALTER TABLE fails with "column already exists", that's OK - 
 -- Supabase's IF NOT EXISTS should handle it, but older PostgreSQL 

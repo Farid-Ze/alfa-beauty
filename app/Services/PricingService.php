@@ -223,13 +223,13 @@ class PricingService
         }
 
         // Check min quantity requirement
-        if ($quantity < $priceList->min_quantity) {
+        if ($priceList->min_quantity && $quantity < $priceList->min_quantity) {
             return null;
         }
 
         return [
             'price' => $priceList->calculatePrice($product->base_price),
-            'discount_percent' => $priceList->discount_percent,
+            'discount_percent' => $priceList->discount_percent ?? 0,
         ];
     }
 

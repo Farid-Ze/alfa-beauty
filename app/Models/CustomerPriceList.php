@@ -11,6 +11,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * 
  * Defines customer-specific pricing for B2B customers.
  * Can apply to specific product, entire brand, or entire category.
+ * 
+ * PRIORITY ORDER:
+ * 1. Product-specific pricing (highest)
+ * 2. Brand-level pricing
+ * 3. Category-level pricing
+ * 4. Global customer discount (lowest)
  */
 class CustomerPriceList extends Model
 {
@@ -71,6 +77,7 @@ class CustomerPriceList extends Model
 
     /**
      * Scope for price lists applicable to a specific product.
+     * Matches by product_id, brand_id, category_id, or global (all null).
      */
     public function scopeForProduct($query, Product $product)
     {
@@ -103,4 +110,5 @@ class CustomerPriceList extends Model
         return $basePrice;
     }
 }
+
 
