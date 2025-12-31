@@ -46,7 +46,7 @@
     ],
     "env": {
         "APP_ENV": "production",
-        "APP_DEBUG": "true",
+        "APP_DEBUG": "false",
         "DB_CONNECTION": "pgsql",
         "FILESYSTEM_DISK": "local",
         "AWS_ACCESS_KEY_ID": "83fa20dbc49b20c9d9cb3c98f9c2f624",
