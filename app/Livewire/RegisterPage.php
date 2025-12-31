@@ -29,18 +29,13 @@ class RegisterPage extends Component
     {
         $this->validate();
 
-        // Get Guest tier (default for new users)
-        $guestTier = \App\Models\LoyaltyTier::where('slug', 'guest')->first();
-
         $user = User::create([
             'name' => $this->name,
             'business_name' => $this->business_name,
             'email' => $this->email,
             'phone' => $this->phone,
             'password' => Hash::make($this->password),
-            'loyalty_tier_id' => $guestTier?->id ?? 1, // Default to Guest tier
-            'points' => 0,
-            'total_spend' => 0,
+            // Let database use default values for: loyalty_tier_id, points, total_spend
         ]);
 
         Auth::login($user);
