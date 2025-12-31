@@ -32,6 +32,10 @@
             "dest": "/storage/$1"
         },
         {
+            "src": "/products/(.*\\.(png|jpg|jpeg|gif|webp|svg|ico))",
+            "dest": "/products/$1"
+        },
+        {
             "src": "/favicon\\.(ico|png)",
             "dest": "/favicon.$1"
         },
