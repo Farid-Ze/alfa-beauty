@@ -11,7 +11,7 @@ use Livewire\Component;
 class RegisterPage extends Component
 {
     public $name;
-    public $business_name;
+    public $company_name;
     public $email;
     public $phone;
     public $password;
@@ -19,7 +19,7 @@ class RegisterPage extends Component
 
     protected $rules = [
         'name' => 'required|min:3',
-        'business_name' => 'required|min:3',
+        'company_name' => 'required|min:3',
         'email' => 'required|email|unique:users,email',
         'phone' => 'required|numeric|min_digits:10',
         'password' => 'required|min:6|confirmed',
@@ -29,13 +29,18 @@ class RegisterPage extends Component
     {
         $this->validate();
 
+        // Get Guest tier (default for new users)
+        $guestTier = \App\Models\LoyaltyTier::where('slug', 'guest')->first();
+
         $user = User::create([
             'name' => $this->name,
-            'business_name' => $this->business_name,
+            'company_name' => $this->company_name,
             'email' => $this->email,
             'phone' => $this->phone,
             'password' => Hash::make($this->password),
-            // Let database use default values for: loyalty_tier_id, points, total_spend
+            'loyalty_tier_id' => $guestTier?->id ?? 1, // Default to Guest tier
+            'points' => 0,
+            'total_spend' => 0,
         ]);
 
         Auth::login($user);
@@ -48,3 +53,4 @@ class RegisterPage extends Component
         return view('livewire.register-page');
     }
 }
+

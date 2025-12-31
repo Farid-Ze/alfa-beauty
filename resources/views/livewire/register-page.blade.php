@@ -22,8 +22,8 @@
                     </div>
                     <div class="form-group">
                         <label class="form-label">{{ __('auth.company_name') }}</label>
-                        <input type="text" wire:model="business_name" placeholder="Salon Cantik Bunda" class="form-input @error('business_name') error @enderror">
-                        @error('business_name') <span class="form-error">{{ $message }}</span> @enderror
+                        <input type="text" wire:model="company_name" placeholder="Salon Cantik Bunda" class="form-input @error('company_name') error @enderror">
+                        @error('company_name') <span class="form-error">{{ $message }}</span> @enderror
                     </div>
                 </div>
 
