@@ -42,18 +42,18 @@ class UpdateBatchExpiryStatus extends Command
 
         // Update all batches in one query
         $expiredCount = BatchInventory::where('expires_at', '<', $today)
-            ->where('is_expired', false)
+            ->whereRaw('is_expired = false')
             ->update(['is_expired' => true, 'is_active' => false]);
 
         $nearExpiryCount = BatchInventory::where('expires_at', '>=', $today)
             ->where('expires_at', '<=', $nearExpiryThreshold)
-            ->where('is_near_expiry', false)
-            ->where('is_expired', false)
+            ->whereRaw('is_near_expiry = false')
+            ->whereRaw('is_expired = false')
             ->update(['is_near_expiry' => true]);
 
         // Find batches no longer near expiry (in case threshold changed)
         $notNearExpiryCount = BatchInventory::where('expires_at', '>', $nearExpiryThreshold)
-            ->where('is_near_expiry', true)
+            ->whereRaw('is_near_expiry = true')
             ->update(['is_near_expiry' => false]);
 
         $this->info("📊 Expiry Status Update Complete:");
@@ -64,9 +64,9 @@ class UpdateBatchExpiryStatus extends Command
         // Summary statistics
         $stats = BatchInventory::selectRaw('
             COUNT(*) as total,
-            SUM(CASE WHEN is_expired = 1 THEN 1 ELSE 0 END) as expired,
-            SUM(CASE WHEN is_near_expiry = 1 AND is_expired = 0 THEN 1 ELSE 0 END) as near_expiry,
-            SUM(CASE WHEN is_active = 1 THEN 1 ELSE 0 END) as active
+            SUM(CASE WHEN is_expired = true THEN 1 ELSE 0 END) as expired,
+            SUM(CASE WHEN is_near_expiry = true AND is_expired = false THEN 1 ELSE 0 END) as near_expiry,
+            SUM(CASE WHEN is_active = true THEN 1 ELSE 0 END) as active
         ')->first();
 
         $this->newLine();
