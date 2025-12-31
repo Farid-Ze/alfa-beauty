@@ -48,7 +48,7 @@
         "APP_ENV": "production",
         "APP_DEBUG": "true",
         "DB_CONNECTION": "pgsql",
-        "FILESYSTEM_DISK": "s3",
+        "FILESYSTEM_DISK": "local",
         "AWS_ACCESS_KEY_ID": "83fa20dbc49b20c9d9cb3c98f9c2f624",
         "AWS_SECRET_ACCESS_KEY": "22b93cee609b06c387e63cad9c0693d566153a9ff9fba05ae6807344403da4ec",
         "AWS_DEFAULT_REGION": "ap-southeast-1",
