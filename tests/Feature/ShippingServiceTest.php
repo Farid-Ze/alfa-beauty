@@ -31,7 +31,7 @@ class ShippingServiceTest extends TestCase
 
     public function test_shipping_zones_are_defined(): void
     {
-        $zones = ShippingService::SHIPPING_ZONES;
+        $zones = $this->shippingService->getShippingZones();
         
         $this->assertArrayHasKey('jabodetabek', $zones);
         $this->assertArrayHasKey('jawa', $zones);
@@ -223,6 +223,6 @@ class ShippingServiceTest extends TestCase
 
     public function test_volumetric_divisor_constant(): void
     {
-        $this->assertEquals(5000, ShippingService::VOLUMETRIC_DIVISOR);
+        $this->assertEquals(5000, $this->shippingService->getVolumetricDivisor());
     }
 }

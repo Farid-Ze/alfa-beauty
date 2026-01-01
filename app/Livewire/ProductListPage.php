@@ -83,6 +83,8 @@ class ProductListPage extends Component
 
     public function updatedSearch()
     {
+        // Limit search term length to prevent DoS
+        $this->search = mb_substr($this->search, 0, 100);
         $this->resetPage();
     }
 
@@ -116,15 +118,36 @@ class ProductListPage extends Component
 
     public function render()
     {
+        // Select only required columns for better performance
         $query = Product::query()
-            ->with(['brand', 'category', 'priceTiers']);
+            ->select([
+                'id',
+                'name',
+                'slug',
+                'sku',
+                'base_price',
+                'stock',
+                'images',
+                'brand_id',
+                'category_id',
+                'is_featured',
+                'min_order_qty',
+                'order_increment',
+                'created_at',
+            ])
+            ->with(['brand:id,name,slug', 'category:id,name,slug', 'priceTiers']);
 
-        // Search
+        // Search with sanitization and length limit
         if ($this->search) {
-            $query->where(function ($q) {
-                $q->where('name', 'like', '%' . $this->search . '%')
-                  ->orWhere('sku', 'like', '%' . $this->search . '%')
-                  ->orWhere('description', 'like', '%' . $this->search . '%');
+            // Sanitize search term - remove special LIKE characters
+            $searchTerm = str_replace(['%', '_'], ['\\%', '\\_'], $this->search);
+            $searchTerm = mb_substr($searchTerm, 0, 100); // Enforce length limit
+            
+            $query->where(function ($q) use ($searchTerm) {
+                $q->where('name', 'like', '%' . $searchTerm . '%')
+                  ->orWhere('sku', 'like', '%' . $searchTerm . '%');
+                  // Note: Removed description search for performance
+                  // Consider full-text search for production scale
             });
         }
 

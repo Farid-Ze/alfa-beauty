@@ -38,47 +38,77 @@ class CartDrawer extends Component
 
     public function removeItem(int $itemId)
     {
-        $this->cartService->removeItem($itemId);
-        $this->dispatch('cart-updated');
+        try {
+            $this->cartService->removeItem($itemId);
+            $this->dispatch('cart-updated');
+        } catch (\Exception $e) {
+            \Log::warning('Failed to remove cart item', ['item_id' => $itemId, 'error' => $e->getMessage()]);
+            $this->dispatch('cart-updated'); // Still refresh cart
+            session()->flash('error', __('cart.item_unavailable'));
+        }
     }
 
     public function updateQuantity(int $itemId, int $quantity)
     {
-        $this->cartService->updateQuantity($itemId, $quantity);
-        $this->dispatch('cart-updated');
+        try {
+            $this->cartService->updateQuantity($itemId, $quantity);
+            $this->dispatch('cart-updated');
+        } catch (\Exception $e) {
+            \Log::warning('Failed to update cart quantity', ['item_id' => $itemId, 'error' => $e->getMessage()]);
+            $this->dispatch('cart-updated');
+            session()->flash('error', __('cart.item_unavailable'));
+        }
     }
 
     public function incrementItem(int $itemId)
     {
-        $cart = $this->cartService->getCart();
-        $item = $cart?->items()->with('product')->find($itemId);
-        
-        if ($item) {
-            // Respect product's order_increment (default to 1)
-            $increment = $item->product->order_increment ?? 1;
-            $this->updateQuantity($itemId, $item->quantity + $increment);
+        try {
+            $cart = $this->cartService->getCart();
+            $item = $cart?->items()->with('product')->find($itemId);
+            
+            if ($item && $item->product) {
+                // Respect product's order_increment (default to 1)
+                $increment = $item->product->order_increment ?? 1;
+                $this->updateQuantity($itemId, $item->quantity + $increment);
+            } else {
+                // Product was deleted - remove item from cart
+                $this->removeItem($itemId);
+            }
+        } catch (\Exception $e) {
+            \Log::warning('Failed to increment cart item', ['item_id' => $itemId, 'error' => $e->getMessage()]);
+            $this->dispatch('cart-updated');
+            session()->flash('error', __('cart.item_unavailable'));
         }
     }
 
     public function decrementItem(int $itemId)
     {
-        $cart = $this->cartService->getCart();
-        $item = $cart?->items()->with('product')->find($itemId);
-        
-        if ($item) {
-            // Respect product's order_increment and min_order_qty
-            $increment = $item->product->order_increment ?? 1;
-            $minQty = $item->product->min_order_qty ?? 1;
-            $newQty = $item->quantity - $increment;
+        try {
+            $cart = $this->cartService->getCart();
+            $item = $cart?->items()->with('product')->find($itemId);
             
-            // Don't go below minimum order quantity
-            if ($newQty < $minQty) {
-                // If decrementing would go below MOQ, remove item instead
-                // This prevents stuck items that can't be decreased
-                $this->removeItem($itemId);
+            if ($item && $item->product) {
+                // Respect product's order_increment and min_order_qty
+                $increment = $item->product->order_increment ?? 1;
+                $minQty = $item->product->min_order_qty ?? 1;
+                $newQty = $item->quantity - $increment;
+                
+                // Don't go below minimum order quantity
+                if ($newQty < $minQty) {
+                    // If decrementing would go below MOQ, remove item instead
+                    // This prevents stuck items that can't be decreased
+                    $this->removeItem($itemId);
+                } else {
+                    $this->updateQuantity($itemId, $newQty);
+                }
             } else {
-                $this->updateQuantity($itemId, $newQty);
+                // Product was deleted - remove item from cart
+                $this->removeItem($itemId);
             }
+        } catch (\Exception $e) {
+            \Log::warning('Failed to decrement cart item', ['item_id' => $itemId, 'error' => $e->getMessage()]);
+            $this->dispatch('cart-updated');
+            session()->flash('error', __('cart.item_unavailable'));
         }
     }
 }

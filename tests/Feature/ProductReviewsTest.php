@@ -105,15 +105,16 @@ class ProductReviewsTest extends TestCase
     public function test_product_reviews_can_load_more(): void
     {
         $product = Product::first();
-        $user = User::create([
-            'name' => 'Reviewer',
-            'email' => 'reviewer@example.com',
-            'password' => 'password',
-            'loyalty_tier_id' => 1,
-        ]);
 
-        // Create 10 reviews
+        // Create 10 reviews with different users (unique constraint on user_id + product_id)
         for ($i = 1; $i <= 10; $i++) {
+            $user = User::create([
+                'name' => "Reviewer {$i}",
+                'email' => "reviewer{$i}@example.com",
+                'password' => 'password',
+                'loyalty_tier_id' => 1,
+            ]);
+            
             $this->createReview($product, $user, [
                 'content' => "Review content number {$i} for product testing.",
             ]);
@@ -132,17 +133,32 @@ class ProductReviewsTest extends TestCase
     public function test_product_reviews_shows_rating_distribution(): void
     {
         $product = Product::first();
-        $user = User::create([
-            'name' => 'Reviewer',
-            'email' => 'reviewer@example.com',
+
+        // Create reviews with different ratings using different users
+        $user1 = User::create([
+            'name' => 'Reviewer 1',
+            'email' => 'reviewer1@example.com',
+            'password' => 'password',
+            'loyalty_tier_id' => 1,
+        ]);
+        
+        $user2 = User::create([
+            'name' => 'Reviewer 2',
+            'email' => 'reviewer2@example.com',
+            'password' => 'password',
+            'loyalty_tier_id' => 1,
+        ]);
+        
+        $user3 = User::create([
+            'name' => 'Reviewer 3',
+            'email' => 'reviewer3@example.com',
             'password' => 'password',
             'loyalty_tier_id' => 1,
         ]);
 
-        // Create reviews with different ratings
-        $this->createReview($product, $user, ['rating' => 5]);
-        $this->createReview($product, $user, ['rating' => 5, 'content' => 'Another five star review.']);
-        $this->createReview($product, $user, ['rating' => 4, 'content' => 'Four star review here.']);
+        $this->createReview($product, $user1, ['rating' => 5]);
+        $this->createReview($product, $user2, ['rating' => 5, 'content' => 'Another five star review.']);
+        $this->createReview($product, $user3, ['rating' => 4, 'content' => 'Four star review here.']);
 
         Livewire::test(ProductReviews::class, ['product' => $product])
             ->assertStatus(200);

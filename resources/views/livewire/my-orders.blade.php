@@ -60,6 +60,13 @@
                     </div>
                 @endforeach
             </div>
+
+            {{-- Pagination --}}
+            @if($orders->hasPages())
+                <div class="pagination-wrapper" style="margin-top: 2rem;">
+                    {{ $orders->links() }}
+                </div>
+            @endif
         @endif
     </div>
 

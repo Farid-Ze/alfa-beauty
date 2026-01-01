@@ -61,7 +61,7 @@ class TaxServiceTest extends TestCase
         $result = $this->taxService->calculateItemTax(
             unitPrice: 100000,
             quantity: 3,
-            taxRate: TaxService::TAX_EXEMPT,
+            taxRate: $this->taxService->getTaxExemptRate(),
             isTaxInclusive: false
         );
 
@@ -72,7 +72,7 @@ class TaxServiceTest extends TestCase
 
     public function test_default_tax_rate_is_11_percent(): void
     {
-        $this->assertEquals(11.0, TaxService::DEFAULT_TAX_RATE);
+        $this->assertEquals(11.0, $this->taxService->getDefaultTaxRate());
     }
 
     public function test_calculate_item_tax_with_single_quantity(): void

@@ -42,7 +42,12 @@
             <a href="{{ route('brands.show', $brand->slug) }}" class="brand-item" data-index="{{ str_pad($index + 1, 2, '0', STR_PAD_LEFT) }}">
                 @if($brand->logo_url)
                     <div class="brand-logo-display">
-                        <img src="{{ url($brand->logo_url) }}" alt="{{ $brand->name }}" loading="lazy">
+                        <img src="{{ url($brand->logo_url) }}" 
+                             alt="{{ $brand->name }}" 
+                             loading="lazy"
+                             width="200"
+                             height="60"
+                             decoding="async">
                     </div>
                 @else
                     <span class="brand-name">{{ $brand->name }}</span>
@@ -70,7 +75,13 @@
     <!-- Company Profile -->
     <section class="company" id="about">
         <div class="company-visual">
-            <img src="{{ asset('images/brands-interior.webp') }}" alt="Alfa Beauty Facility" class="company-image" loading="lazy">
+            <img src="{{ asset('images/brands-interior.webp') }}" 
+                 alt="Alfa Beauty Facility" 
+                 class="company-image" 
+                 loading="lazy"
+                 width="800"
+                 height="500"
+                 decoding="async">
             
             <!-- Desktop Headline: Structural Split -->
             <div class="company-headline-desktop">

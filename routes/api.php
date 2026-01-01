@@ -7,6 +7,8 @@ use App\Http\Controllers\Api\V1\BrandController;
 use App\Http\Controllers\Api\V1\CategoryController;
 use App\Http\Controllers\Api\V1\UserController;
 use App\Http\Controllers\Api\V1\OrderController;
+use App\Http\Controllers\Api\V1\HealthController;
+use App\Http\Middleware\ApiVersion;
 
 /*
 |--------------------------------------------------------------------------
@@ -18,7 +20,7 @@ use App\Http\Controllers\Api\V1\OrderController;
 |
 */
 
-Route::prefix('v1')->name('api.v1.')->middleware(['throttle:api'])->group(function () {
+Route::prefix('v1')->name('api.v1.')->middleware(['throttle:api', ApiVersion::class])->group(function () {
     // Public endpoints
     Route::get('products', [ProductController::class, 'index'])->name('products.index');
     Route::get('products/{slug}', [ProductController::class, 'show'])->name('products.show');
@@ -37,12 +39,7 @@ Route::prefix('v1')->name('api.v1.')->middleware(['throttle:api'])->group(functi
         Route::get('orders/{order}', [OrderController::class, 'show'])->name('orders.show');
     });
 
-    // Health check
-    Route::get('health', function () {
-        return response()->json([
-            'status' => 'ok',
-            'timestamp' => now()->toIso8601String(),
-            'version' => 'v1',
-        ]);
-    })->name('health');
+    // Health check endpoints
+    Route::get('health', [HealthController::class, 'basic'])->name('health');
+    Route::get('health/detailed', [HealthController::class, 'detailed'])->name('health.detailed');
 });

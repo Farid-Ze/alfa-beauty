@@ -1,4 +1,43 @@
 <div>
+    {{-- Structured Data for SEO --}}
+    @php
+        $schemaData = [
+            '@context' => 'https://schema.org',
+            '@type' => 'Product',
+            'name' => $product->name,
+            'description' => Str::limit(strip_tags($product->description ?? ''), 200),
+            'sku' => $product->sku,
+            'brand' => [
+                '@type' => 'Brand',
+                'name' => $product->brand?->name ?? 'Alfa Beauty',
+            ],
+            'offers' => [
+                '@type' => 'Offer',
+                'url' => url()->current(),
+                'priceCurrency' => 'IDR',
+                'price' => $currentPrice,
+                'availability' => $product->in_stock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+                'seller' => [
+                    '@type' => 'Organization',
+                    'name' => 'Alfa Beauty',
+                ],
+            ],
+        ];
+        
+        if ($product->images && count($product->images) > 0) {
+            $schemaData['image'] = url($product->images[0]);
+        }
+        
+        if ($product->bpom_number) {
+            $schemaData['additionalProperty'] = [
+                '@type' => 'PropertyValue',
+                'name' => 'BPOM Registration',
+                'value' => $product->bpom_number,
+            ];
+        }
+    @endphp
+    <script type="application/ld+json">{!! json_encode($schemaData, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}</script>
+
     <!-- Page Hero with Breadcrumb -->
     <section class="page-hero" style="text-align: left;">
         <nav class="breadcrumb">
@@ -17,7 +56,12 @@
         <div class="product-gallery">
             <div class="product-main-image">
                 @if($product->images && count($product->images) > 0)
-                    <img src="{{ url($product->images[0]) }}" alt="{{ $product->name }}">
+                    <img src="{{ url($product->images[0]) }}" 
+                         alt="{{ $product->name }}" 
+                         width="600" 
+                         height="600"
+                         loading="eager"
+                         fetchpriority="high">
                 @else
                     <div style="display: flex; align-items: center; justify-content: center; height: 100%; color: var(--gray-400);">
                         <svg width="80" height="80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -42,7 +86,11 @@
                 <div class="product-thumbnails">
                     @foreach($product->images as $index => $image)
                         <div class="product-thumbnail {{ $index === 0 ? 'active' : '' }}">
-                            <img src="{{ url($image) }}" alt="{{ $product->name }}">
+                            <img src="{{ url($image) }}" 
+                                 alt="{{ $product->name }} - Image {{ $index + 1 }}"
+                                 width="100"
+                                 height="100"
+                                 loading="lazy">
                         </div>
                     @endforeach
                 </div>

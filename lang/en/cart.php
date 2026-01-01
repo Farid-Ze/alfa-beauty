@@ -23,4 +23,5 @@ return [
     'product_not_found' => 'Product not found',
     'add_failed' => 'Failed to add item to cart. Please try again.',
     'update_failed' => 'Failed to update cart. Please try again.',
+    'item_unavailable' => 'This item is no longer available and has been removed.',
 ];

@@ -64,6 +64,35 @@
     }
     </script>
     @stack('structured-data')
+    
+    <style>
+        /* Fix horizontal scroll - prevent testimonials track overflow */
+        html, body {
+            overflow-x: hidden;
+        }
+        
+        .testimonials-clean-container {
+            overflow-x: hidden !important;
+        }
+        
+        /* Fix #toast creating white space - make it properly positioned */
+        #toast, .toast {
+            position: fixed !important;
+            height: auto !important;
+            min-height: 0 !important;
+        }
+        
+        /* Footer bottom text colors */
+        .footer-bottom-left span,
+        .footer-bottom-right a {
+            color: rgba(255,255,255,0.5) !important;
+            font-size: 0.8125rem;
+        }
+        
+        .footer-bottom-right a:hover {
+            color: rgba(255,255,255,0.8) !important;
+        }
+    </style>
 </head>
 <body>
     {{-- Toast Notification System --}}
@@ -251,14 +280,14 @@
         </div>
 
         <!-- Bottom Bar -->
-        <div class="footer-bottom" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; padding: 1.5rem 2rem; border-top: 1px solid rgba(255,255,255,0.1);">
+        <div class="footer-bottom">
             <div class="footer-bottom-left">
-                <span style="color: rgba(255,255,255,0.6); font-size: 0.8125rem;">© {{ date('Y') }} Alfa Beauty</span>
+                <span>© {{ date('Y') }} Alfa Beauty</span>
             </div>
-            <div class="footer-bottom-right" style="display: flex; gap: 1.5rem;">
-                <a href="/refund" style="color: rgba(255,255,255,0.6); font-size: 0.8125rem; text-decoration: none; transition: color 0.2s;">{{ __('nav.refund_policy') }}</a>
-                <a href="/privacy" style="color: rgba(255,255,255,0.6); font-size: 0.8125rem; text-decoration: none; transition: color 0.2s;">{{ __('nav.privacy') }}</a>
-                <a href="/terms" style="color: rgba(255,255,255,0.6); font-size: 0.8125rem; text-decoration: none; transition: color 0.2s;">{{ __('nav.terms') }}</a>
+            <div class="footer-bottom-right">
+                <a href="/refund">{{ __('nav.refund_policy') }}</a>
+                <a href="/privacy">{{ __('nav.privacy') }}</a>
+                <a href="/terms">{{ __('nav.terms') }}</a>
             </div>
         </div>
     </footer>

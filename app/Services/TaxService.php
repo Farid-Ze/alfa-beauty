@@ -13,14 +13,20 @@ use App\Models\Order;
 class TaxService
 {
     /**
-     * Default tax rate (PPN Indonesia)
+     * Get the default tax rate from config.
      */
-    public const DEFAULT_TAX_RATE = 11.00;
+    public function getDefaultTaxRate(): float
+    {
+        return (float) config('services.tax.default_rate', 11.00);
+    }
 
     /**
-     * Tax-exempt rate
+     * Get the tax-exempt rate.
      */
-    public const TAX_EXEMPT = 0.00;
+    public function getTaxExemptRate(): float
+    {
+        return (float) config('services.tax.exempt_rate', 0.00);
+    }
 
     /**
      * Calculate tax for a single item.
@@ -28,9 +34,10 @@ class TaxService
     public function calculateItemTax(
         float $unitPrice,
         int $quantity,
-        float $taxRate = self::DEFAULT_TAX_RATE,
+        ?float $taxRate = null,
         bool $isTaxInclusive = false
     ): array {
+        $taxRate = $taxRate ?? $this->getDefaultTaxRate();
         $lineTotal = $unitPrice * $quantity;
         
         if ($isTaxInclusive) {
@@ -66,7 +73,7 @@ class TaxService
             $itemTax = $this->calculateItemTax(
                 (float) ($item->unit_price ?? 0),
                 (int) ($item->quantity ?? 0),
-                (float) ($item->tax_rate ?? self::DEFAULT_TAX_RATE),
+                (float) ($item->tax_rate ?? $this->getDefaultTaxRate()),
                 (bool) $order->is_tax_inclusive
             );
             
@@ -76,7 +83,7 @@ class TaxService
         
         return [
             'subtotal_before_tax' => round($subtotalBeforeTax, 2),
-            'tax_rate' => (float) ($order->tax_rate ?? self::DEFAULT_TAX_RATE),
+            'tax_rate' => (float) ($order->tax_rate ?? $this->getDefaultTaxRate()),
             'tax_amount' => round($totalTaxAmount, 2),
             'subtotal_after_tax' => round($subtotalBeforeTax + $totalTaxAmount, 2),
         ];
@@ -100,7 +107,7 @@ class TaxService
             $itemTax = $this->calculateItemTax(
                 (float) $item->unit_price,
                 (int) $item->quantity,
-                (float) ($order->tax_rate ?? self::DEFAULT_TAX_RATE),
+                (float) ($order->tax_rate ?? $this->getDefaultTaxRate()),
                 (bool) $order->is_tax_inclusive
             );
             
@@ -158,7 +165,7 @@ class TaxService
             'alamat_pembeli' => $order->shipping_address ?? '',
             'dpp' => number_format((float) ($order->subtotal_before_tax ?? 0), 0, '', ''),
             'ppn' => number_format((float) ($order->tax_amount ?? 0), 0, '', ''),
-            'tarif_ppn' => $order->tax_rate ?? self::DEFAULT_TAX_RATE,
+            'tarif_ppn' => $order->tax_rate ?? $this->getDefaultTaxRate(),
             'keterangan' => "Order #{$order->order_number}",
             'items' => $order->items->map(fn($item) => [
                 'nama_barang' => $item->product?->name ?? '',

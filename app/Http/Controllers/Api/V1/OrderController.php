@@ -8,10 +8,24 @@ use App\Models\Order;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
+/**
+ * Order API Controller
+ *
+ * Handles order listing and detail operations for authenticated users.
+ *
+ * @package App\Http\Controllers\Api\V1
+ */
 class OrderController extends Controller
 {
     /**
-     * Display a listing of the user's orders.
+     * Display a paginated listing of the user's orders.
+     *
+     * @param Request $request The HTTP request with query parameters
+     * @return AnonymousResourceCollection Paginated order collection
+     *
+     * @queryParam status string Filter by order status.
+     * @queryParam payment_status string Filter by payment status.
+     * @queryParam per_page integer Items per page (max 50). Default: 15.
      */
     public function index(Request $request): AnonymousResourceCollection
     {
@@ -41,6 +55,12 @@ class OrderController extends Controller
 
     /**
      * Display the specified order.
+     *
+     * @param Request $request The HTTP request with authenticated user
+     * @param Order $order The order model (auto-resolved)
+     * @return OrderResource The order resource with items and payment logs
+     *
+     * @throws \Symfony\Component\HttpKernel\Exception\HttpException 403 if order doesn't belong to user
      */
     public function show(Request $request, Order $order): OrderResource
     {

@@ -130,7 +130,7 @@ class ProductApiTest extends TestCase
 
         $response->assertStatus(200)
             ->assertJsonPath('status', 'ok')
-            ->assertJsonPath('version', 'v1');
+            ->assertJsonStructure(['status', 'timestamp', 'version']);
     }
 
     public function test_authenticated_user_can_get_profile(): void

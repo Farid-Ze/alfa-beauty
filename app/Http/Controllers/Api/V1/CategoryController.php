@@ -8,10 +8,24 @@ use App\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
+/**
+ * Category API Controller
+ *
+ * Handles category listing operations.
+ *
+ * @package App\Http\Controllers\Api\V1
+ */
 class CategoryController extends Controller
 {
     /**
      * Display a listing of categories.
+     *
+     * @param Request $request The HTTP request with query parameters
+     * @return AnonymousResourceCollection Category collection
+     *
+     * @queryParam root_only boolean Filter only root categories (no parent).
+     * @queryParam with_children boolean Include child categories.
+     * @queryParam has_products boolean Filter categories with at least one product.
      */
     public function index(Request $request): AnonymousResourceCollection
     {

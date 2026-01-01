@@ -130,21 +130,22 @@ class ReviewTest extends TestCase
 
     public function test_review_approved_scope(): void
     {
-        $user = $this->createUser();
+        $user1 = $this->createUser();
+        $user2 = $this->createUser();
         $product = Product::first();
 
-        // Create approved review
+        // Create approved review (user 1)
         Review::create([
-            'user_id' => $user->id,
+            'user_id' => $user1->id,
             'product_id' => $product->id,
             'rating' => 5,
             'content' => 'This is an approved review.',
             'is_approved' => true,
         ]);
 
-        // Create unapproved review
+        // Create unapproved review (different user to respect unique constraint)
         Review::create([
-            'user_id' => $user->id,
+            'user_id' => $user2->id,
             'product_id' => $product->id,
             'rating' => 1,
             'content' => 'This is pending approval.',

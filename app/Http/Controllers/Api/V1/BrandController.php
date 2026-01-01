@@ -8,10 +8,24 @@ use App\Models\Brand;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
+/**
+ * Brand API Controller
+ *
+ * Handles brand listing and detail operations.
+ *
+ * @package App\Http\Controllers\Api\V1
+ */
 class BrandController extends Controller
 {
     /**
      * Display a listing of brands.
+     *
+     * @param Request $request The HTTP request with query parameters
+     * @return AnonymousResourceCollection Brand collection
+     *
+     * @queryParam featured boolean Filter featured brands only.
+     * @queryParam has_products boolean Filter brands with at least one product.
+     * @queryParam sort string Sort field. Default: sort_order.
      */
     public function index(Request $request): AnonymousResourceCollection
     {
@@ -34,7 +48,14 @@ class BrandController extends Controller
     }
 
     /**
-     * Display the specified brand.
+     * Display the specified brand by slug.
+     *
+     * @param string $slug The brand slug
+     * @return BrandResource The brand resource with product count
+     *
+     * @urlParam slug string required The brand slug. Example: alfaparf-milano
+     *
+     * @throws \Illuminate\Database\Eloquent\ModelNotFoundException When brand not found
      */
     public function show(string $slug): BrandResource
     {

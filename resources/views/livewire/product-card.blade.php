@@ -9,7 +9,12 @@
 @endphp
 <article class="product-card">
     <a href="{{ route('products.show', $product->slug) }}" class="product-image">
-        <img src="{{ isset($product->images[0]) ? url($product->images[0]) : asset('images/product-color.png') }}" alt="{{ $product->name }}" loading="lazy">
+        <img src="{{ isset($product->images[0]) ? url($product->images[0]) : asset('images/product-color.png') }}" 
+             alt="{{ $product->name }}" 
+             loading="lazy"
+             width="280"
+             height="280"
+             decoding="async">
         
         <!-- B2B Discount Badge -->
         @if($hasDiscount)

@@ -16,66 +16,44 @@ use App\Models\CustomerOrderSetting;
 class ShippingService
 {
     /**
-     * Shipping zones and base rates (Rp per kg)
-     * These are placeholder rates - integrate with actual courier APIs
+     * Get shipping zones configuration from config.
      */
-    public const SHIPPING_ZONES = [
-        'jabodetabek' => [
-            'name' => 'Jabodetabek',
-            'base_rate' => 15000,
-            'weight_rate' => 5000, // per additional kg
-            'min_weight' => 1, // kg
-        ],
-        'jawa' => [
-            'name' => 'Jawa',
-            'base_rate' => 20000,
-            'weight_rate' => 7000,
-            'min_weight' => 1,
-        ],
-        'sumatera' => [
-            'name' => 'Sumatera',
-            'base_rate' => 35000,
-            'weight_rate' => 12000,
-            'min_weight' => 1,
-        ],
-        'kalimantan' => [
-            'name' => 'Kalimantan',
-            'base_rate' => 40000,
-            'weight_rate' => 15000,
-            'min_weight' => 1,
-        ],
-        'sulawesi' => [
-            'name' => 'Sulawesi',
-            'base_rate' => 45000,
-            'weight_rate' => 15000,
-            'min_weight' => 1,
-        ],
-        'bali_nusa' => [
-            'name' => 'Bali & Nusa Tenggara',
-            'base_rate' => 35000,
-            'weight_rate' => 12000,
-            'min_weight' => 1,
-        ],
-        'papua_maluku' => [
-            'name' => 'Papua & Maluku',
-            'base_rate' => 65000,
-            'weight_rate' => 25000,
-            'min_weight' => 1,
-        ],
-    ];
+    public function getShippingZones(): array
+    {
+        return config('services.shipping.zones', []);
+    }
 
     /**
-     * Volumetric divisor for domestic shipping
+     * Get volumetric divisor from config.
      */
-    public const VOLUMETRIC_DIVISOR = 5000;
+    public function getVolumetricDivisor(): int
+    {
+        return (int) config('services.shipping.volumetric_divisor', 5000);
+    }
+
+    /**
+     * Get default zone from config.
+     */
+    public function getDefaultZone(): string
+    {
+        return config('services.shipping.default_zone', 'jabodetabek');
+    }
 
     /**
      * Calculate shipping cost for an order.
      */
-    public function calculateShippingCost(Order $order, string $zone = 'jabodetabek'): array
+    public function calculateShippingCost(Order $order, ?string $zone = null): array
     {
+        $zone = $zone ?? $this->getDefaultZone();
+        $zones = $this->getShippingZones();
+        
         $totalWeight = $this->calculateOrderWeight($order);
-        $zoneConfig = self::SHIPPING_ZONES[$zone] ?? self::SHIPPING_ZONES['jabodetabek'];
+        $zoneConfig = $zones[$zone] ?? $zones[$this->getDefaultZone()] ?? [
+            'name' => 'Default',
+            'base_rate' => 15000,
+            'weight_rate' => 5000,
+            'min_weight' => 1,
+        ];
         
         // Convert grams to kg (round up)
         $weightKg = ceil($totalWeight / 1000);
@@ -236,7 +214,7 @@ class ShippingService
     {
         $options = [];
         
-        foreach (self::SHIPPING_ZONES as $zone => $config) {
+        foreach ($this->getShippingZones() as $zone => $config) {
             $options[$zone] = $this->calculateShippingCost($order, $zone);
         }
         

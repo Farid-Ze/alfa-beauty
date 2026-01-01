@@ -23,4 +23,5 @@ return [
     'product_not_found' => 'Produk tidak ditemukan',
     'add_failed' => 'Gagal menambahkan ke keranjang. Silakan coba lagi.',
     'update_failed' => 'Gagal memperbarui keranjang. Silakan coba lagi.',
+    'item_unavailable' => 'Produk ini tidak tersedia lagi dan telah dihapus.',
 ];

@@ -104,9 +104,18 @@ class OrderService
         return DB::transaction(function () use ($cart, $customerDetails, $userId) {
             $user = $userId ? User::find($userId) : null;
             
+            Log::info('OrderService: Starting order creation', [
+                'user_id' => $userId,
+                'cart_id' => $cart->id,
+                'item_count' => $cart->items->count(),
+            ]);
+            
             // DEFENSIVE: Validate and correct MOQ violations before processing
             $moqCorrections = $this->validateAndCorrectMOQ($cart);
             if (!empty($moqCorrections)) {
+                Log::info('OrderService: MOQ corrections applied', [
+                    'corrections' => $moqCorrections,
+                ]);
                 // Refresh cart items after corrections
                 $cart->refresh();
                 $cart->load('items.product');
@@ -213,6 +222,14 @@ class OrderService
             if ($user) {
                 $user->notify(new OrderConfirmation($order));
             }
+
+            Log::info('OrderService: Order created successfully', [
+                'order_id' => $order->id,
+                'order_number' => $order->order_number,
+                'user_id' => $userId,
+                'total_amount' => $totalAmount,
+                'item_count' => $cart->items->count(),
+            ]);
 
             return $order;
         });
@@ -353,8 +370,18 @@ class OrderService
             // Load items for message generation
             $order->load('items.product');
 
-            // Generate WhatsApp URL
-            $whatsappNumber = config('services.whatsapp.business_number', '6281234567890');
+            // Generate WhatsApp URL - validate config
+            $whatsappNumber = config('services.whatsapp.business_number');
+            if (empty($whatsappNumber) || $whatsappNumber === '6281234567890') {
+                // In production, this should throw an exception
+                // For development, log warning but continue
+                if (app()->environment('production')) {
+                    throw new \RuntimeException('WhatsApp business number not configured. Set WHATSAPP_BUSINESS_NUMBER in .env');
+                }
+                \Log::warning('WhatsApp business number not configured - using placeholder');
+                $whatsappNumber = '6281234567890';
+            }
+            
             $message = $order->generateWhatsAppMessage();
             $encodedMessage = rawurlencode($message);
             $whatsappUrl = "https://wa.me/{$whatsappNumber}?text={$encodedMessage}";
@@ -375,6 +402,12 @@ class OrderService
         if ($order->payment_status === 'paid' || !$order->user_id) {
             return;
         }
+
+        Log::info('OrderService: Completing order', [
+            'order_id' => $order->id,
+            'order_number' => $order->order_number,
+            'user_id' => $order->user_id,
+        ]);
 
         DB::transaction(function () use ($order) {
             $order->update(['payment_status' => 'paid', 'status' => 'processing']);
@@ -411,6 +444,14 @@ class OrderService
             // 5. Send payment received notification (queued)
             $order->load('pointTransactions');
             $user->notify(new PaymentReceived($order));
+            
+            Log::info('OrderService: Order completed, points awarded', [
+                'order_id' => $order->id,
+                'order_number' => $order->order_number,
+                'user_id' => $user->id,
+                'points_earned' => $earnedPoints ?? 0,
+                'new_total_spend' => $user->total_spend,
+            ]);
         });
     }
 

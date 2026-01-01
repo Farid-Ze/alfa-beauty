@@ -72,7 +72,7 @@ class PointTransactionFactory extends Factory
     /**
      * Transaction for redeeming points.
      */
-    public function redeem(int $amount = null): static
+    public function redeem(?int $amount = null): static
     {
         $points = $amount ?? $this->faker->numberBetween(50, 500);
         
@@ -100,7 +100,7 @@ class PointTransactionFactory extends Factory
     /**
      * Transaction for admin adjustment.
      */
-    public function adjustment(int $amount = null): static
+    public function adjustment(?int $amount = null): static
     {
         $points = $amount ?? $this->faker->numberBetween(-100, 100);
         
