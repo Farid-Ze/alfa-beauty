@@ -27,7 +27,7 @@ class ProductSeeder extends Seeder
                 'bpom_number' => 'NA18201200123',
                 'is_active' => true,
                 'is_featured' => true,
-                'images' => ['products/product-aurum-serum.webp'],
+                'images' => ['product-images/product-aurum-serum.webp'],
                 // Weight & Dimensions (50ml bottle)
                 'weight_grams' => 85,
                 'length_mm' => 35,
@@ -53,7 +53,7 @@ class ProductSeeder extends Seeder
                 'bpom_number' => 'NA18201200124',
                 'is_active' => true,
                 'is_featured' => true,
-                'images' => ['products/product-lumiere-keratin.webp'],
+                'images' => ['product-images/product-lumiere-keratin.webp'],
                 // Weight & Dimensions (500ml bottle)
                 'weight_grams' => 580,
                 'length_mm' => 70,
@@ -78,7 +78,7 @@ class ProductSeeder extends Seeder
                 'bpom_number' => 'NA18201200001',
                 'is_active' => true,
                 'is_featured' => true,
-                'images' => ['products/product-aurum-shampoo.webp'],
+                'images' => ['product-images/product-aurum-shampoo.webp'],
                 // Weight & Dimensions (1000ml bottle)
                 'weight_grams' => 1100,
                 'length_mm' => 80,
@@ -103,7 +103,7 @@ class ProductSeeder extends Seeder
                 'bpom_number' => 'NA18201200200',
                 'is_active' => true,
                 'is_featured' => false,
-                'images' => ['products/product-luminoso-color.webp'],
+                'images' => ['product-images/product-luminoso-color.webp'],
                 // Weight & Dimensions (60ml tube)
                 'weight_grams' => 75,
                 'length_mm' => 40,
@@ -128,7 +128,7 @@ class ProductSeeder extends Seeder
                 'bpom_number' => 'NA18201200301',
                 'is_active' => true,
                 'is_featured' => true,
-                'images' => ['products/product-lumiere-conditioner.webp'],
+                'images' => ['product-images/product-lumiere-conditioner.webp'],
                 // Weight & Dimensions (100ml bottle)
                 'weight_grams' => 140,
                 'length_mm' => 40,
@@ -153,7 +153,7 @@ class ProductSeeder extends Seeder
                 'bpom_number' => 'NA18201200002',
                 'is_active' => true,
                 'is_featured' => true,
-                'images' => ['products/product-salsa-keratin.webp'],
+                'images' => ['product-images/product-salsa-keratin.webp'],
                 // Weight & Dimensions (250ml bottle)
                 'weight_grams' => 290,
                 'length_mm' => 55,
@@ -178,7 +178,7 @@ class ProductSeeder extends Seeder
                 'bpom_number' => 'NA18201200125',
                 'is_active' => true,
                 'is_featured' => false,
-                'images' => ['products/product-luminoso-color.webp'],
+                'images' => ['product-images/product-luminoso-color.webp'],
                 // Weight & Dimensions (60ml tube)
                 'weight_grams' => 80,
                 'length_mm' => 45,
@@ -203,7 +203,7 @@ class ProductSeeder extends Seeder
                 'bpom_number' => 'NA18201200201',
                 'is_active' => true,
                 'is_featured' => true,
-                'images' => ['products/product-alfaparf-shampoo.webp'],
+                'images' => ['product-images/product-alfaparf-shampoo.webp'],
                 // Weight & Dimensions (350ml bottle)
                 'weight_grams' => 400,
                 'length_mm' => 60,

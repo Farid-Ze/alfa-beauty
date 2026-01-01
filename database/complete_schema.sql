@@ -796,14 +796,14 @@ ON CONFLICT (slug) DO NOTHING;
 
 -- Default Products
 INSERT INTO products (sku, name, slug, brand_id, category_id, base_price, stock, description, is_halal, bpom_number, is_active, is_featured, images, min_order_qty, order_increment, weight_grams, selling_unit, units_per_case) VALUES
-('AFP-SDL-001', 'Semi Di Lino Diamond Illuminating Serum', 'semi-di-lino-diamond-serum', 2, 4, 350000, 50, 'Serum untuk rambut berkilau seperti berlian', TRUE, 'NA18201200123', TRUE, TRUE, '["products/product-aurum-serum.webp"]'::jsonb, 1, 1, 45, 'bottle', 12),
-('AFP-LIS-001', 'Lisse Design Keratin Therapy', 'lisse-design-keratin-therapy', 2, 2, 850000, 25, 'Keratin treatment untuk rambut lurus sempurna', TRUE, 'NA18201200124', TRUE, TRUE, '["products/product-lumiere-keratin.webp"]'::jsonb, 1, 1, 500, 'bottle', 6),
-('SLS-SHP-001', 'Salsa Professional Keratin Shampoo', 'salsa-keratin-shampoo', 1, 4, 125000, 100, 'Shampoo keratin profesional buatan Indonesia', TRUE, 'NA18201200001', TRUE, TRUE, '["products/product-aurum-shampoo.webp"]'::jsonb, 6, 6, 250, 'bottle', 24),
-('FMV-COL-001', 'Farmavita Suprema Color', 'farmavita-suprema-color', 3, 1, 95000, 200, 'Hair color professional dari Italia', FALSE, 'NA18201200200', TRUE, FALSE, '["products/product-luminoso-color.webp"]'::jsonb, 12, 6, 60, 'tube', 36),
-('MTB-OLE-001', 'Montibello Oleo Intense', 'montibello-oleo-intense', 4, 4, 275000, 45, 'Premium oil treatment from Spain', TRUE, 'NA18201200301', TRUE, TRUE, '["products/product-alfaparf-shampoo.webp"]'::jsonb, 1, 1, 100, 'bottle', 12),
-('SLS-TRT-001', 'Salsa Keratin Treatment', 'salsa-keratin-treatment', 1, 2, 185000, 75, 'Professional keratin smoothing treatment', TRUE, 'NA18201200002', TRUE, TRUE, '["products/product-salsa-keratin.webp"]'::jsonb, 1, 1, 500, 'bottle', 6),
-('AFP-COL-001', 'Alfaparf Evolution Color', 'alfaparf-evolution-color', 2, 1, 125000, 150, 'Premium permanent hair color', TRUE, 'NA18201200125', TRUE, FALSE, '["products/product-luminoso-color.webp"]'::jsonb, 6, 6, 60, 'tube', 36),
-('FMV-SHA-001', 'Farmavita HD Life Shampoo', 'farmavita-hd-life-shampoo', 3, 4, 165000, 80, 'Sulfate-free professional shampoo', TRUE, 'NA18201200201', TRUE, TRUE, '["products/product-lumiere-conditioner.webp"]'::jsonb, 1, 1, 250, 'bottle', 24)
+('AFP-SDL-001', 'Semi Di Lino Diamond Illuminating Serum', 'semi-di-lino-diamond-serum', 2, 4, 350000, 50, 'Serum untuk rambut berkilau seperti berlian', TRUE, 'NA18201200123', TRUE, TRUE, '["product-images/product-aurum-serum.webp"]'::jsonb, 1, 1, 45, 'bottle', 12),
+('AFP-LIS-001', 'Lisse Design Keratin Therapy', 'lisse-design-keratin-therapy', 2, 2, 850000, 25, 'Keratin treatment untuk rambut lurus sempurna', TRUE, 'NA18201200124', TRUE, TRUE, '["product-images/product-lumiere-keratin.webp"]'::jsonb, 1, 1, 500, 'bottle', 6),
+('SLS-SHP-001', 'Salsa Professional Keratin Shampoo', 'salsa-keratin-shampoo', 1, 4, 125000, 100, 'Shampoo keratin profesional buatan Indonesia', TRUE, 'NA18201200001', TRUE, TRUE, '["product-images/product-aurum-shampoo.webp"]'::jsonb, 6, 6, 250, 'bottle', 24),
+('FMV-COL-001', 'Farmavita Suprema Color', 'farmavita-suprema-color', 3, 1, 95000, 200, 'Hair color professional dari Italia', FALSE, 'NA18201200200', TRUE, FALSE, '["product-images/product-luminoso-color.webp"]'::jsonb, 12, 6, 60, 'tube', 36),
+('MTB-OLE-001', 'Montibello Oleo Intense', 'montibello-oleo-intense', 4, 4, 275000, 45, 'Premium oil treatment from Spain', TRUE, 'NA18201200301', TRUE, TRUE, '["product-images/product-alfaparf-shampoo.webp"]'::jsonb, 1, 1, 100, 'bottle', 12),
+('SLS-TRT-001', 'Salsa Keratin Treatment', 'salsa-keratin-treatment', 1, 2, 185000, 75, 'Professional keratin smoothing treatment', TRUE, 'NA18201200002', TRUE, TRUE, '["product-images/product-salsa-keratin.webp"]'::jsonb, 1, 1, 500, 'bottle', 6),
+('AFP-COL-001', 'Alfaparf Evolution Color', 'alfaparf-evolution-color', 2, 1, 125000, 150, 'Premium permanent hair color', TRUE, 'NA18201200125', TRUE, FALSE, '["product-images/product-luminoso-color.webp"]'::jsonb, 6, 6, 60, 'tube', 36),
+('FMV-SHA-001', 'Farmavita HD Life Shampoo', 'farmavita-hd-life-shampoo', 3, 4, 165000, 80, 'Sulfate-free professional shampoo', TRUE, 'NA18201200201', TRUE, TRUE, '["product-images/product-lumiere-conditioner.webp"]'::jsonb, 1, 1, 250, 'bottle', 24)
 ON CONFLICT (sku) DO NOTHING;
 
 -- Sample Price Tiers (Volume Discounts)
