@@ -79,14 +79,25 @@ Route::get('/lang/{locale}', function (string $locale) {
 
 /*
 |--------------------------------------------------------------------------
-| SEO Routes
+| SEO Routes (Rate Limited & Cached)
 |--------------------------------------------------------------------------
 */
 Route::get('/sitemap.xml', function () {
-    $products = \App\Models\Product::where('is_active', true)->get();
-    $brands = \App\Models\Brand::all();
-    $categories = \App\Models\Category::all();
+    // Cache sitemap for 1 hour to prevent expensive queries on every request
+    $cacheKey = 'sitemap_xml_content';
+    $cacheTtl = 3600; // 1 hour
     
-    return response()->view('sitemap', compact('products', 'brands', 'categories'))
-        ->header('Content-Type', 'application/xml');
-})->name('sitemap');
+    $data = \Illuminate\Support\Facades\Cache::remember($cacheKey, $cacheTtl, function () {
+        return [
+            'products' => \App\Models\Product::whereRaw('is_active = true')
+                ->select('slug', 'updated_at')
+                ->get(),
+            'brands' => \App\Models\Brand::select('slug', 'updated_at')->get(),
+            'categories' => \App\Models\Category::select('slug', 'updated_at')->get(),
+        ];
+    });
+    
+    return response()->view('sitemap', $data)
+        ->header('Content-Type', 'application/xml')
+        ->header('Cache-Control', 'public, max-age=3600');
+})->middleware('throttle:10,1')->name('sitemap');

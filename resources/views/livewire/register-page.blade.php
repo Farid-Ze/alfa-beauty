@@ -14,6 +14,12 @@
             </div>
 
             <form wire:submit.prevent="register" novalidate>
+                {{-- Honeypot fields for spam protection (hidden from real users) --}}
+                <div style="position: absolute; left: -9999px;" aria-hidden="true">
+                    <input type="text" name="website" tabindex="-1" autocomplete="off">
+                    <input type="text" name="fax" tabindex="-1" autocomplete="off">
+                </div>
+                
                 <div class="form-grid">
                     <div class="form-group">
                         <label class="form-label">{{ __('auth.name') }}</label>

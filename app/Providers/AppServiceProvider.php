@@ -2,8 +2,20 @@
 
 namespace App\Providers;
 
+use App\Contracts\CartServiceInterface;
+use App\Contracts\InventoryServiceInterface;
+use App\Contracts\OrderServiceInterface;
+use App\Contracts\PricingServiceInterface;
+use App\Services\CartService;
+use App\Services\InventoryService;
+use App\Services\OrderService;
+use App\Services\PricingService;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use Illuminate\Queue\Events\JobFailed;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
@@ -11,11 +23,26 @@ use Illuminate\Support\ServiceProvider;
 class AppServiceProvider extends ServiceProvider
 {
     /**
+     * Service container bindings.
+     *
+     * @var array<class-string, class-string>
+     */
+    public array $bindings = [
+        PricingServiceInterface::class => PricingService::class,
+        CartServiceInterface::class => CartService::class,
+        OrderServiceInterface::class => OrderService::class,
+        InventoryServiceInterface::class => InventoryService::class,
+    ];
+
+    /**
      * Register any application services.
      */
     public function register(): void
     {
-        //
+        // Bind service interfaces to implementations
+        foreach ($this->bindings as $interface => $implementation) {
+            $this->app->bind($interface, $implementation);
+        }
     }
 
     /**
@@ -29,6 +56,40 @@ class AppServiceProvider extends ServiceProvider
         }
 
         $this->configureRateLimiting();
+        $this->configureQueryLogging();
+        $this->configureQueueFailedHandler();
+    }
+
+    /**
+     * Configure database query logging for slow query detection.
+     */
+    protected function configureQueryLogging(): void
+    {
+        // Only log slow queries in production (threshold: 1000ms)
+        if (!$this->app->environment('production')) {
+            return;
+        }
+
+        DB::listen(function ($query) {
+            $slowQueryThreshold = 1000; // milliseconds
+            
+            if ($query->time > $slowQueryThreshold) {
+                Log::warning('Slow query detected', [
+                    'sql' => $query->sql,
+                    'bindings' => $query->bindings,
+                    'time_ms' => $query->time,
+                    'connection' => $query->connectionName,
+                ]);
+            }
+        });
+    }
+
+    /**
+     * Configure queue failed job handler.
+     */
+    protected function configureQueueFailedHandler(): void
+    {
+        Event::listen(JobFailed::class, \App\Listeners\LogFailedJobs::class);
     }
 
     /**

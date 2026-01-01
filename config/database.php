@@ -94,7 +94,14 @@ return [
             // Code must use whereRaw('col = true') instead of where('col', true) to avoid "operator does not exist: boolean = integer" error.
             $pdoOptions = [
                 \PDO::ATTR_EMULATE_PREPARES => true,
+                \PDO::ATTR_PERSISTENT => (bool) env('DB_PERSISTENT_CONNECTIONS', false),
             ];
+            
+            // Connection pooling settings for production
+            // When using Supabase Transaction Pooler or PgBouncer:
+            // - Set POSTGRES_URL to the pooler endpoint (port 6543)
+            // - Set DB_PERSISTENT_CONNECTIONS=false (pooler handles this)
+            // - Set DB_MAX_CONNECTIONS as needed (default: 10)
             
             if ($url) {
                 $parsed = parse_url($url);

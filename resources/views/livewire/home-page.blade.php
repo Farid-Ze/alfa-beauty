@@ -290,6 +290,12 @@
             
             <form class="cta-contact-form" action="#" method="POST">
                 @csrf
+                {{-- Honeypot fields for spam protection (hidden from real users) --}}
+                <div style="position: absolute; left: -9999px;" aria-hidden="true">
+                    <input type="text" name="website" tabindex="-1" autocomplete="off">
+                    <input type="text" name="company_url" tabindex="-1" autocomplete="off">
+                </div>
+                
                 <div class="form-row">
                     <div class="form-group">
                         <label for="contact-name">{{ __('checkout.name') }}</label>

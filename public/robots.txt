@@ -1,5 +1,8 @@
 # Alfa Beauty - robots.txt
 # https://alfabeauty.id
+#
+# IMPORTANT: For staging/preview environments, deploy robots-staging.txt instead
+# or set X-Robots-Tag: noindex header via web server config.
 
 User-agent: *
 Allow: /
@@ -11,9 +14,28 @@ Disallow: /logout
 Disallow: /checkout
 Disallow: /checkout/*
 Disallow: /orders
+Disallow: /orders/*
 Disallow: /api/
 Disallow: /_debugbar/
 Disallow: /livewire/
+Disallow: /email/
+Disallow: /storage/
+
+# Block AI training crawlers
+User-agent: GPTBot
+Disallow: /
+
+User-agent: ChatGPT-User
+Disallow: /
+
+User-agent: CCBot
+Disallow: /
+
+User-agent: anthropic-ai
+Disallow: /
+
+User-agent: Google-Extended
+Disallow: /
 
 # Sitemap
 Sitemap: https://alfabeauty.id/sitemap.xml

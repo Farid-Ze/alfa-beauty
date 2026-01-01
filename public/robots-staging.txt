@@ -1,0 +1,10 @@
+# Alfa Beauty - Staging robots.txt
+# Use this file for staging/preview environments
+# Rename to robots.txt or serve via web server config
+
+# Block all search engines from indexing staging site
+User-agent: *
+Disallow: /
+
+# No sitemap for staging
+# Sitemap: none

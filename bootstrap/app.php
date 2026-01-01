@@ -15,9 +15,11 @@ $app = Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         // Global middleware for all requests
         $middleware->append(\App\Http\Middleware\SecurityHeaders::class);
+        $middleware->append(\App\Http\Middleware\ForceHttps::class);
         
         $middleware->web(append: [
             \App\Http\Middleware\SetLocale::class,
+            \App\Http\Middleware\HoneypotProtection::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
