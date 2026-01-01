@@ -13,6 +13,16 @@ $app = Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Trust all proxies (Vercel, Cloudflare, etc.) - fixes HTTPS detection
+        $middleware->trustProxies(
+            at: '*',
+            headers: \Illuminate\Http\Request::HEADER_X_FORWARDED_FOR |
+                     \Illuminate\Http\Request::HEADER_X_FORWARDED_HOST |
+                     \Illuminate\Http\Request::HEADER_X_FORWARDED_PORT |
+                     \Illuminate\Http\Request::HEADER_X_FORWARDED_PROTO |
+                     \Illuminate\Http\Request::HEADER_X_FORWARDED_AWS_ELB
+        );
+        
         // Global middleware for all requests
         $middleware->append(\App\Http\Middleware\SecurityHeaders::class);
         $middleware->append(\App\Http\Middleware\ForceHttps::class);
