@@ -18,6 +18,7 @@ class CheckoutPage extends Component
     public $notes;
     public array $stockErrors = [];
     public array $priceChanges = [];
+    public array $moqViolations = [];
 
     protected CartService $cartService;
 
@@ -72,6 +73,49 @@ class CheckoutPage extends Component
     }
 
     /**
+     * Validate MOQ and order increments before checkout.
+     * Auto-fixes invalid quantities and notifies user.
+     */
+    protected function validateMOQBeforeCheckout(): bool
+    {
+        // Get violations and auto-fix them
+        $this->moqViolations = $this->cartService->validateMOQ(true);
+        
+        if (!empty($this->moqViolations)) {
+            $productNames = collect($this->moqViolations)->pluck('product_name')->join(', ');
+            session()->flash('warning', __('checkout.moq_adjusted', ['products' => $productNames]));
+            
+            // Refresh prices after quantity adjustment
+            $this->priceChanges = array_merge(
+                $this->priceChanges, 
+                $this->cartService->refreshPrices()
+            );
+            
+            return false;
+        }
+        
+        return true;
+    }
+
+    /**
+     * Perform all validations before order creation.
+     * Returns true only if all validations pass.
+     */
+    protected function validateBeforeOrder(): bool
+    {
+        // First validate MOQ - this may adjust quantities
+        $moqValid = $this->validateMOQBeforeCheckout();
+        
+        // Then validate stock - must be done after MOQ adjustment
+        $stockValid = $this->validateStockBeforeCheckout();
+        
+        // Final price refresh to ensure accuracy
+        $this->priceChanges = $this->cartService->refreshPrices();
+        
+        return $moqValid && $stockValid;
+    }
+
+    /**
      * Standard order placement (legacy flow)
      */
     public function placeOrder(OrderService $orderService)
@@ -83,8 +127,8 @@ class CheckoutPage extends Component
             return redirect('/');
         }
 
-        // Validate stock before proceeding
-        if (!$this->validateStockBeforeCheckout()) {
+        // Comprehensive validation: MOQ, stock, and price refresh
+        if (!$this->validateBeforeOrder()) {
             return;
         }
 
@@ -135,8 +179,8 @@ class CheckoutPage extends Component
             return redirect('/');
         }
 
-        // Validate stock before proceeding
-        if (!$this->validateStockBeforeCheckout()) {
+        // Comprehensive validation: MOQ, stock, and price refresh
+        if (!$this->validateBeforeOrder()) {
             return;
         }
 

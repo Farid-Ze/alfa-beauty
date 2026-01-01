@@ -5,6 +5,8 @@ namespace App\Livewire;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
+use App\Services\PricingService;
+use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Title;
 use Livewire\Attributes\Url;
 use Livewire\Component;
@@ -35,6 +37,13 @@ class ProductListPage extends Component
 
     #[Url]
     public $perPage = 12;
+    
+    protected PricingService $pricingService;
+    
+    public function boot(PricingService $pricingService)
+    {
+        $this->pricingService = $pricingService;
+    }
 
     public function updatedSearch()
     {
@@ -59,7 +68,7 @@ class ProductListPage extends Component
     public function render()
     {
         $query = Product::query()
-            ->with(['brand', 'category']);
+            ->with(['brand', 'category', 'priceTiers']);
 
         // Search
         if ($this->search) {
@@ -111,8 +120,18 @@ class ProductListPage extends Component
         // Only active/in-stock logic if needed? For B2B, usually show all but mark OOS.
         $query->whereRaw('is_active = true');
 
+        $products = $query->paginate($this->perPage);
+        
+        // Fetch B2B prices in bulk for all products on this page
+        // Convert paginator items to collection for getBulkPrices
+        $prices = [];
+        if ($products->isNotEmpty()) {
+            $prices = $this->pricingService->getBulkPrices($products->getCollection(), Auth::user());
+        }
+
         return view('livewire.product-list-page', [
-            'products' => $query->paginate($this->perPage),
+            'products' => $products,
+            'prices' => $prices,
             'brands' => Brand::whereHas('products')->get(),
             'categories' => Category::whereHas('products')->get(),
         ]);

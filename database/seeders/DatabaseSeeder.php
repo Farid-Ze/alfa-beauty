@@ -19,7 +19,9 @@ class DatabaseSeeder extends Seeder
             LoyaltyTierSeeder::class,
             BrandSeeder::class,
             CategorySeeder::class,
+            SupplierSeeder::class,
             ProductSeeder::class,
+            DiscountRuleSeeder::class,
         ]);
     }
 }

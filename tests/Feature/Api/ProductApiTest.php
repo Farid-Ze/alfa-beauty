@@ -65,7 +65,7 @@ class ProductApiTest extends TestCase
     public function test_can_search_products(): void
     {
         $product = Product::first();
-        $searchTerm = substr($product->name, 0, 5);
+        $searchTerm = urlencode(substr($product->name, 0, 5));
 
         $response = $this->getJson("/api/v1/products?search={$searchTerm}");
 

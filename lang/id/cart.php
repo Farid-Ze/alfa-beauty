@@ -12,6 +12,7 @@ return [
     
     // Cart Item
     'qty' => 'Qty',
+    'min_qty_reached' => 'Jumlah minimum tercapai',
     'item_added' => ':name ditambahkan ke keranjang',
     'item_removed' => 'Produk dihapus dari keranjang',
     'cart_updated' => 'Keranjang diperbarui',

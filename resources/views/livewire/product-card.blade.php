@@ -1,17 +1,22 @@
+@php
+    // Use B2B price info if provided, otherwise fall back to product defaults
+    $displayPrice = $priceInfo['price'] ?? $product->price;
+    $originalPrice = $priceInfo['original_price'] ?? $product->base_price;
+    $priceSource = $priceInfo['source'] ?? 'base_price';
+    $hasDiscount = $priceInfo && isset($priceInfo['price']) && $priceInfo['price'] < $originalPrice;
+    $discountPercent = $hasDiscount ? round((1 - $displayPrice / $originalPrice) * 100) : 0;
+    $hasVolumePricing = $product->has_volume_pricing || ($priceSource === 'volume_tier');
+@endphp
 <article class="product-card">
     <a href="{{ route('products.show', $product->slug) }}" class="product-image">
         <img src="{{ isset($product->images[0]) ? url($product->images[0]) : asset('images/product-color.png') }}" alt="{{ $product->name }}">
         
-        <!-- B2B/Volume Pricing Indicator -->
-        @auth
-            @if(Auth::user()->has_b2b_pricing || $product->has_volume_pricing)
-                <span class="cart-item-badge" style="position: absolute; top: 8px; right: 8px;">B2B</span>
-            @endif
-        @else
-            @if($product->has_volume_pricing)
-                <span class="cart-item-badge" style="position: absolute; top: 8px; right: 8px;">Volume</span>
-            @endif
-        @endauth
+        <!-- B2B Discount Badge -->
+        @if($hasDiscount)
+            <span class="cart-item-badge" style="position: absolute; top: 8px; right: 8px;">-{{ $discountPercent }}%</span>
+        @elseif($hasVolumePricing)
+            <span class="cart-item-badge" style="position: absolute; top: 8px; right: 8px;">Volume</span>
+        @endif
     </a>
     <div class="product-details">
         <span class="product-brand">{{ $product->brand->name ?? __('products.brand') }}</span>
@@ -19,16 +24,25 @@
             <a href="{{ route('products.show', $product->slug) }}">{{ $product->name }}</a>
         </h3>
         <div class="product-pricing">
-            <span class="price-current">Rp {{ number_format($product->price, 0, ',', '.') }}</span>
-            @auth
-                @if(Auth::user()->has_b2b_pricing || $product->has_volume_pricing)
-                    <span class="price-source-tag">Lihat Detail</span>
-                @else
-                    <span class="price-points">+{{ $product->points }} {{ __('general.pts') }}</span>
-                @endif
+            @if($hasDiscount)
+                <span class="price-original" style="text-decoration: line-through; color: var(--neutral-500); font-size: 0.75rem;">
+                    Rp {{ number_format($originalPrice, 0, ',', '.') }}
+                </span>
+            @endif
+            <span class="price-current {{ $hasDiscount ? 'price-discounted' : '' }}">
+                Rp {{ number_format($displayPrice, 0, ',', '.') }}
+            </span>
+            @if($priceSource === 'customer_price_list')
+                <span class="price-source-tag">Harga Khusus</span>
+            @elseif($priceSource === 'volume_tier')
+                <span class="price-source-tag">Diskon Volume</span>
+            @elseif($priceSource === 'loyalty_tier')
+                <span class="price-source-tag">Diskon Loyalty</span>
+            @elseif($hasVolumePricing)
+                <span class="price-source-tag">Lihat Detail</span>
             @else
                 <span class="price-points">+{{ $product->points }} {{ __('general.pts') }}</span>
-            @endauth
+            @endif
         </div>
     </div>
     <button class="btn-quick-add" wire:click="addToCart" wire:loading.attr="disabled">

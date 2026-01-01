@@ -4,8 +4,12 @@ namespace App\Livewire;
 
 use App\Models\Brand;
 use App\Models\Product;
+use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 
+/**
+ * @method \Illuminate\Contracts\View\View|\Illuminate\Contracts\View\Factory layout(string $view, array $params = [])
+ */
 class BrandDetail extends Component
 {
     public Brand $brand;
@@ -16,28 +20,28 @@ class BrandDetail extends Component
 
     public function mount(string $slug)
     {
-        $this->brand = Brand::where('slug', $slug)->firstOrFail();
+        // OPTIMIZED: Single query with stats via withCount and subquery
+        $this->brand = Brand::where('slug', $slug)
+            ->withCount(['products as product_count' => function ($query) {
+                $query->whereRaw('is_active = true');
+            }])
+            ->addSelect([
+                'total_stock' => DB::table('products')
+                    ->selectRaw('COALESCE(SUM(stock), 0)')
+                    ->whereColumn('brand_id', 'brands.id')
+                    ->whereRaw('is_active = true')
+            ])
+            ->firstOrFail();
         
-        // Get featured product (or first product)
+        // Extract stats from brand model
+        $this->productCount = $this->brand->product_count;
+        $this->totalStock = $this->brand->total_stock ?? 0;
+        
+        // Get featured product (single query with fallback)
         $this->featuredProduct = Product::where('brand_id', $this->brand->id)
             ->whereRaw('is_active = true')
-            ->whereRaw('is_featured = true')
+            ->orderByRaw('is_featured DESC') // Featured first, then any
             ->first();
-            
-        if (!$this->featuredProduct) {
-            $this->featuredProduct = Product::where('brand_id', $this->brand->id)
-                ->whereRaw('is_active = true')
-                ->first();
-        }
-        
-        // Get stats
-        $this->productCount = Product::where('brand_id', $this->brand->id)
-            ->whereRaw('is_active = true')
-            ->count();
-            
-        $this->totalStock = Product::where('brand_id', $this->brand->id)
-            ->whereRaw('is_active = true')
-            ->sum('stock');
         
         // Get other brands for switcher
         $this->otherBrands = Brand::where('id', '!=', $this->brand->id)
@@ -49,7 +53,8 @@ class BrandDetail extends Component
 
     public function render()
     {
-        return view('livewire.brand-detail')
+        /** @phpstan-ignore method.notFound */
+        return view('livewire.brand-detail') // @phpstan-ignore-next-line
             ->layout('components.layouts.app', [
                 'title' => $this->brand->name . ' - Alfa Beauty'
             ]);

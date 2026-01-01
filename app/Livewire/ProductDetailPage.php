@@ -15,6 +15,9 @@ class ProductDetailPage extends Component
     public $slug;
     public $quantity = 1;
     
+    // Cached product data to avoid repeated queries
+    protected ?Product $cachedProduct = null;
+    
     // Computed pricing properties
     public $currentPrice;
     public $originalPrice;
@@ -30,10 +33,40 @@ class ProductDetailPage extends Component
         $this->cartService = $cartService;
         $this->pricingService = $pricingService;
     }
+    
+    /**
+     * Get cached product to avoid repeated queries.
+     * OPTIMIZATION: Was 5+ queries per request, now 1 query.
+     */
+    protected function getProduct(): ?Product
+    {
+        if (!$this->cachedProduct) {
+            $this->cachedProduct = Product::with(['brand', 'category', 'priceTiers'])
+                ->where('slug', $this->slug)
+                ->first();
+        }
+        return $this->cachedProduct;
+    }
+    
+    /**
+     * Clear cached product (use after updates that might affect product data).
+     */
+    protected function clearProductCache(): void
+    {
+        $this->cachedProduct = null;
+    }
 
     public function mount($slug)
     {
         $this->slug = $slug;
+        
+        // Initialize quantity to min_order_qty
+        $product = $this->getProduct();
+        if (!$product) {
+            abort(404);
+        }
+        $this->quantity = $product->min_order_qty ?? 1;
+        
         $this->updatePricing();
     }
 
@@ -42,7 +75,18 @@ class ProductDetailPage extends Component
      */
     public function updatedQuantity($value)
     {
-        $this->quantity = max(1, (int) $value);
+        $product = $this->getProduct();
+        $minQty = $product?->min_order_qty ?? 1;
+        $increment = $product?->order_increment ?? 1;
+        
+        $qty = max($minQty, (int) $value);
+        
+        // Round to nearest increment
+        if ($increment > 1) {
+            $qty = (int) ceil(($qty - $minQty) / $increment) * $increment + $minQty;
+        }
+        
+        $this->quantity = $qty;
         $this->updatePricing();
     }
 
@@ -51,7 +95,7 @@ class ProductDetailPage extends Component
      */
     protected function updatePricing(): void
     {
-        $product = Product::where('slug', $this->slug)->first();
+        $product = $this->getProduct();
         if (!$product) return;
 
         $user = Auth::user();
@@ -62,10 +106,9 @@ class ProductDetailPage extends Component
         $this->discountPercent = $priceInfo['discount_percent'];
         $this->priceSource = $priceInfo['source'];
 
-        // Get volume tiers for display
-        $this->priceTiers = $product->priceTiers()
-            ->orderBy('min_quantity')
-            ->get()
+        // Get volume tiers for display (already eager loaded)
+        $this->priceTiers = $product->priceTiers
+            ->sortBy('min_quantity')
             ->map(function ($tier) use ($product) {
                 return [
                     'min_qty' => $tier->min_quantity,
@@ -77,6 +120,7 @@ class ProductDetailPage extends Component
                         : "{$tier->min_quantity}+",
                 ];
             })
+            ->values()
             ->toArray();
     }
 
@@ -88,7 +132,10 @@ class ProductDetailPage extends Component
      */
     public function addToCart()
     {
-        $product = Product::where('slug', $this->slug)->firstOrFail();
+        $product = $this->getProduct();
+        if (!$product) {
+            abort(404);
+        }
         
         // Validate stock
         if ($this->quantity > $product->stock) {
@@ -109,36 +156,43 @@ class ProductDetailPage extends Component
         // Open cart drawer after adding
         $this->dispatch('toggle-cart');
         
-        // Reset quantity
-        $this->quantity = 1;
+        // Reset quantity to minimum
+        $this->quantity = $product->min_order_qty ?? 1;
         $this->updatePricing();
     }
 
     /**
-     * Increment quantity.
+     * Increment quantity by order increment.
      */
     public function incrementQuantity()
     {
-        $this->quantity++;
+        $product = $this->getProduct();
+        $increment = $product?->order_increment ?? 1;
+        $this->quantity += $increment;
         $this->updatePricing();
     }
 
     /**
-     * Decrement quantity (min 1).
+     * Decrement quantity by order increment (respecting min_order_qty).
      */
     public function decrementQuantity()
     {
-        if ($this->quantity > 1) {
-            $this->quantity--;
+        $product = $this->getProduct();
+        $minQty = $product?->min_order_qty ?? 1;
+        $increment = $product?->order_increment ?? 1;
+        
+        if ($this->quantity - $increment >= $minQty) {
+            $this->quantity -= $increment;
             $this->updatePricing();
         }
     }
 
     public function render()
     {
-        $product = Product::with(['brand', 'category', 'priceTiers'])
-            ->where('slug', $this->slug)
-            ->firstOrFail();
+        $product = $this->getProduct();
+        if (!$product) {
+            abort(404);
+        }
 
         return view('livewire.product-detail-page', [
             'product' => $product,
@@ -146,6 +200,8 @@ class ProductDetailPage extends Component
             'hasVolumePricing' => $this->priceSource === 'volume_tier',
             'hasDiscount' => $this->discountPercent > 0,
             'lineTotal' => $this->currentPrice * $this->quantity,
+            'minOrderQty' => $product->min_order_qty ?? 1,
+            'orderIncrement' => $product->order_increment ?? 1,
         ]);
     }
 }

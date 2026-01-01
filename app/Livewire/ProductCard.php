@@ -7,6 +7,12 @@ use Livewire\Component;
 class ProductCard extends Component
 {
     public \App\Models\Product $product;
+    
+    /**
+     * Optional B2B price info passed from parent.
+     * Structure: ['price' => float, 'original_price' => float, 'source' => string, 'discount_percent' => float|null]
+     */
+    public ?array $priceInfo = null;
 
     public function addToCart(\App\Services\CartService $cartService)
     {

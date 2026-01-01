@@ -13,15 +13,44 @@ use Carbon\Carbon;
  * 
  * Tracks product batches for BPOM traceability.
  * Data must be retained for 6 years after last production (BPOM PIF requirement).
+ *
+ * @property int $id
+ * @property int $product_id
+ * @property int|null $supplier_id
+ * @property string $batch_number
+ * @property string|null $lot_number
+ * @property int $quantity_received
+ * @property int $quantity_available
+ * @property int $quantity_sold
+ * @property int $quantity_damaged
+ * @property Carbon|null $manufactured_at
+ * @property Carbon|null $expires_at
+ * @property Carbon|null $received_at
+ * @property Carbon|null $received_date
+ * @property float|null $cost_price
+ * @property float|null $purchase_price
+ * @property string|null $purchase_order_number
+ * @property float|null $near_expiry_discount_percent
+ * @property bool $is_active
+ * @property bool $is_near_expiry
+ * @property bool $is_expired
+ * @property int|null $warehouse_id
+ * @property string|null $supplier_name
+ * @property string|null $country_of_origin
+ * @property string|null $notes
+ * @property array|null $metadata
+ * @property-read Product $product
+ * @property-read Supplier|null $supplier
  */
 class BatchInventory extends Model
 {
     use HasFactory, SoftDeletes;
 
-    protected $table = 'batch_inventories';
+    protected $table = 'batch_inventory';
 
     protected $fillable = [
         'product_id',
+        'supplier_id',
         'batch_number',
         'lot_number',
         'quantity_received',
@@ -31,7 +60,10 @@ class BatchInventory extends Model
         'manufactured_at',
         'expires_at',
         'received_at',
+        'received_date',
         'cost_price',
+        'purchase_price',
+        'purchase_order_number',
         'near_expiry_discount_percent',
         'is_active',
         'is_near_expiry',
@@ -44,11 +76,13 @@ class BatchInventory extends Model
     ];
 
     protected $casts = [
-        'manufactured_at' => 'date',
-        'expires_at' => 'date',
-        'received_at' => 'date',
-        'cost_price' => 'decimal:2',
-        'near_expiry_discount_percent' => 'decimal:2',
+        'manufactured_at' => 'datetime',
+        'expires_at' => 'datetime',
+        'received_at' => 'datetime',
+        'received_date' => 'datetime',
+        'cost_price' => 'float',
+        'purchase_price' => 'float',
+        'near_expiry_discount_percent' => 'float',
         'is_active' => 'boolean',
         'is_near_expiry' => 'boolean',
         'is_expired' => 'boolean',
@@ -66,6 +100,22 @@ class BatchInventory extends Model
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
+    }
+
+    /**
+     * Get the supplier this batch came from.
+     */
+    public function supplier(): BelongsTo
+    {
+        return $this->belongsTo(Supplier::class);
+    }
+
+    /**
+     * Get return items associated with this batch.
+     */
+    public function returnItems()
+    {
+        return $this->hasMany(ReturnItem::class);
     }
 
     /**
@@ -133,7 +183,7 @@ class BatchInventory extends Model
      */
     public function getIsExpiredComputedAttribute(): bool
     {
-        return $this->expires_at->isPast();
+        return $this->expires_at?->isPast() ?? false;
     }
 
     /**

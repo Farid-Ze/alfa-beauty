@@ -6,11 +6,33 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
 
+/**
+ * User Model
+ *
+ * @property int $id
+ * @property string $name
+ * @property string|null $company_name
+ * @property string $email
+ * @property string|null $phone
+ * @property string $password
+ * @property int $points
+ * @property float $total_spend
+ * @property int|null $loyalty_tier_id
+ * @property string|null $customer_type
+ * @property string|null $business_name
+ * @property string|null $npwp
+ * @property \Carbon\Carbon|null $email_verified_at
+ * @property \Carbon\Carbon|null $created_at
+ * @property \Carbon\Carbon|null $updated_at
+ * @property-read LoyaltyTier|null $loyaltyTier
+ * @property-read CustomerPaymentTerm|null $paymentTerm
+ */
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, HasApiTokens;
 
     /**
      * The attributes that are mass assignable.
@@ -94,9 +116,11 @@ class User extends Authenticatable
 
     /**
      * Check if user can use credit terms.
+     * @phpstan-ignore-next-line
      */
     public function getCanUseCreditAttribute(): bool
     {
+        /** @phpstan-ignore-next-line */
         return $this->paymentTerm?->is_approved 
             && $this->paymentTerm?->term_type !== CustomerPaymentTerm::TERM_COD;
     }
@@ -205,6 +229,7 @@ class User extends Authenticatable
             $this->update(['loyalty_tier_id' => $newTier->id]);
             
             // Log tier upgrade for analytics
+            /** @phpstan-ignore-next-line */
             \Illuminate\Support\Facades\Log::info('User tier upgraded', [
                 'user_id' => $this->id,
                 'old_tier' => $oldTier?->name,

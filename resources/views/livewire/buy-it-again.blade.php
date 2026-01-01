@@ -10,6 +10,12 @@
                 @foreach($products as $product)
                     @php
                         $productImages = is_array($product->images) ? $product->images : [];
+                        $priceInfo = $prices[$product->id] ?? null;
+                        $displayPrice = $priceInfo['price'] ?? $product->base_price;
+                        $originalPrice = $priceInfo['original_price'] ?? $product->base_price;
+                        $hasDiscount = $priceInfo && $priceInfo['price'] < $originalPrice;
+                        $priceSource = $priceInfo['source'] ?? 'base_price';
+                        $discountPercent = $hasDiscount ? round((1 - $displayPrice / $originalPrice) * 100) : 0;
                     @endphp
                     <div class="buy-again-card">
                         <a href="{{ route('products.show', $product->slug) }}" class="buy-again-image">
@@ -23,12 +29,10 @@
                                 </div>
                             @endif
                             
-                            <!-- B2B Indicator (if user has B2B pricing) -->
-                            @auth
-                                @if(Auth::user()->has_b2b_pricing)
-                                    <span class="cart-item-badge">B2B</span>
-                                @endif
-                            @endauth
+                            <!-- B2B Discount Badge -->
+                            @if($hasDiscount)
+                                <span class="cart-item-badge">-{{ $discountPercent }}%</span>
+                            @endif
                         </a>
                         
                         <div class="buy-again-info">
@@ -36,14 +40,21 @@
                             <h3 class="buy-again-name">
                                 <a href="{{ route('products.show', $product->slug) }}">{{ $product->name }}</a>
                             </h3>
-                            <p class="buy-again-price">
-                                Rp {{ number_format($product->base_price, 0, ',', '.') }}
-                                @auth
-                                    @if(Auth::user()->has_b2b_pricing)
-                                        <span class="price-source-tag">Lihat Harga Khusus</span>
-                                    @endif
-                                @endauth
-                            </p>
+                            <div class="buy-again-price">
+                                @if($hasDiscount)
+                                    <span class="price-original">Rp {{ number_format($originalPrice, 0, ',', '.') }}</span>
+                                @endif
+                                <span class="price-current {{ $hasDiscount ? 'price-discounted' : '' }}">
+                                    Rp {{ number_format($displayPrice, 0, ',', '.') }}
+                                </span>
+                                @if($priceSource === 'customer_price_list')
+                                    <span class="price-source-tag">Harga Khusus</span>
+                                @elseif($priceSource === 'volume_tier')
+                                    <span class="price-source-tag">Diskon Volume</span>
+                                @elseif($priceSource === 'loyalty_tier')
+                                    <span class="price-source-tag">Diskon Loyalty</span>
+                                @endif
+                            </div>
                         </div>
                         
                         <button 

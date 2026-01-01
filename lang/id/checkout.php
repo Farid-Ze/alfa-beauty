@@ -55,4 +55,5 @@ return [
     'order_error' => 'Gagal membuat pesanan',
     'whatsapp_error' => 'Gagal memproses checkout WhatsApp',
     'stock_warning' => 'Beberapa produk stoknya tidak mencukupi',
+    'moq_adjusted' => 'Jumlah pesanan telah disesuaikan dengan ketentuan minimum untuk: :products',
 ];

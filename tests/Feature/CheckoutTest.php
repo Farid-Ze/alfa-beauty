@@ -35,7 +35,12 @@ class CheckoutTest extends TestCase
 
     public function test_user_can_access_checkout_with_items_in_cart(): void
     {
+        $user = User::factory()->create();
         $product = Product::first();
+        
+        $this->actingAs($user);
+        
+        // Create cart in database for authenticated user
         $cartService = app(CartService::class);
         $cartService->addItem($product->id, 1);
 
@@ -119,14 +124,14 @@ class CheckoutTest extends TestCase
             'notes' => '',
         ], $user->id);
 
-        // Silver tier has 5% discount
-        $expectedSubtotal = $product->base_price;
-        $expectedDiscount = $expectedSubtotal * 0.05;
-        $expectedTotal = $expectedSubtotal - $expectedDiscount;
-
-        $this->assertEquals(5, $order->discount_percent);
-        $this->assertEquals($expectedDiscount, $order->discount_amount);
-        $this->assertEquals($expectedTotal, $order->total_amount);
+        // Silver tier has 5% discount - applied in PricingService
+        // Price is discounted at line item level, not at order level
+        $expectedPrice = $product->base_price * 0.95; // 5% off at item level
+        
+        // Order discount_percent should be 0 (already applied in line item)
+        $this->assertEquals(0, $order->discount_percent);
+        $this->assertEquals(0, $order->discount_amount);
+        $this->assertEquals($expectedPrice, $order->total_amount);
     }
 
     public function test_whatsapp_order_creates_payment_log(): void

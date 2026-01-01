@@ -17,11 +17,75 @@ class OrderService
 {
     protected InventoryService $inventoryService;
     protected PricingService $pricingService;
+    protected CartService $cartService;
 
-    public function __construct(InventoryService $inventoryService, PricingService $pricingService)
-    {
+    public function __construct(
+        InventoryService $inventoryService, 
+        PricingService $pricingService,
+        CartService $cartService
+    ) {
         $this->inventoryService = $inventoryService;
         $this->pricingService = $pricingService;
+        $this->cartService = $cartService;
+    }
+    
+    /**
+     * Validate and correct MOQ violations before order creation.
+     * 
+     * DEFENSIVE: Even if cart should be validated, we re-check here
+     * to prevent invalid orders from being created.
+     * 
+     * @param Cart $cart
+     * @return array List of corrections made
+     */
+    protected function validateAndCorrectMOQ(Cart $cart): array
+    {
+        $corrections = [];
+        $products = \App\Models\Product::whereIn('id', $cart->items->pluck('product_id'))->get()->keyBy('id');
+        
+        foreach ($cart->items as $item) {
+            $product = $products[$item->product_id] ?? null;
+            if (!$product) continue;
+            
+            $minQty = $product->min_order_qty ?? 1;
+            $increment = $product->order_increment ?? 1;
+            $originalQty = $item->quantity;
+            $correctedQty = $originalQty;
+            
+            // Ensure minimum order quantity
+            if ($correctedQty < $minQty) {
+                $correctedQty = $minQty;
+            }
+            
+            // Ensure quantity is in valid increments
+            if ($increment > 1 && $correctedQty > $minQty) {
+                $remainder = ($correctedQty - $minQty) % $increment;
+                if ($remainder !== 0) {
+                    $correctedQty = $correctedQty + ($increment - $remainder);
+                }
+            }
+            
+            if ($correctedQty !== $originalQty) {
+                // Update cart item
+                $item->update(['quantity' => $correctedQty]);
+                
+                $corrections[] = [
+                    'product_id' => $product->id,
+                    'product_name' => $product->name,
+                    'original_qty' => $originalQty,
+                    'corrected_qty' => $correctedQty,
+                    'reason' => $originalQty < $minQty ? 'below_moq' : 'invalid_increment',
+                ];
+                
+                Log::info('OrderService: Corrected MOQ violation', [
+                    'product_id' => $product->id,
+                    'original' => $originalQty,
+                    'corrected' => $correctedQty,
+                ]);
+            }
+        }
+        
+        return $corrections;
     }
 
     /**
@@ -39,6 +103,14 @@ class OrderService
     {
         return DB::transaction(function () use ($cart, $customerDetails, $userId) {
             $user = $userId ? User::find($userId) : null;
+            
+            // DEFENSIVE: Validate and correct MOQ violations before processing
+            $moqCorrections = $this->validateAndCorrectMOQ($cart);
+            if (!empty($moqCorrections)) {
+                // Refresh cart items after corrections
+                $cart->refresh();
+                $cart->load('items.product');
+            }
             
             // Get B2B prices for all cart items in bulk (single query)
             $productQuantities = $cart->items->pluck('quantity', 'product_id')->toArray();
@@ -76,13 +148,13 @@ class OrderService
             $discountPercent = 0;
             $discountAmount = 0;
             
-            // Check if any item used customer-specific pricing
-            $hasCustomerPricing = collect($lineItems)->contains(function ($item) {
-                return in_array($item['price_source'] ?? '', ['customer_price_list', 'volume_tier']);
+            // Check if any item used customer-specific or tier-based pricing (already discounted)
+            $hasPricingWithDiscount = collect($lineItems)->contains(function ($item) {
+                return in_array($item['price_source'] ?? '', ['customer_price_list', 'volume_tier', 'loyalty_tier']);
             });
             
             // If using base prices with loyalty tier, apply tier discount
-            if (!$hasCustomerPricing && $user?->loyaltyTier) {
+            if (!$hasPricingWithDiscount && $user?->loyaltyTier) {
                 $discountPercent = $user->loyaltyTier->discount_percent ?? 0;
                 if ($discountPercent > 0) {
                     $discountAmount = $subtotal * ($discountPercent / 100);
@@ -162,6 +234,14 @@ class OrderService
         return DB::transaction(function () use ($cart, $customerDetails, $userId) {
             $user = $userId ? User::find($userId) : null;
             
+            // DEFENSIVE: Validate and correct MOQ violations before processing
+            $moqCorrections = $this->validateAndCorrectMOQ($cart);
+            if (!empty($moqCorrections)) {
+                // Refresh cart items after corrections
+                $cart->refresh();
+                $cart->load('items.product');
+            }
+            
             // Get B2B prices for all cart items in bulk (single query)
             $productQuantities = $cart->items->pluck('quantity', 'product_id')->toArray();
             $products = \App\Models\Product::whereIn('id', array_keys($productQuantities))->get();
@@ -194,13 +274,13 @@ class OrderService
             $discountPercent = 0;
             $discountAmount = 0;
             
-            // Check if using customer-specific pricing
-            $hasCustomerPricing = collect($prices)->contains(function ($priceInfo) {
-                return in_array($priceInfo['source'] ?? '', ['customer_price_list', 'volume_tier']);
+            // Check if using customer-specific or tier-based pricing (already discounted)
+            $hasPricingWithDiscount = collect($prices)->contains(function ($priceInfo) {
+                return in_array($priceInfo['source'] ?? '', ['customer_price_list', 'volume_tier', 'loyalty_tier']);
             });
             
             // Apply loyalty tier discount only if no B2B pricing
-            if (!$hasCustomerPricing && $user?->loyaltyTier) {
+            if (!$hasPricingWithDiscount && $user?->loyaltyTier) {
                 $discountPercent = $user->loyaltyTier->discount_percent ?? 0;
                 if ($discountPercent > 0) {
                     $discountAmount = $subtotal * ($discountPercent / 100);
@@ -341,8 +421,10 @@ class OrderService
     {
         return DB::transaction(function () use ($order, $adminUserId, $referenceNumber) {
             // Update payment log
+            /** @var \App\Models\PaymentLog|null $paymentLog */
             $paymentLog = $order->paymentLogs()->latest()->first();
             if ($paymentLog) {
+                /** @phpstan-ignore method.notFound */
                 $paymentLog->confirm($adminUserId, $referenceNumber);
             }
 

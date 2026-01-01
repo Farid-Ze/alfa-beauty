@@ -1,0 +1,444 @@
+# Proposal MVP - PT. Alfa Beauty
+## Platform E-commerce B2B Hair Care
+
+> **Tanggal**: 31 Desember 2025  
+> **Disusun Untuk**: Owner PT. Alfa Beauty
+
+---
+
+## 🎯 Ringkasan Eksekutif
+
+Platform **Alfa Beauty** adalah solusi e-commerce B2B yang dirancang khusus untuk industri hair care di Indonesia. MVP ini menghadirkan **4 fitur inti**:
+
+| Fitur | Tujuan Bisnis |
+|-------|---------------|
+| **Loyalty Points** | Meningkatkan retensi pelanggan |
+| **Testimonials** | Membangun kepercayaan dan social proof |
+| **B2B Pricing** | Fleksibilitas harga untuk mitra bisnis |
+| **Multi-bahasa** | Jangkauan pasar yang lebih luas |
+
+---
+
+## 🏆 4 Fitur Inti
+
+### 1. Loyalty Points (Retensi)
+
+```mermaid
+flowchart LR
+    A[Belanja] --> B[+Points]
+    B --> C{Total Spend}
+    C -->|5jt| D[🥈 Silver 5%]
+    C -->|15jt| E[🥇 Gold 10%]
+    D --> F[Repeat Order]
+    E --> F
+```
+
+| Tier | Syarat | Benefit |
+|------|--------|---------|
+| Bronze | Default | Earn 1 point/Rp 10.000 |
+| Silver | Spend Rp 5jt | +5% discount |
+| Gold | Spend Rp 15jt | +10% discount |
+
+---
+
+### 2. Testimonials (Trust) - Fase 2
+
+```mermaid
+flowchart LR
+    A[Order Selesai] --> B[Minta Review]
+    B --> C[Submit + 50 Points]
+    C --> D[Tampil di Website]
+    D --> E[Trust ↑]
+    E --> F[Conversion ↑]
+```
+
+| Komponen | Deskripsi |
+|----------|-----------|
+| Rating | ⭐⭐⭐⭐⭐ (1-5 bintang) |
+| Review Text | Ulasan tertulis |
+| Verified Badge | Label "Verified Buyer" |
+| Bonus | +50 Points per review |
+
+---
+
+### 3. B2B Pricing (Margin)
+
+```mermaid
+flowchart TD
+    A[User Login] --> B{Tipe Customer?}
+    B -->|Regular| C[Harga Retail]
+    B -->|B2B| D[Load Customer Price]
+    D --> E{Quantity?}
+    E -->|6+| F[Volume Discount 5%]
+    E -->|12+| G[Volume Discount 10%]
+    F --> H[Total + Savings Display]
+    G --> H
+```
+
+| Hierarki Harga | Prioritas |
+|----------------|-----------|
+| Harga Kontrak Customer | 🔴 Tertinggi |
+| Diskon Volume (6+, 12+) | 🟡 Menengah |
+| Diskon Loyalty Tier | 🟢 Standar |
+| Harga Retail | ⚪ Fallback |
+
+---
+
+### 4. Multi-bahasa (Ekspansi)
+
+```mermaid
+flowchart LR
+    A[🌐 Visit] --> B{Cookie?}
+    B -->|ID| C[Indonesia]
+    B -->|EN| D[English]
+    B -->|None| E[Default: ID]
+    C --> F[Website]
+    D --> F
+    E --> F
+```
+
+| Bahasa | Status | Target Market |
+|--------|--------|---------------|
+| 🇮🇩 Indonesia | ✅ Ready | Primary |
+| 🇬🇧 English | ✅ Ready | Malaysia, Singapore |
+
+---
+
+## 1. 🏆 Fitur Poin (Loyalty Program) - Detail
+
+### Nilai Bisnis
+- **Meningkatkan repeat purchase** hingga 30%
+- **Customer lifetime value** lebih tinggi
+- **Data pelanggan** untuk marketing yang lebih targeted
+
+### User Flow
+
+```mermaid
+flowchart TD
+    A[👤 User Mendaftar] --> B[Otomatis Bronze Tier]
+    B --> C[🛒 Melakukan Pembelian]
+    C --> D{Total Spend?}
+    D -->|< Rp 5jt| E[Bronze - No Discount]
+    D -->|Rp 5-15jt| F[Silver - 5% Discount]
+    D -->|> Rp 15jt| G[Gold - 10% Discount]
+    E --> H[+1 Point/Rp 10.000]
+    F --> H
+    G --> H
+    H --> I[Akumulasi Poin]
+    I --> J[Gunakan di Pembelian Berikutnya]
+    J --> C
+```
+
+### Tampilan UI
+
+**Di Navigasi (Header)**:
+```
+┌─────────────────────────────────────────────────────────────┐
+│  🛒 Alfa Beauty    [Produk ▼]   [Brand ▼]    🔍             │
+│                                      ┌──────────────────┐   │
+│                                      │ 🥇 Gold Member   │   │
+│                                      │ ⭐ 1,250 Points  │   │
+│                                      └──────────────────┘   │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**Di Halaman Checkout**:
+```
+┌─────────────────────────────────────────────────────────────┐
+│  RINGKASAN BELANJA                                          │
+│  Subtotal              Rp 1.500.000                         │
+│  🥇 Diskon Gold (10%)  - Rp   150.000                       │
+│  TOTAL                 Rp 1.350.000                         │
+│  ⭐ +150 Points akan ditambahkan ke akun Anda               │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Perhitungan Bisnis - Loyalty
+
+| Asumsi | Nilai |
+|--------|-------|
+| Jumlah member aktif | 100 member |
+| Rata-rata belanja/bulan | Rp 2.000.000 |
+| Repeat rate tanpa loyalty | 40% |
+| Repeat rate dengan loyalty | 65% |
+
+```
+PROYEKSI REVENUE BULANAN
+━━━━━━━━━━━━━━━━━━━━━━━━
+Tanpa Loyalty:
+100 × Rp 2.000.000 × 40% = Rp 80.000.000/bulan
+
+Dengan Loyalty:
+100 × Rp 2.000.000 × 65% = Rp 130.000.000/bulan
+
+PENINGKATAN: +Rp 50.000.000/bulan (+62.5%)
+
+Cost diskon rata-rata: 5% × Rp 130.000.000 = Rp 6.500.000
+NET GAIN: Rp 43.500.000/bulan
+```
+
+---
+
+## 2. ⭐ Fitur Testimonials - Detail
+
+### Nilai Bisnis
+- **Social proof** meningkatkan kepercayaan
+- **Conversion rate** naik 15-25%
+- **User-generated content** gratis
+
+### User Flow
+
+```mermaid
+flowchart TD
+    A[📦 Order Delivered] --> B[Email/Notifikasi Review]
+    B --> C{User Submit Review?}
+    C -->|Ya| D[Input Rating ⭐]
+    D --> E[Tulis Ulasan]
+    E --> F[Submit]
+    F --> G[Admin Moderasi]
+    G -->|Approve| H[Tampil di Website]
+    G -->|Reject| I[User Notifikasi]
+    H --> J[+50 Bonus Points]
+    C -->|Tidak| K[Reminder 7 Hari]
+    K --> C
+```
+
+### Tampilan UI
+
+**Di Halaman Produk**:
+```
+┌─────────────────────────────────────────────────────────────┐
+│  ULASAN PEMBELI (48 ulasan)  ⭐⭐⭐⭐⭐ 4.8                    │
+│  ─────────────────────────────────                          │
+│  ⭐⭐⭐⭐⭐  "Hasil bagus untuk rambut kering"               │
+│  👤 Salon Indah • Verified Buyer • 15 Des 2025              │
+│                                                             │
+│  ⭐⭐⭐⭐☆  "Packaging rapi, sudah repeat order 3x"          │
+│  👤 Beauty Store Malang • Verified Buyer • 10 Des 2025      │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Perhitungan Bisnis - Testimonials
+
+| Metrik | Tanpa Testimoni | Dengan Testimoni |
+|--------|-----------------|------------------|
+| Visitors/bulan | 5,000 | 5,000 |
+| Conversion rate | 2% | 3% |
+| Orders/bulan | 100 | 150 |
+| AOV | Rp 1.500.000 | Rp 1.500.000 |
+| **Revenue** | **Rp 150.000.000** | **Rp 225.000.000** |
+
+```
+PENINGKATAN REVENUE: +Rp 75.000.000/bulan (+50%)
+```
+
+---
+
+## 3. 💼 Fitur B2B Pricing - Detail
+
+### Nilai Bisnis
+- **Margin lebih tinggi** untuk volume besar
+- **Customer lock-in** dengan harga kontrak
+- **Fleksibilitas** negosiasi mitra
+
+### User Flow
+
+```mermaid
+flowchart TD
+    A[👤 User Login] --> B{Tipe User?}
+    B -->|Guest/Retail| C[Lihat Harga Retail]
+    B -->|B2B Customer| D[Load Customer Price List]
+    D --> E[Harga Khusus Ditampilkan]
+    E --> F[Pilih Quantity]
+    F --> G{Quantity >= Tier?}
+    G -->|Ya| H[Apply Volume Discount]
+    G -->|Tidak| I[Harga Customer Tetap]
+    H --> J[Tampilkan Total + Savings]
+    I --> J
+    C --> K[Pilih Quantity]
+    K --> L[Harga Retail Tetap]
+    J --> M[Add to Cart]
+    L --> M
+```
+
+### Tampilan UI
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  📦 SHAMPOO PROFESIONAL 1000ML                              │
+│                                                             │
+│  Harga Retail: Rp 150.000                                   │
+│  💼 HARGA KHUSUS ANDA: Rp 127.500 (Diskon 15%)             │
+│                                                             │
+│  📦 DISKON VOLUME                                           │
+│  • 1-5 pcs    → Rp 127.500/pcs                             │
+│  • 6-11 pcs   → Rp 121.125/pcs (5% extra)                  │
+│  • 12+ pcs    → Rp 114.750/pcs (10% extra)                 │
+│                                                             │
+│  Quantity: [ 12 ]    Total: Rp 1.377.000                   │
+│  💰 ANDA HEMAT: Rp 423.000 (23.5%)                         │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Perhitungan Bisnis - B2B Pricing
+
+**Skenario: 20 Customer B2B Aktif**
+
+| Customer Tier | Jumlah | Avg Order | Diskon | Revenue/bulan |
+|---------------|--------|-----------|--------|---------------|
+| Regular | 10 | Rp 3.000.000 | 10% | Rp 27.000.000 |
+| VIP | 6 | Rp 8.000.000 | 15% | Rp 40.800.000 |
+| Enterprise | 4 | Rp 20.000.000 | 20% | Rp 64.000.000 |
+| **Total** | **20** | | | **Rp 131.800.000** |
+
+```
+MARGIN ANALYSIS
+━━━━━━━━━━━━━━━
+Gross Margin Retail: 40%
+Gross Margin B2B (after discount): 25-30%
+
+Revenue B2B: Rp 131.800.000
+Gross Profit: Rp 131.800.000 × 27.5% = Rp 36.245.000/bulan
+
+B2B Trade-off: Margin lebih kecil, VOLUME lebih besar, CHURN lebih rendah
+```
+
+---
+
+## 4. 🌐 Fitur Multi-Bahasa - Detail
+
+### Nilai Bisnis
+- **Ekspansi pasar** ke Malaysia, Singapura
+- **Professional image** brand internasional
+- **Inklusif** untuk expat dan bisnis asing
+
+### User Flow
+
+```mermaid
+flowchart TD
+    A[🌐 User Buka Website] --> B{Cookie Bahasa?}
+    B -->|Ada| C[Load Bahasa dari Cookie]
+    B -->|Tidak Ada| D[Default: Indonesia]
+    C --> E[Tampilkan Website]
+    D --> E
+    E --> F{User Klik Switch?}
+    F -->|🇮🇩| G[Set Cookie: ID]
+    F -->|🇬🇧| H[Set Cookie: EN]
+    G --> I[Reload dengan Bahasa Baru]
+    H --> I
+    I --> E
+```
+
+### Cakupan Terjemahan
+
+| Bagian | ID | EN | Status |
+|--------|----|----|--------|
+| Navigasi | ✅ | ✅ | Ready |
+| Produk | ✅ | ✅ | Ready |
+| Checkout | ✅ | ✅ | Ready |
+| Auth | ✅ | ✅ | Ready |
+| Notifikasi | ✅ | ✅ | Ready |
+
+### Perhitungan Bisnis - Internationalization
+
+```
+TARGET MARKET EXPANSION
+━━━━━━━━━━━━━━━━━━━━━━━
+Current (Indonesia Only):
+- Active customers: 100
+- Monthly revenue: Rp 200.000.000
+
+Year 1 Projection (dengan Multi-language):
+- Indonesia: 120 customers (+20%)
+- Malaysia: 15 customers
+- Singapore: 10 customers
+- Total: 145 customers
+
+Revenue Projection:
+- Indonesia: Rp 240.000.000
+- Malaysia: Rp 45.000.000 (15 × Rp 3.000.000)
+- Singapore: Rp 50.000.000 (10 × Rp 5.000.000)
+- TOTAL: Rp 335.000.000/bulan
+
+GROWTH: +67.5%
+```
+
+---
+
+## 📊 Ringkasan Perhitungan Bisnis
+
+### Total Revenue Projection
+
+| Fitur | Current | With Feature | Growth |
+|-------|---------|--------------|--------|
+| Loyalty | Rp 80M | Rp 130M | +62.5% |
+| Testimonials | Rp 150M | Rp 225M | +50% |
+| B2B Pricing | Rp 100M | Rp 132M | +32% |
+| Multi-lang | Rp 200M | Rp 335M | +67.5% |
+
+### Combined Impact (12 Bulan)
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  PROYEKSI KEUANGAN TAHUN PERTAMA                           │
+│  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━                              │
+│                                                             │
+│  Current Monthly Revenue:        Rp   200.000.000          │
+│  Projected Monthly Revenue:      Rp   400.000.000          │
+│  Monthly Growth:                 +Rp  200.000.000          │
+│                                                             │
+│  ─────────────────────────────────────────────────         │
+│  ANNUAL PROJECTION                                          │
+│                                                             │
+│  Year 0 (tanpa fitur):          Rp 2.400.000.000          │
+│  Year 1 (dengan fitur):         Rp 4.800.000.000          │
+│                                                             │
+│  ADDITIONAL REVENUE:            Rp 2.400.000.000/tahun     │
+│  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━         │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Break-Even Analysis
+
+| Item | Biaya |
+|------|-------|
+| Development (one-time) | Rp 50.000.000 |
+| Server & Infra/bulan | Rp 2.000.000 |
+| Maintenance/bulan | Rp 5.000.000 |
+| **Monthly Cost** | **Rp 7.000.000** |
+
+```
+Break-Even Calculation:
+━━━━━━━━━━━━━━━━━━━━━━
+Development cost: Rp 50.000.000
+Monthly additional profit: Rp 50.000.000 (conservative)
+Monthly overhead: Rp 7.000.000
+Net monthly gain: Rp 43.000.000
+
+BREAK-EVEN: 50.000.000 ÷ 43.000.000 = 1.2 bulan
+```
+
+---
+
+## ✅ Status & Timeline
+
+| Fitur | Status | Timeline |
+|-------|--------|----------|
+| Loyalty Points | ✅ Siap | Live |
+| B2B Pricing | ✅ Siap | Live |
+| Multi-bahasa | ✅ Siap | Live |
+| Testimonials | 🔄 Fase 2 | 2-3 minggu |
+
+---
+
+## 📞 Rekomendasi Langkah Selanjutnya
+
+1. **Minggu 1**: Demo live platform ke owner
+2. **Minggu 2**: Feedback dan revisi minor
+3. **Minggu 3-4**: Develop modul Testimonials
+4. **Minggu 5**: Soft launch dengan 10 mitra
+5. **Minggu 6+**: Full launch + marketing
+
+---
+
+> **Kesimpulan**: MVP Alfa Beauty memiliki fondasi kuat dengan proyeksi ROI break-even dalam **1.2 bulan**. Dengan 4 fitur inti yang terintegrasi, platform siap memberikan pertumbuhan revenue hingga **100%** dalam tahun pertama.

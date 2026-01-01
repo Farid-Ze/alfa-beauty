@@ -56,20 +56,34 @@ class CartDrawer extends Component
     public function incrementItem(int $itemId)
     {
         $cart = $this->cartService->getCart();
-        $item = $cart?->items()->find($itemId);
+        $item = $cart?->items()->with('product')->find($itemId);
         
         if ($item) {
-            $this->updateQuantity($itemId, $item->quantity + 1);
+            // Respect product's order_increment (default to 1)
+            $increment = $item->product->order_increment ?? 1;
+            $this->updateQuantity($itemId, $item->quantity + $increment);
         }
     }
 
     public function decrementItem(int $itemId)
     {
         $cart = $this->cartService->getCart();
-        $item = $cart?->items()->find($itemId);
+        $item = $cart?->items()->with('product')->find($itemId);
         
-        if ($item && $item->quantity > 1) {
-            $this->updateQuantity($itemId, $item->quantity - 1);
+        if ($item) {
+            // Respect product's order_increment and min_order_qty
+            $increment = $item->product->order_increment ?? 1;
+            $minQty = $item->product->min_order_qty ?? 1;
+            $newQty = $item->quantity - $increment;
+            
+            // Don't go below minimum order quantity
+            if ($newQty < $minQty) {
+                // If decrementing would go below MOQ, remove item instead
+                // This prevents stuck items that can't be decreased
+                $this->removeItem($itemId);
+            } else {
+                $this->updateQuantity($itemId, $newQty);
+            }
         }
     }
 }

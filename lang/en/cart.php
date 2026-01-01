@@ -12,6 +12,7 @@ return [
     
     // Cart Item
     'qty' => 'Qty',
+    'min_qty_reached' => 'Minimum quantity reached',
     'item_added' => ':name added to cart',
     'item_removed' => 'Item removed from cart',
     'cart_updated' => 'Cart updated',

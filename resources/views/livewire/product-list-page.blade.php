@@ -96,7 +96,11 @@
             <!-- Grid -->
             <div wire:loading.class="opacity-50" class="products-grid">
                 @forelse($products as $product)
-                    <livewire:product-card :product="$product" :key="$product->id" />
+                    <livewire:product-card 
+                        :product="$product" 
+                        :price-info="$prices[$product->id] ?? null" 
+                        :key="$product->id" 
+                    />
                 @empty
                     <div class="no-products-message">
                         <p style="font-family: var(--font-display); font-size: 1.5rem; margin-bottom: var(--space-sm);">{{ __('products.no_products') }}</p>

@@ -11,6 +11,19 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * 
  * Defines B2B payment terms for customers.
  * Supports Net 30, Net 60, credit limits, and early payment discounts.
+ *
+ * @property int $id
+ * @property int $user_id
+ * @property string $term_type
+ * @property float|null $credit_limit
+ * @property float|null $credit_used
+ * @property float|null $early_payment_discount
+ * @property bool $is_approved
+ * @property \Carbon\Carbon|null $approved_at
+ * @property \Carbon\Carbon|null $created_at
+ * @property \Carbon\Carbon|null $updated_at
+ * @property-read float $available_credit
+ * @property-read User $user
  */
 class CustomerPaymentTerm extends Model
 {
@@ -36,9 +49,9 @@ class CustomerPaymentTerm extends Model
     ];
 
     protected $casts = [
-        'credit_limit' => 'decimal:2',
-        'current_balance' => 'decimal:2',
-        'early_payment_discount_percent' => 'decimal:2',
+        'credit_limit' => 'float',
+        'current_balance' => 'float',
+        'early_payment_discount_percent' => 'float',
         'early_payment_days' => 'integer',
         'is_approved' => 'boolean',
         'approved_at' => 'datetime',

@@ -76,18 +76,25 @@
                                 <span class="cart-item-pts">+{{ $product->points * $item['quantity'] }} {{ __('general.pts') }}</span>
                             </div>
                             <div class="cart-item-actions">
+                                @php
+                                    $orderIncrement = $product->order_increment ?? 1;
+                                    $minOrderQty = $product->min_order_qty ?? 1;
+                                    $canDecrement = $item['quantity'] > $minOrderQty;
+                                @endphp
                                 <div class="cart-item-qty">
                                     <button 
                                         wire:click="decrementItem({{ $item['id'] }})"
                                         wire:loading.attr="disabled"
                                         wire:target="decrementItem"
-                                        {{ $item['quantity'] <= 1 ? 'disabled' : '' }}
+                                        {{ !$canDecrement ? 'disabled' : '' }}
+                                        title="{{ !$canDecrement ? __('cart.min_qty_reached') : '-' . $orderIncrement }}"
                                     >−</button>
                                     <span>{{ $item['quantity'] }}</span>
                                     <button 
                                         wire:click="incrementItem({{ $item['id'] }})"
                                         wire:loading.attr="disabled"
                                         wire:target="incrementItem"
+                                        title="+{{ $orderIncrement }}"
                                     >+</button>
                                 </div>
                                 <button 

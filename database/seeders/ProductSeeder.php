@@ -28,6 +28,16 @@ class ProductSeeder extends Seeder
                 'is_active' => true,
                 'is_featured' => true,
                 'images' => ['products/product-serum.png'],
+                // Weight & Dimensions (50ml bottle)
+                'weight_grams' => 85,
+                'length_mm' => 35,
+                'width_mm' => 35,
+                'height_mm' => 120,
+                // UoM & MOQ
+                'selling_unit' => 'bottle',
+                'units_per_case' => 12,
+                'min_order_qty' => 1,
+                'order_increment' => 1,
             ],
             // Alfaparf Milano - Treatment (Keratin)
             [
@@ -44,6 +54,15 @@ class ProductSeeder extends Seeder
                 'is_active' => true,
                 'is_featured' => true,
                 'images' => ['products/product-keratin.png'],
+                // Weight & Dimensions (500ml bottle)
+                'weight_grams' => 580,
+                'length_mm' => 70,
+                'width_mm' => 70,
+                'height_mm' => 200,
+                'selling_unit' => 'bottle',
+                'units_per_case' => 6,
+                'min_order_qty' => 1,
+                'order_increment' => 1,
             ],
             // Salsa Cosmetic - Care (Serum)
             [
@@ -60,6 +79,15 @@ class ProductSeeder extends Seeder
                 'is_active' => true,
                 'is_featured' => true,
                 'images' => ['products/product-serum.png'],
+                // Weight & Dimensions (1000ml bottle)
+                'weight_grams' => 1100,
+                'length_mm' => 80,
+                'width_mm' => 50,
+                'height_mm' => 250,
+                'selling_unit' => 'bottle',
+                'units_per_case' => 12,
+                'min_order_qty' => 3,
+                'order_increment' => 3,
             ],
             // Farmavita - Colouring (Color)
             [
@@ -76,6 +104,15 @@ class ProductSeeder extends Seeder
                 'is_active' => true,
                 'is_featured' => false,
                 'images' => ['products/product-color.png'],
+                // Weight & Dimensions (60ml tube)
+                'weight_grams' => 75,
+                'length_mm' => 40,
+                'width_mm' => 40,
+                'height_mm' => 150,
+                'selling_unit' => 'tube',
+                'units_per_case' => 24,
+                'min_order_qty' => 6,
+                'order_increment' => 6,
             ],
             // Montibello - Care (Serum)
             [
@@ -92,6 +129,15 @@ class ProductSeeder extends Seeder
                 'is_active' => true,
                 'is_featured' => true,
                 'images' => ['products/alfaparf-serum.png'],
+                // Weight & Dimensions (100ml bottle)
+                'weight_grams' => 140,
+                'length_mm' => 40,
+                'width_mm' => 40,
+                'height_mm' => 140,
+                'selling_unit' => 'bottle',
+                'units_per_case' => 12,
+                'min_order_qty' => 1,
+                'order_increment' => 1,
             ],
             // Salsa Cosmetic - Treatment (Keratin)
             [
@@ -108,6 +154,15 @@ class ProductSeeder extends Seeder
                 'is_active' => true,
                 'is_featured' => true,
                 'images' => ['products/product-keratin.png'],
+                // Weight & Dimensions (250ml bottle)
+                'weight_grams' => 290,
+                'length_mm' => 55,
+                'width_mm' => 55,
+                'height_mm' => 160,
+                'selling_unit' => 'bottle',
+                'units_per_case' => 12,
+                'min_order_qty' => 2,
+                'order_increment' => 1,
             ],
             // Alfaparf Milano - Color
             [
@@ -124,6 +179,15 @@ class ProductSeeder extends Seeder
                 'is_active' => true,
                 'is_featured' => false,
                 'images' => ['products/product-color.png'],
+                // Weight & Dimensions (60ml tube)
+                'weight_grams' => 80,
+                'length_mm' => 45,
+                'width_mm' => 45,
+                'height_mm' => 155,
+                'selling_unit' => 'tube',
+                'units_per_case' => 24,
+                'min_order_qty' => 6,
+                'order_increment' => 6,
             ],
             // Farmavita - Care (Serum)
             [
@@ -140,6 +204,15 @@ class ProductSeeder extends Seeder
                 'is_active' => true,
                 'is_featured' => true,
                 'images' => ['products/product-serum.png'],
+                // Weight & Dimensions (350ml bottle)
+                'weight_grams' => 400,
+                'length_mm' => 60,
+                'width_mm' => 45,
+                'height_mm' => 180,
+                'selling_unit' => 'bottle',
+                'units_per_case' => 12,
+                'min_order_qty' => 2,
+                'order_increment' => 1,
             ],
         ];
 

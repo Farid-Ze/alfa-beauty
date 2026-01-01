@@ -39,14 +39,14 @@ class CartService
         }
 
         if (Auth::check()) {
-            $this->cart = Cart::with('items.product.brand')
+            $this->cart = Cart::with(['items.product.brand', 'items.product.priceTiers'])
                 ->where('user_id', Auth::id())
                 ->latest()
                 ->first();
         } else {
             $sessionId = Cookie::get(self::COOKIE_NAME);
             if ($sessionId) {
-                $this->cart = Cart::with('items.product.brand')
+                $this->cart = Cart::with(['items.product.brand', 'items.product.priceTiers'])
                     ->where('session_id', $sessionId)
                     ->latest()
                     ->first();
@@ -84,38 +84,37 @@ class CartService
      * 
      * PERFORMANCE: This accepts quantity directly, so adding 500 units
      * is a single database operation, not 500 loops.
+     * 
+     * VALIDATION: Enforces min_order_qty and order_increment rules.
      *
      * @param int $productId
      * @param int $quantity Amount to add (can be any positive number)
      * @return CartItem
+     * @throws \InvalidArgumentException If quantity doesn't meet MOQ/increment rules
      */
     public function addItem(int $productId, int $quantity = 1): CartItem
     {
         $cart = $this->getOrCreateCart();
         $product = Product::findOrFail($productId);
 
+        // Get existing quantity if any
+        $existingItem = $cart->items()->where('product_id', $productId)->first();
+        $existingQty = $existingItem?->quantity ?? 0;
+        $newTotalQty = $existingQty + $quantity;
+
+        // Validate MOQ and increment
+        $validatedQty = $this->validateAndAdjustQuantity($product, $newTotalQty);
+
         // Get current B2B price for this user
         $priceInfo = $this->pricingService->getPrice(
             $product,
             Auth::user(),
-            $quantity
+            $validatedQty
         );
 
-        $existingItem = $cart->items()->where('product_id', $productId)->first();
-
         if ($existingItem) {
-            // Update quantity with single query (not loop!)
-            $newQuantity = $existingItem->quantity + $quantity;
-            
-            // Recalculate price for new quantity (might hit different tier)
-            $priceInfo = $this->pricingService->getPrice(
-                $product,
-                Auth::user(),
-                $newQuantity
-            );
-            
             $existingItem->update([
-                'quantity' => $newQuantity,
+                'quantity' => $validatedQty,
                 'price_at_add' => $priceInfo['price'],
             ]);
             
@@ -124,13 +123,39 @@ class CartService
 
         return $cart->items()->create([
             'product_id' => $productId,
-            'quantity' => $quantity,
-            'price_at_add' => $priceInfo['price'], // Store B2B price
+            'quantity' => $validatedQty,
+            'price_at_add' => $priceInfo['price'],
         ]);
     }
 
     /**
+     * Validate and adjust quantity to meet MOQ and increment rules.
+     *
+     * @param Product $product
+     * @param int $requestedQty
+     * @return int Adjusted quantity
+     */
+    protected function validateAndAdjustQuantity(Product $product, int $requestedQty): int
+    {
+        $minQty = $product->min_order_qty ?? 1;
+        $increment = $product->order_increment ?? 1;
+
+        // Ensure at least minimum
+        $qty = max($minQty, $requestedQty);
+
+        // Round up to nearest valid increment
+        if ($increment > 1) {
+            $overMin = $qty - $minQty;
+            $qty = $minQty + (int) ceil($overMin / $increment) * $increment;
+        }
+
+        return $qty;
+    }
+
+    /**
      * Set exact quantity for a cart item.
+     * 
+     * VALIDATION: Enforces min_order_qty and order_increment rules.
      * 
      * @param int $itemId
      * @param int $quantity New quantity (0 = remove)
@@ -150,15 +175,19 @@ class CartService
             return null;
         }
 
+        // Validate and adjust quantity for MOQ/increment
+        $product = $item->product;
+        $validatedQty = $this->validateAndAdjustQuantity($product, $quantity);
+
         // Recalculate price for new quantity (might hit different tier)
         $priceInfo = $this->pricingService->getPrice(
-            $item->product,
+            $product,
             Auth::user(),
-            $quantity
+            $validatedQty
         );
 
         $item->update([
-            'quantity' => $quantity,
+            'quantity' => $validatedQty,
             'price_at_add' => $priceInfo['price'],
         ]);
         
@@ -412,5 +441,89 @@ class CartService
             'subtotal' => $subtotal,
             'item_count' => $cart->items->sum('quantity'),
         ];
+    }
+
+    /**
+     * Validate that all cart items meet MOQ and increment requirements.
+     * 
+     * Returns array of violations (empty = all valid).
+     * Also auto-adjusts quantities if $autoFix is true.
+     * 
+     * @param bool $autoFix If true, automatically adjusts invalid quantities
+     * @return array Array of MOQ/increment violations
+     */
+    public function validateMOQ(bool $autoFix = false): array
+    {
+        $cart = $this->getCart();
+        if (!$cart || $cart->items->isEmpty()) return [];
+
+        $violations = [];
+        $productIds = $cart->items->pluck('product_id')->toArray();
+        $products = Product::whereIn('id', $productIds)->get()->keyBy('id');
+
+        foreach ($cart->items as $item) {
+            $product = $products[$item->product_id] ?? null;
+            if (!$product) continue;
+
+            $minQty = $product->min_order_qty ?? 1;
+            $increment = $product->order_increment ?? 1;
+            $currentQty = $item->quantity;
+            
+            // Check MOQ
+            if ($currentQty < $minQty) {
+                $violations[] = [
+                    'type' => 'moq',
+                    'item_id' => $item->id,
+                    'product_id' => $product->id,
+                    'product_name' => $product->name,
+                    'current_qty' => $currentQty,
+                    'min_qty' => $minQty,
+                    'corrected_qty' => $minQty,
+                ];
+                
+                if ($autoFix) {
+                    $item->update(['quantity' => $minQty]);
+                }
+                continue;
+            }
+
+            // Check increment (quantity should be in steps of order_increment from min_order_qty)
+            $adjustedFromMin = $currentQty - $minQty;
+            if ($increment > 1 && $adjustedFromMin % $increment !== 0) {
+                // Round up to next valid increment
+                $correctedQty = $minQty + (intdiv($adjustedFromMin, $increment) + 1) * $increment;
+                
+                $violations[] = [
+                    'type' => 'increment',
+                    'item_id' => $item->id,
+                    'product_id' => $product->id,
+                    'product_name' => $product->name,
+                    'current_qty' => $currentQty,
+                    'increment' => $increment,
+                    'corrected_qty' => $correctedQty,
+                ];
+                
+                if ($autoFix) {
+                    // Also recalculate price for new quantity
+                    $priceInfo = $this->pricingService->getPrice($product, Auth::user(), $correctedQty);
+                    $item->update([
+                        'quantity' => $correctedQty,
+                        'price_at_add' => $priceInfo['price'],
+                    ]);
+                }
+            }
+        }
+
+        return $violations;
+    }
+
+    /**
+     * Check if cart passes all MOQ requirements.
+     * 
+     * @return bool
+     */
+    public function hasValidMOQ(): bool
+    {
+        return empty($this->validateMOQ(false));
     }
 }

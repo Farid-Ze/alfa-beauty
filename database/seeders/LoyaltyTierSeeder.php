@@ -31,6 +31,9 @@ class LoyaltyTierSeeder extends Seeder
                 'point_multiplier' => 1.0, // Now guests can earn points (1x base rate)
                 'free_shipping' => false,
                 'badge_color' => '#6B7280', // Gray
+                'period_type' => 'yearly',
+                'tier_validity_months' => 12,
+                'auto_downgrade' => false, // Guest never downgrades
             ],
             [
                 'name' => 'Silver',
@@ -40,6 +43,9 @@ class LoyaltyTierSeeder extends Seeder
                 'point_multiplier' => 1.0,
                 'free_shipping' => false, // Requires min order Rp 2.5 juta
                 'badge_color' => '#94A3B8', // Silver
+                'period_type' => 'yearly',
+                'tier_validity_months' => 12,
+                'auto_downgrade' => true,
             ],
             [
                 'name' => 'Gold',
@@ -49,17 +55,22 @@ class LoyaltyTierSeeder extends Seeder
                 'point_multiplier' => 1.5,
                 'free_shipping' => true, // Always free
                 'badge_color' => '#C9A962', // Gold
+                'period_type' => 'yearly',
+                'tier_validity_months' => 12,
+                'auto_downgrade' => true,
             ],
-            // Future: Platinum tier for high-value clients
-            // [
-            //     'name' => 'Platinum',
-            //     'slug' => 'platinum',
-            //     'min_spend' => 75000000, // Rp 75 juta/year
-            //     'discount_percent' => 12,
-            //     'point_multiplier' => 2.0,
-            //     'free_shipping' => true,
-            //     'badge_color' => '#E5E4E2', // Platinum
-            // ],
+            [
+                'name' => 'Platinum',
+                'slug' => 'platinum',
+                'min_spend' => 75000000, // Rp 75 juta/year - high-value clients
+                'discount_percent' => 12,
+                'point_multiplier' => 2.0,
+                'free_shipping' => true,
+                'badge_color' => '#E5E4E2', // Platinum
+                'period_type' => 'yearly',
+                'tier_validity_months' => 12,
+                'auto_downgrade' => true,
+            ],
         ];
 
         foreach ($tiers as $tier) {

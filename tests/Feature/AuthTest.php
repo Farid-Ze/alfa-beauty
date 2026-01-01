@@ -2,10 +2,13 @@
 
 namespace Tests\Feature;
 
+use App\Livewire\LoginPage;
+use App\Livewire\RegisterPage;
 use App\Models\User;
 use App\Models\LoyaltyTier;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
+use Livewire\Livewire;
 use Tests\TestCase;
 
 class AuthTest extends TestCase
@@ -38,16 +41,15 @@ class AuthTest extends TestCase
 
     public function test_user_can_register_with_valid_data(): void
     {
-        $response = $this->post('/register', [
-            'name' => 'Test User',
-            'company_name' => 'Test Company',
-            'email' => 'test@example.com',
-            'phone' => '08123456789',
-            'password' => 'password123',
-            'password_confirmation' => 'password123',
-        ]);
-
-        $response->assertRedirect('/');
+        Livewire::test(RegisterPage::class)
+            ->set('name', 'Test User')
+            ->set('company_name', 'Test Company')
+            ->set('email', 'test@example.com')
+            ->set('phone', '08123456789')
+            ->set('password', 'password123')
+            ->set('password_confirmation', 'password123')
+            ->call('register')
+            ->assertRedirect('/');
         
         $this->assertDatabaseHas('users', [
             'email' => 'test@example.com',
@@ -63,16 +65,15 @@ class AuthTest extends TestCase
             'email' => 'existing@example.com',
         ]);
 
-        $response = $this->post('/register', [
-            'name' => 'Test User',
-            'company_name' => 'Test Company',
-            'email' => 'existing@example.com',
-            'phone' => '08123456789',
-            'password' => 'password123',
-            'password_confirmation' => 'password123',
-        ]);
-
-        $response->assertSessionHasErrors('email');
+        Livewire::test(RegisterPage::class)
+            ->set('name', 'Test User')
+            ->set('company_name', 'Test Company')
+            ->set('email', 'existing@example.com')
+            ->set('phone', '08123456789')
+            ->set('password', 'password123')
+            ->set('password_confirmation', 'password123')
+            ->call('register')
+            ->assertHasErrors(['email']);
     }
 
     public function test_user_can_login_with_valid_credentials(): void
@@ -82,12 +83,12 @@ class AuthTest extends TestCase
             'password' => Hash::make('password123'),
         ]);
 
-        $response = $this->post('/login', [
-            'email' => 'test@example.com',
-            'password' => 'password123',
-        ]);
+        Livewire::test(LoginPage::class)
+            ->set('email', 'test@example.com')
+            ->set('password', 'password123')
+            ->call('login')
+            ->assertRedirect('/');
 
-        $response->assertRedirect('/');
         $this->assertAuthenticatedAs($user);
     }
 
@@ -98,12 +99,12 @@ class AuthTest extends TestCase
             'password' => Hash::make('password123'),
         ]);
 
-        $response = $this->post('/login', [
-            'email' => 'test@example.com',
-            'password' => 'wrongpassword',
-        ]);
+        Livewire::test(LoginPage::class)
+            ->set('email', 'test@example.com')
+            ->set('password', 'wrongpassword')
+            ->call('login')
+            ->assertHasErrors(['email']);
 
-        $response->assertSessionHasErrors('email');
         $this->assertGuest();
     }
 
@@ -124,14 +125,14 @@ class AuthTest extends TestCase
     {
         $guestTier = LoyaltyTier::where('slug', 'guest')->first();
 
-        $response = $this->post('/register', [
-            'name' => 'Test User',
-            'company_name' => 'Test Company',
-            'email' => 'test@example.com',
-            'phone' => '08123456789',
-            'password' => 'password123',
-            'password_confirmation' => 'password123',
-        ]);
+        Livewire::test(RegisterPage::class)
+            ->set('name', 'Test User')
+            ->set('company_name', 'Test Company')
+            ->set('email', 'test@example.com')
+            ->set('phone', '08123456789')
+            ->set('password', 'password123')
+            ->set('password_confirmation', 'password123')
+            ->call('register');
 
         $user = User::where('email', 'test@example.com')->first();
         

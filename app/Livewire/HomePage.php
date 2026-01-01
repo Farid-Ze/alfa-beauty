@@ -3,7 +3,7 @@
 namespace App\Livewire;
 
 use App\Models\Brand;
-use App\Models\Product;
+use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 
 class HomePage extends Component
@@ -12,19 +12,21 @@ class HomePage extends Component
 
     public function mount()
     {
+        // OPTIMIZED: Single query with withCount and subquery for stock sum
+        // Eliminates N+1 problem (was 8+ queries, now 1 query)
         $this->brands = Brand::whereRaw('is_featured = true')
             ->orderBy('sort_order')
             ->take(4)
-            ->get()
-            ->map(function ($brand) {
-                $brand->product_count = Product::where('brand_id', $brand->id)
+            ->withCount(['products as product_count' => function ($query) {
+                $query->whereRaw('is_active = true');
+            }])
+            ->addSelect([
+                'total_stock' => DB::table('products')
+                    ->selectRaw('COALESCE(SUM(stock), 0)')
+                    ->whereColumn('brand_id', 'brands.id')
                     ->whereRaw('is_active = true')
-                    ->count();
-                $brand->total_stock = Product::where('brand_id', $brand->id)
-                    ->whereRaw('is_active = true')
-                    ->sum('stock');
-                return $brand;
-            });
+            ])
+            ->get();
     }
 
     public function render()

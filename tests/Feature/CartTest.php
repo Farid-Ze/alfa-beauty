@@ -105,14 +105,25 @@ class CartTest extends TestCase
 
     public function test_can_clear_cart(): void
     {
-        $products = Product::take(3)->get();
+        // Use products with min_order_qty = 1 to avoid MOQ adjustments affecting count
+        $products = Product::where('min_order_qty', 1)->take(3)->get();
+        
+        // Ensure we have enough products for the test
+        if ($products->count() < 3) {
+            $products = Product::take(3)->get();
+        }
+        
         $cartService = app(CartService::class);
 
+        // Track expected total considering MOQ adjustments
+        $expectedTotal = 0;
         foreach ($products as $product) {
+            $minQty = $product->min_order_qty ?? 1;
             $cartService->addItem($product->id, 1);
+            $expectedTotal += max(1, $minQty); // MOQ adjustment
         }
 
-        $this->assertEquals(3, $cartService->getItemCount());
+        $this->assertEquals($expectedTotal, $cartService->getItemCount());
 
         $cartService->clearCart();
 

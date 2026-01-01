@@ -3,6 +3,7 @@
 namespace App\Livewire;
 
 use App\Services\CartService;
+use App\Services\PricingService;
 use Livewire\Component;
 use Illuminate\Support\Facades\Auth;
 use App\Models\OrderItem;
@@ -10,10 +11,12 @@ use App\Models\OrderItem;
 class BuyItAgain extends Component
 {
     protected CartService $cartService;
+    protected PricingService $pricingService;
 
-    public function boot(CartService $cartService)
+    public function boot(CartService $cartService, PricingService $pricingService)
     {
         $this->cartService = $cartService;
+        $this->pricingService = $pricingService;
     }
 
     public function addToCart($productId)
@@ -36,22 +39,32 @@ class BuyItAgain extends Component
     {
         // Get unique products from user's completed orders
         $purchasedProducts = collect();
+        $pricesMap = [];
         
         if (Auth::check()) {
             $purchasedProducts = OrderItem::whereHas('order', function ($query) {
                 $query->where('user_id', Auth::id())
                       ->where('status', 'completed');
             })
-            ->with('product.brand')
+            ->with(['product.brand', 'product.priceTiers'])
             ->get()
             ->pluck('product')
             ->filter() // Remove nulls if product was deleted
             ->unique('id')
             ->take(6); // Limit to 6 products for display
+            
+            // Fetch all prices in one batch using getBulkPrices
+            if ($purchasedProducts->isNotEmpty()) {
+                $pricesMap = $this->pricingService->getBulkPrices(
+                    $purchasedProducts,
+                    Auth::user()
+                );
+            }
         }
         
         return view('livewire.buy-it-again', [
-            'products' => $purchasedProducts
+            'products' => $purchasedProducts,
+            'prices' => $pricesMap,
         ]);
     }
 }

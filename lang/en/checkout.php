@@ -55,4 +55,5 @@ return [
     'order_error' => 'Failed to place order',
     'whatsapp_error' => 'Failed to process WhatsApp checkout',
     'stock_warning' => 'Some products have insufficient stock',
+    'moq_adjusted' => 'Order quantities have been adjusted to meet minimum requirements for: :products',
 ];

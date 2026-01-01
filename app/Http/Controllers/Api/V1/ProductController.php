@@ -16,7 +16,7 @@ class ProductController extends Controller
     public function index(Request $request): AnonymousResourceCollection
     {
         $query = Product::query()
-            ->with(['brand', 'category'])
+            ->with(['brand', 'category', 'priceTiers'])
             ->whereRaw('is_active = true');
 
         // Search
@@ -77,7 +77,7 @@ class ProductController extends Controller
      */
     public function show(string $slug): ProductResource
     {
-        $product = Product::with(['brand', 'category'])
+        $product = Product::with(['brand', 'category', 'priceTiers'])
             ->where('slug', $slug)
             ->whereRaw('is_active = true')
             ->firstOrFail();
