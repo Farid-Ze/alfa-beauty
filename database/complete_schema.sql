@@ -9,7 +9,48 @@
 -- 
 -- Total: 33 Migrations consolidated
 -- Generated: 2026-01-01
+-- Updated: 2026-01-02 (Added DROP statements for clean reset)
 -- ============================================================
+
+-- ============================================================
+-- SECTION 0: CLEAN RESET (Drop existing tables in reverse order)
+-- ============================================================
+-- WARNING: This will DELETE ALL DATA! Only run on fresh database.
+
+DROP TABLE IF EXISTS return_items CASCADE;
+DROP TABLE IF EXISTS order_returns CASCADE;
+DROP TABLE IF EXISTS order_cancellations CASCADE;
+DROP TABLE IF EXISTS order_discounts CASCADE;
+DROP TABLE IF EXISTS discount_rules CASCADE;
+DROP TABLE IF EXISTS reviews CASCADE;
+DROP TABLE IF EXISTS point_transactions CASCADE;
+DROP TABLE IF EXISTS user_loyalty_periods CASCADE;
+DROP TABLE IF EXISTS payment_logs CASCADE;
+DROP TABLE IF EXISTS batch_inventories CASCADE;
+DROP TABLE IF EXISTS customer_price_lists CASCADE;
+DROP TABLE IF EXISTS customer_payment_terms CASCADE;
+DROP TABLE IF EXISTS customer_order_settings CASCADE;
+DROP TABLE IF EXISTS product_moq_overrides CASCADE;
+DROP TABLE IF EXISTS product_price_tiers CASCADE;
+DROP TABLE IF EXISTS cart_items CASCADE;
+DROP TABLE IF EXISTS carts CASCADE;
+DROP TABLE IF EXISTS order_items CASCADE;
+DROP TABLE IF EXISTS orders CASCADE;
+DROP TABLE IF EXISTS products CASCADE;
+DROP TABLE IF EXISTS categories CASCADE;
+DROP TABLE IF EXISTS brands CASCADE;
+DROP TABLE IF EXISTS notifications CASCADE;
+DROP TABLE IF EXISTS failed_jobs CASCADE;
+DROP TABLE IF EXISTS job_batches CASCADE;
+DROP TABLE IF EXISTS jobs CASCADE;
+DROP TABLE IF EXISTS cache_locks CASCADE;
+DROP TABLE IF EXISTS cache CASCADE;
+DROP TABLE IF EXISTS sessions CASCADE;
+DROP TABLE IF EXISTS password_reset_tokens CASCADE;
+DROP TABLE IF EXISTS users CASCADE;
+DROP TABLE IF EXISTS suppliers CASCADE;
+DROP TABLE IF EXISTS loyalty_tiers CASCADE;
+DROP TABLE IF EXISTS migrations CASCADE;
 
 -- ============================================================
 -- SECTION 1: MIGRATIONS TRACKING
