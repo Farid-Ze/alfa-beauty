@@ -17,7 +17,7 @@
 
 CREATE TABLE IF NOT EXISTS migrations (
     id SERIAL PRIMARY KEY,
-    migration VARCHAR(255) NOT NULL,
+    migration VARCHAR(255) UNIQUE NOT NULL,
     batch INTEGER NOT NULL
 );
 
@@ -443,7 +443,7 @@ CREATE TABLE IF NOT EXISTS return_items (
     order_return_id BIGINT NOT NULL REFERENCES order_returns(id) ON DELETE CASCADE,
     order_item_id BIGINT NOT NULL REFERENCES order_items(id) ON DELETE CASCADE,
     product_id BIGINT NOT NULL REFERENCES products(id) ON DELETE CASCADE,
-    batch_inventory_id BIGINT NULL REFERENCES batch_inventory(id) ON DELETE SET NULL,
+    batch_inventory_id BIGINT NULL, -- FK added after batch_inventory table created
     quantity_requested INTEGER NOT NULL,
     quantity_received INTEGER DEFAULT 0,
     quantity_approved INTEGER DEFAULT 0,
@@ -529,7 +529,7 @@ CREATE INDEX IF NOT EXISTS payment_logs_reference_index ON payment_logs(referenc
 -- SECTION 15: BATCH INVENTORY (FEFO/BPOM Tracking)
 -- ============================================================
 
-CREATE TABLE IF NOT EXISTS batch_inventory (
+CREATE TABLE IF NOT EXISTS batch_inventories (
     id BIGSERIAL PRIMARY KEY,
     product_id BIGINT NOT NULL REFERENCES products(id) ON DELETE CASCADE,
     supplier_id BIGINT NULL REFERENCES suppliers(id) ON DELETE SET NULL,
@@ -546,26 +546,32 @@ CREATE TABLE IF NOT EXISTS batch_inventory (
     manufactured_at DATE NULL,
     expires_at DATE NOT NULL,
     received_at DATE NULL,
-    received_date DATE NULL,
     is_active BOOLEAN DEFAULT TRUE,
     is_expired BOOLEAN DEFAULT FALSE,
     is_near_expiry BOOLEAN DEFAULT FALSE,
     near_expiry_discount_percent DECIMAL(5,2) DEFAULT 0,
     warehouse_id BIGINT NULL,
     supplier_name VARCHAR(255) NULL,
-    country_of_origin VARCHAR(255) DEFAULT 'IT',
+    country_of_origin VARCHAR(255) NULL,
     notes TEXT NULL,
     metadata JSONB NULL,
-    deleted_at TIMESTAMP NULL,
-    created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW()
+    deleted_at TIMESTAMPTZ NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Batch Inventory Indexes (from migration 2025_12_30_000002)
-CREATE INDEX IF NOT EXISTS batch_inventory_product_expiry_index ON batch_inventory(product_id, expires_at);
-CREATE INDEX IF NOT EXISTS batch_inventory_batch_expiry_index ON batch_inventory(batch_number, expires_at);
-CREATE INDEX IF NOT EXISTS batch_inventory_near_expiry_index ON batch_inventory(is_near_expiry);
-CREATE UNIQUE INDEX IF NOT EXISTS batch_inventory_product_batch_unique ON batch_inventory(product_id, batch_number);
+-- Batch Inventories Indexes (from migration 2025_12_30_000002)
+CREATE INDEX IF NOT EXISTS batch_inventories_product_expiry_index ON batch_inventories(product_id, expires_at);
+CREATE INDEX IF NOT EXISTS batch_inventories_batch_expiry_index ON batch_inventories(batch_number, expires_at);
+CREATE INDEX IF NOT EXISTS batch_inventories_near_expiry_index ON batch_inventories(is_near_expiry);
+CREATE UNIQUE INDEX IF NOT EXISTS batch_inventories_product_batch_unique ON batch_inventories(product_id, batch_number);
+
+-- Add FK constraint for return_items.batch_inventory_id (deferred from SECTION 12)
+ALTER TABLE return_items 
+    ADD CONSTRAINT fk_return_items_batch_inventory 
+    FOREIGN KEY (batch_inventory_id) 
+    REFERENCES batch_inventories(id) 
+    ON DELETE SET NULL;
 
 -- ============================================================
 -- SECTION 16: CUSTOMER PRICE LISTS (B2B Custom Pricing)
@@ -732,13 +738,32 @@ CREATE TABLE IF NOT EXISTS reviews (
     is_verified BOOLEAN DEFAULT FALSE,
     is_approved BOOLEAN DEFAULT FALSE,
     points_awarded BOOLEAN DEFAULT FALSE,
-    approved_at TIMESTAMP NULL,
+    approved_at TIMESTAMPTZ NULL,
     approved_by BIGINT NULL REFERENCES users(id) ON DELETE SET NULL,
-    created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW()
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    -- Unique constraint: one review per user per product (from migration 2026_01_01_200000)
+    UNIQUE (user_id, product_id)
 );
 CREATE INDEX IF NOT EXISTS reviews_product_approved_index ON reviews(product_id, is_approved);
 CREATE INDEX IF NOT EXISTS reviews_user_index ON reviews(user_id);
+
+-- ============================================================
+-- SECTION 19B: ADDITIONAL PERFORMANCE INDEXES (from migration 2026_01_01_300000)
+-- ============================================================
+
+-- Product name search optimization
+CREATE INDEX IF NOT EXISTS idx_products_search_name ON products(is_active, name);
+
+-- Order queries by user
+CREATE INDEX IF NOT EXISTS idx_orders_user_created ON orders(user_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_orders_user_status ON orders(user_id, status);
+
+-- Cart items cleanup queries
+CREATE INDEX IF NOT EXISTS idx_cart_items_created ON cart_items(created_at);
+
+-- Point transactions by user
+CREATE INDEX IF NOT EXISTS idx_point_transactions_user ON point_transactions(user_id, created_at);
 
 -- ============================================================
 -- SECTION 20: DEFAULT SEED DATA
@@ -770,14 +795,14 @@ ON CONFLICT (slug) DO NOTHING;
 
 -- Default Products
 INSERT INTO products (sku, name, slug, brand_id, category_id, base_price, stock, description, is_halal, bpom_number, is_active, is_featured, images, min_order_qty, order_increment, weight_grams, selling_unit, units_per_case) VALUES
-('AFP-SDL-001', 'Semi Di Lino Diamond Illuminating Serum', 'semi-di-lino-diamond-serum', 2, 4, 350000, 50, 'Serum untuk rambut berkilau seperti berlian', TRUE, 'NA18201200123', TRUE, TRUE, '["products/product-aurum-serum.webp"]', 1, 1, 45, 'bottle', 12),
-('AFP-LIS-001', 'Lisse Design Keratin Therapy', 'lisse-design-keratin-therapy', 2, 2, 850000, 25, 'Keratin treatment untuk rambut lurus sempurna', TRUE, 'NA18201200124', TRUE, TRUE, '["products/product-lumiere-keratin.webp"]', 1, 1, 500, 'bottle', 6),
-('SLS-SHP-001', 'Salsa Professional Keratin Shampoo', 'salsa-keratin-shampoo', 1, 4, 125000, 100, 'Shampoo keratin profesional buatan Indonesia', TRUE, 'NA18201200001', TRUE, TRUE, '["products/product-aurum-shampoo.webp"]', 6, 6, 250, 'bottle', 24),
-('FMV-COL-001', 'Farmavita Suprema Color', 'farmavita-suprema-color', 3, 1, 95000, 200, 'Hair color professional dari Italia', FALSE, 'NA18201200200', TRUE, FALSE, '["products/product-luminoso-color.webp"]', 12, 6, 60, 'tube', 36),
-('MTB-OLE-001', 'Montibello Oleo Intense', 'montibello-oleo-intense', 4, 4, 275000, 45, 'Premium oil treatment from Spain', TRUE, 'NA18201200301', TRUE, TRUE, '["products/product-alfaparf-shampoo.webp"]', 1, 1, 100, 'bottle', 12),
-('SLS-TRT-001', 'Salsa Keratin Treatment', 'salsa-keratin-treatment', 1, 2, 185000, 75, 'Professional keratin smoothing treatment', TRUE, 'NA18201200002', TRUE, TRUE, '["products/product-salsa-keratin.webp"]', 1, 1, 500, 'bottle', 6),
-('AFP-COL-001', 'Alfaparf Evolution Color', 'alfaparf-evolution-color', 2, 1, 125000, 150, 'Premium permanent hair color', TRUE, 'NA18201200125', TRUE, FALSE, '["products/product-luminoso-color.webp"]', 6, 6, 60, 'tube', 36),
-('FMV-SHA-001', 'Farmavita HD Life Shampoo', 'farmavita-hd-life-shampoo', 3, 4, 165000, 80, 'Sulfate-free professional shampoo', TRUE, 'NA18201200201', TRUE, TRUE, '["products/product-lumiere-conditioner.webp"]', 1, 1, 250, 'bottle', 24)
+('AFP-SDL-001', 'Semi Di Lino Diamond Illuminating Serum', 'semi-di-lino-diamond-serum', 2, 4, 350000, 50, 'Serum untuk rambut berkilau seperti berlian', TRUE, 'NA18201200123', TRUE, TRUE, '["products/product-aurum-serum.webp"]'::jsonb, 1, 1, 45, 'bottle', 12),
+('AFP-LIS-001', 'Lisse Design Keratin Therapy', 'lisse-design-keratin-therapy', 2, 2, 850000, 25, 'Keratin treatment untuk rambut lurus sempurna', TRUE, 'NA18201200124', TRUE, TRUE, '["products/product-lumiere-keratin.webp"]'::jsonb, 1, 1, 500, 'bottle', 6),
+('SLS-SHP-001', 'Salsa Professional Keratin Shampoo', 'salsa-keratin-shampoo', 1, 4, 125000, 100, 'Shampoo keratin profesional buatan Indonesia', TRUE, 'NA18201200001', TRUE, TRUE, '["products/product-aurum-shampoo.webp"]'::jsonb, 6, 6, 250, 'bottle', 24),
+('FMV-COL-001', 'Farmavita Suprema Color', 'farmavita-suprema-color', 3, 1, 95000, 200, 'Hair color professional dari Italia', FALSE, 'NA18201200200', TRUE, FALSE, '["products/product-luminoso-color.webp"]'::jsonb, 12, 6, 60, 'tube', 36),
+('MTB-OLE-001', 'Montibello Oleo Intense', 'montibello-oleo-intense', 4, 4, 275000, 45, 'Premium oil treatment from Spain', TRUE, 'NA18201200301', TRUE, TRUE, '["products/product-alfaparf-shampoo.webp"]'::jsonb, 1, 1, 100, 'bottle', 12),
+('SLS-TRT-001', 'Salsa Keratin Treatment', 'salsa-keratin-treatment', 1, 2, 185000, 75, 'Professional keratin smoothing treatment', TRUE, 'NA18201200002', TRUE, TRUE, '["products/product-salsa-keratin.webp"]'::jsonb, 1, 1, 500, 'bottle', 6),
+('AFP-COL-001', 'Alfaparf Evolution Color', 'alfaparf-evolution-color', 2, 1, 125000, 150, 'Premium permanent hair color', TRUE, 'NA18201200125', TRUE, FALSE, '["products/product-luminoso-color.webp"]'::jsonb, 6, 6, 60, 'tube', 36),
+('FMV-SHA-001', 'Farmavita HD Life Shampoo', 'farmavita-hd-life-shampoo', 3, 4, 165000, 80, 'Sulfate-free professional shampoo', TRUE, 'NA18201200201', TRUE, TRUE, '["products/product-lumiere-conditioner.webp"]'::jsonb, 1, 1, 250, 'bottle', 24)
 ON CONFLICT (sku) DO NOTHING;
 
 -- Sample Price Tiers (Volume Discounts)
@@ -827,8 +852,10 @@ INSERT INTO migrations (migration, batch) VALUES
 ('2026_01_01_000008_add_customer_moq_configuration', 1),
 ('2026_01_01_000009_add_customer_price_list_constraint', 1),
 ('2026_01_01_000010_add_product_performance_indexes', 1),
-('2026_01_01_100000_create_reviews_table', 1)
-ON CONFLICT DO NOTHING;
+('2026_01_01_100000_create_reviews_table', 1),
+('2026_01_01_200000_add_unique_constraint_to_reviews', 1),
+('2026_01_01_300000_add_additional_performance_indexes', 1)
+ON CONFLICT (migration) DO NOTHING;
 
 -- ============================================================
 -- DONE!

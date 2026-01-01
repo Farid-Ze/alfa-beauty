@@ -1,11 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services;
 
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\User;
 use App\Models\CustomerOrderSetting;
+use Illuminate\Support\Facades\Log;
 
 /**
  * ShippingService
@@ -44,43 +47,65 @@ class ShippingService
      */
     public function calculateShippingCost(Order $order, ?string $zone = null): array
     {
-        $zone = $zone ?? $this->getDefaultZone();
-        $zones = $this->getShippingZones();
-        
-        $totalWeight = $this->calculateOrderWeight($order);
-        $zoneConfig = $zones[$zone] ?? $zones[$this->getDefaultZone()] ?? [
-            'name' => 'Default',
-            'base_rate' => 15000,
-            'weight_rate' => 5000,
-            'min_weight' => 1,
-        ];
-        
-        // Convert grams to kg (round up)
-        $weightKg = ceil($totalWeight / 1000);
-        $weightKg = max($weightKg, $zoneConfig['min_weight']);
-        
-        // Calculate base + additional weight cost
-        $baseCost = $zoneConfig['base_rate'];
-        $additionalWeight = max(0, $weightKg - $zoneConfig['min_weight']);
-        $additionalCost = $additionalWeight * $zoneConfig['weight_rate'];
-        
-        $totalCost = $baseCost + $additionalCost;
-        
-        // Check for free shipping eligibility
-        $freeShipping = $this->checkFreeShippingEligibility($order);
-        
-        return [
-            'weight_grams' => $totalWeight,
-            'weight_kg' => $weightKg,
-            'zone' => $zone,
-            'zone_name' => $zoneConfig['name'],
-            'base_cost' => $baseCost,
-            'additional_cost' => $additionalCost,
-            'total_cost' => $freeShipping['eligible'] ? 0 : $totalCost,
-            'original_cost' => $totalCost,
-            'free_shipping' => $freeShipping['eligible'],
-            'free_shipping_reason' => $freeShipping['reason'] ?? null,
-        ];
+        try {
+            $zone = $zone ?? $this->getDefaultZone();
+            $zones = $this->getShippingZones();
+            
+            $totalWeight = $this->calculateOrderWeight($order);
+            $zoneConfig = $zones[$zone] ?? $zones[$this->getDefaultZone()] ?? [
+                'name' => 'Default',
+                'base_rate' => 15000,
+                'weight_rate' => 5000,
+                'min_weight' => 1,
+            ];
+            
+            // Convert grams to kg (round up)
+            $weightKg = ceil($totalWeight / 1000);
+            $weightKg = max($weightKg, $zoneConfig['min_weight']);
+            
+            // Calculate base + additional weight cost
+            $baseCost = $zoneConfig['base_rate'];
+            $additionalWeight = max(0, $weightKg - $zoneConfig['min_weight']);
+            $additionalCost = $additionalWeight * $zoneConfig['weight_rate'];
+            
+            $totalCost = $baseCost + $additionalCost;
+            
+            // Check for free shipping eligibility
+            $freeShipping = $this->checkFreeShippingEligibility($order);
+            
+            return [
+                'weight_grams' => $totalWeight,
+                'weight_kg' => $weightKg,
+                'zone' => $zone,
+                'zone_name' => $zoneConfig['name'],
+                'base_cost' => $baseCost,
+                'additional_cost' => $additionalCost,
+                'total_cost' => $freeShipping['eligible'] ? 0 : $totalCost,
+                'original_cost' => $totalCost,
+                'free_shipping' => $freeShipping['eligible'],
+                'free_shipping_reason' => $freeShipping['reason'] ?? null,
+            ];
+        } catch (\Exception $e) {
+            Log::error('ShippingService::calculateShippingCost failed', [
+                'order_id' => $order->id ?? null,
+                'zone' => $zone,
+                'error' => $e->getMessage(),
+            ]);
+            
+            // Return safe defaults
+            return [
+                'weight_grams' => 0,
+                'weight_kg' => 1,
+                'zone' => $zone ?? 'default',
+                'zone_name' => 'Default',
+                'base_cost' => 15000,
+                'additional_cost' => 0,
+                'total_cost' => 15000,
+                'original_cost' => 15000,
+                'free_shipping' => false,
+                'free_shipping_reason' => null,
+            ];
+        }
     }
 
     /**
@@ -194,17 +219,28 @@ class ShippingService
      */
     public function applyShippingToOrder(Order $order, ?string $zone = null): Order
     {
-        if (!$zone && $order->shipping_address) {
-            $zone = $this->detectZoneFromAddress($order->shipping_address);
+        try {
+            if (!$zone && $order->shipping_address) {
+                $zone = $this->detectZoneFromAddress($order->shipping_address);
+            }
+            
+            $shippingData = $this->calculateShippingCost($order, $zone ?? 'jabodetabek');
+            
+            $order->shipping_cost = $shippingData['total_cost'];
+            $order->shipping_method = $shippingData['zone_name'];
+            $order->save();
+            
+            return $order;
+        } catch (\Exception $e) {
+            Log::error('ShippingService::applyShippingToOrder failed', [
+                'order_id' => $order->id ?? null,
+                'zone' => $zone,
+                'error' => $e->getMessage(),
+            ]);
+            
+            // Return order unchanged
+            return $order;
         }
-        
-        $shippingData = $this->calculateShippingCost($order, $zone ?? 'jabodetabek');
-        
-        $order->shipping_cost = $shippingData['total_cost'];
-        $order->shipping_method = $shippingData['zone_name'];
-        $order->save();
-        
-        return $order;
     }
 
     /**

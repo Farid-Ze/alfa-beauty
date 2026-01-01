@@ -1,8 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services;
 
 use App\Models\Order;
+use Illuminate\Support\Facades\Log;
 
 /**
  * TaxService
@@ -39,7 +42,7 @@ class TaxService
     ): array {
         $taxRate = $taxRate ?? $this->getDefaultTaxRate();
         $lineTotal = $unitPrice * $quantity;
-        
+
         if ($isTaxInclusive) {
             // Price already includes tax, extract tax amount
             $subtotalBeforeTax = $lineTotal / (1 + ($taxRate / 100));
@@ -49,7 +52,7 @@ class TaxService
             $subtotalBeforeTax = $lineTotal;
             $taxAmount = $subtotalBeforeTax * ($taxRate / 100);
         }
-        
+
         return [
             'unit_price_before_tax' => $isTaxInclusive ? $unitPrice / (1 + ($taxRate / 100)) : $unitPrice,
             'subtotal_before_tax' => round($subtotalBeforeTax, 2),
@@ -65,28 +68,43 @@ class TaxService
      */
     public function calculateOrderTax(Order $order): array
     {
-        $subtotalBeforeTax = 0;
-        $totalTaxAmount = 0;
-        
-        /** @phpstan-ignore-next-line */
-        foreach ($order->items as $item) {
-            $itemTax = $this->calculateItemTax(
-                (float) ($item->unit_price ?? 0),
-                (int) ($item->quantity ?? 0),
-                (float) ($item->tax_rate ?? $this->getDefaultTaxRate()),
-                (bool) $order->is_tax_inclusive
-            );
-            
-            $subtotalBeforeTax += $itemTax['subtotal_before_tax'];
-            $totalTaxAmount += $itemTax['tax_amount'];
+        try {
+            $subtotalBeforeTax = 0;
+            $totalTaxAmount = 0;
+
+            /** @phpstan-ignore-next-line */
+            foreach ($order->items as $item) {
+                $itemTax = $this->calculateItemTax(
+                    (float) ($item->unit_price ?? 0),
+                    (int) ($item->quantity ?? 0),
+                    (float) ($item->tax_rate ?? $this->getDefaultTaxRate()),
+                    (bool) $order->is_tax_inclusive
+                );
+
+                $subtotalBeforeTax += $itemTax['subtotal_before_tax'];
+                $totalTaxAmount += $itemTax['tax_amount'];
+            }
+
+            return [
+                'subtotal_before_tax' => round($subtotalBeforeTax, 2),
+                'tax_rate' => (float) ($order->tax_rate ?? $this->getDefaultTaxRate()),
+                'tax_amount' => round($totalTaxAmount, 2),
+                'subtotal_after_tax' => round($subtotalBeforeTax + $totalTaxAmount, 2),
+            ];
+        } catch (\Exception $e) {
+            Log::error('TaxService::calculateOrderTax failed', [
+                'order_id' => $order->id ?? null,
+                'error' => $e->getMessage(),
+            ]);
+
+            // Return safe defaults
+            return [
+                'subtotal_before_tax' => 0,
+                'tax_rate' => $this->getDefaultTaxRate(),
+                'tax_amount' => 0,
+                'subtotal_after_tax' => 0,
+            ];
         }
-        
-        return [
-            'subtotal_before_tax' => round($subtotalBeforeTax, 2),
-            'tax_rate' => (float) ($order->tax_rate ?? $this->getDefaultTaxRate()),
-            'tax_amount' => round($totalTaxAmount, 2),
-            'subtotal_after_tax' => round($subtotalBeforeTax + $totalTaxAmount, 2),
-        ];
     }
 
     /**
@@ -95,44 +113,54 @@ class TaxService
      */
     public function applyTaxToOrder(Order $order, bool $save = true): Order
     {
-        $taxData = $this->calculateOrderTax($order);
-        
-        /** @phpstan-ignore-next-line */
-        $order->subtotal_before_tax = $taxData['subtotal_before_tax'];
-        /** @phpstan-ignore-next-line */
-        $order->tax_amount = $taxData['tax_amount'];
-        
-        // Update items with tax breakdown
-        foreach ($order->items as $item) {
-            $itemTax = $this->calculateItemTax(
-                (float) $item->unit_price,
-                (int) $item->quantity,
-                (float) ($order->tax_rate ?? $this->getDefaultTaxRate()),
-                (bool) $order->is_tax_inclusive
-            );
-            
+        try {
+            $taxData = $this->calculateOrderTax($order);
+
             /** @phpstan-ignore-next-line */
-            $item->unit_price_before_tax = $itemTax['unit_price_before_tax'];
+            $order->subtotal_before_tax = $taxData['subtotal_before_tax'];
             /** @phpstan-ignore-next-line */
-            $item->subtotal_before_tax = $itemTax['subtotal_before_tax'];
-            /** @phpstan-ignore-next-line */
-            $item->tax_rate = $itemTax['tax_rate'];
-            /** @phpstan-ignore-next-line */
-            $item->tax_amount = $itemTax['tax_amount'];
-            
-            if ($save) {
-                $item->save();
+            $order->tax_amount = $taxData['tax_amount'];
+
+            // Update items with tax breakdown
+            foreach ($order->items as $item) {
+                $itemTax = $this->calculateItemTax(
+                    (float) $item->unit_price,
+                    (int) $item->quantity,
+                    (float) ($order->tax_rate ?? $this->getDefaultTaxRate()),
+                    (bool) $order->is_tax_inclusive
+                );
+
+                /** @phpstan-ignore-next-line */
+                $item->unit_price_before_tax = $itemTax['unit_price_before_tax'];
+                /** @phpstan-ignore-next-line */
+                $item->subtotal_before_tax = $itemTax['subtotal_before_tax'];
+                /** @phpstan-ignore-next-line */
+                $item->tax_rate = $itemTax['tax_rate'];
+                /** @phpstan-ignore-next-line */
+                $item->tax_amount = $itemTax['tax_amount'];
+
+                if ($save) {
+                    $item->save();
+                }
             }
+
+            // Recalculate total
+            $order->recalculateTotals();
+
+            if ($save) {
+                $order->save();
+            }
+
+            return $order;
+        } catch (\Exception $e) {
+            Log::error('TaxService::applyTaxToOrder failed', [
+                'order_id' => $order->id ?? null,
+                'error' => $e->getMessage(),
+            ]);
+
+            // Return order unchanged to prevent data corruption
+            return $order;
         }
-        
-        // Recalculate total
-        $order->recalculateTotals();
-        
-        if ($save) {
-            $order->save();
-        }
-        
-        return $order;
     }
 
     /**
@@ -146,7 +174,7 @@ class TaxService
         // - Export orders
         // - Certain business entity types
         // - Special agreements
-        
+
         return false;
     }
 

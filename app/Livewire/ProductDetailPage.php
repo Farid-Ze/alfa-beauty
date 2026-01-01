@@ -103,7 +103,7 @@ class ProductDetailPage extends Component
 
         $this->currentPrice = $priceInfo['price'];
         $this->originalPrice = $priceInfo['original_price'] ?? $product->base_price;
-        $this->discountPercent = $priceInfo['discount_percent'];
+        $this->discountPercent = $priceInfo['discount_percent'] ?? 0.0;
         $this->priceSource = $priceInfo['source'];
 
         // Get volume tiers for display (already eager loaded)

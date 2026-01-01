@@ -36,14 +36,13 @@ return new class extends Migration
             });
         }
 
-        Schema::table('batch_inventory', function (Blueprint $table) {
+        Schema::table('batch_inventories', function (Blueprint $table) {
             // Add supplier reference
             $table->foreignId('supplier_id')->nullable()->after('product_id')
                 ->constrained()->nullOnDelete();
             
             // Add receiving info
-            $table->date('received_date')->nullable()->after('expiry_date');
-            $table->decimal('purchase_price', 15, 2)->nullable()->after('received_date')
+            $table->decimal('purchase_price', 15, 2)->nullable()->after('received_at')
                 ->comment('Cost price for margin calculation');
             $table->string('purchase_order_number', 50)->nullable()->after('purchase_price');
         });
@@ -54,7 +53,7 @@ return new class extends Migration
         $driver = Schema::getConnection()->getDriverName();
         
         if ($driver !== 'sqlite') {
-            Schema::table('batch_inventory', function (Blueprint $table) {
+            Schema::table('batch_inventories', function (Blueprint $table) {
                 $table->dropUnique(['product_id', 'batch_number']);
                 $table->unique(['product_id', 'batch_number', 'supplier_id'], 'batch_product_supplier_unique');
             });
@@ -66,17 +65,16 @@ return new class extends Migration
         $driver = Schema::getConnection()->getDriverName();
         
         if ($driver !== 'sqlite') {
-            Schema::table('batch_inventory', function (Blueprint $table) {
+            Schema::table('batch_inventories', function (Blueprint $table) {
                 $table->dropUnique('batch_product_supplier_unique');
                 $table->unique(['product_id', 'batch_number']);
             });
         }
 
-        Schema::table('batch_inventory', function (Blueprint $table) {
+        Schema::table('batch_inventories', function (Blueprint $table) {
             $table->dropForeign(['supplier_id']);
             $table->dropColumn([
                 'supplier_id',
-                'received_date',
                 'purchase_price',
                 'purchase_order_number',
             ]);

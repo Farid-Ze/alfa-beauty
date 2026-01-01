@@ -9,6 +9,7 @@ use App\Models\CartItem;
 use App\Models\Product;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cookie;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 /**
@@ -29,7 +30,8 @@ class CartService
 
     public function __construct(
         protected readonly PricingService $pricingService
-    ) {}
+    ) {
+    }
 
     public function getCart(): ?Cart
     {
@@ -93,38 +95,54 @@ class CartService
      */
     public function addItem(int $productId, int $quantity = 1): CartItem
     {
-        $cart = $this->getOrCreateCart();
-        $product = Product::findOrFail($productId);
+        try {
+            $cart = $this->getOrCreateCart();
+            $product = Product::findOrFail($productId);
 
-        // Get existing quantity if any
-        $existingItem = $cart->items()->where('product_id', $productId)->first();
-        $existingQty = $existingItem?->quantity ?? 0;
-        $newTotalQty = $existingQty + $quantity;
+            // Get existing quantity if any
+            /** @var CartItem|null $existingItem */
+            $existingItem = $cart->items()->where('product_id', $productId)->first();
+            $existingQty = $existingItem?->quantity ?? 0;
+            $newTotalQty = $existingQty + $quantity;
 
-        // Validate MOQ and increment
-        $validatedQty = $this->validateAndAdjustQuantity($product, $newTotalQty);
+            // Validate MOQ and increment
+            $validatedQty = $this->validateAndAdjustQuantity($product, $newTotalQty);
 
-        // Get current B2B price for this user
-        $priceInfo = $this->pricingService->getPrice(
-            $product,
-            Auth::user(),
-            $validatedQty
-        );
+            // Get current B2B price for this user
+            $priceInfo = $this->pricingService->getPrice(
+                $product,
+                Auth::user(),
+                $validatedQty
+            );
 
-        if ($existingItem) {
-            $existingItem->update([
+            if ($existingItem) {
+                $existingItem->update([
+                    'quantity' => $validatedQty,
+                    'price_at_add' => $priceInfo['price'],
+                ]);
+
+                /** @phpstan-ignore-next-line */
+                return $existingItem->fresh();
+            }
+
+            /** @phpstan-ignore-next-line */
+            return $cart->items()->create([
+                'product_id' => $productId,
                 'quantity' => $validatedQty,
                 'price_at_add' => $priceInfo['price'],
             ]);
-            
-            return $existingItem->fresh();
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            Log::warning('CartService::addItem - Product not found', ['product_id' => $productId]);
+            throw $e;
+        } catch (\Exception $e) {
+            Log::error('CartService::addItem failed', [
+                'product_id' => $productId,
+                'quantity' => $quantity,
+                'user_id' => Auth::id(),
+                'error' => $e->getMessage(),
+            ]);
+            throw $e;
         }
-
-        return $cart->items()->create([
-            'product_id' => $productId,
-            'quantity' => $validatedQty,
-            'price_at_add' => $priceInfo['price'],
-        ]);
     }
 
     /**
@@ -162,50 +180,81 @@ class CartService
      */
     public function updateQuantity(int $itemId, int $quantity): ?CartItem
     {
-        $cart = $this->getCart();
-        if (!$cart) return null;
+        try {
+            $cart = $this->getCart();
+            if (!$cart)
+                return null;
 
-        $item = $cart->items()->find($itemId);
+            /** @var CartItem|null $item */
+            $item = $cart->items()->find($itemId);
 
-        if (!$item) return null;
+            if (!$item)
+                return null;
 
-        if ($quantity <= 0) {
-            $item->delete();
+            if ($quantity <= 0) {
+                $item->delete();
+                return null;
+            }
+
+            // Validate and adjust quantity for MOQ/increment
+            $product = $item->product;
+            $validatedQty = $this->validateAndAdjustQuantity($product, $quantity);
+
+            // Recalculate price for new quantity (might hit different tier)
+            $priceInfo = $this->pricingService->getPrice(
+                $product,
+                Auth::user(),
+                $validatedQty
+            );
+
+            $item->update([
+                'quantity' => $validatedQty,
+                'price_at_add' => $priceInfo['price'],
+            ]);
+
+            /** @phpstan-ignore-next-line */
+            return $item->fresh();
+        } catch (\Exception $e) {
+            Log::error('CartService::updateQuantity failed', [
+                'item_id' => $itemId,
+                'quantity' => $quantity,
+                'user_id' => Auth::id(),
+                'error' => $e->getMessage(),
+            ]);
             return null;
         }
-
-        // Validate and adjust quantity for MOQ/increment
-        $product = $item->product;
-        $validatedQty = $this->validateAndAdjustQuantity($product, $quantity);
-
-        // Recalculate price for new quantity (might hit different tier)
-        $priceInfo = $this->pricingService->getPrice(
-            $product,
-            Auth::user(),
-            $validatedQty
-        );
-
-        $item->update([
-            'quantity' => $validatedQty,
-            'price_at_add' => $priceInfo['price'],
-        ]);
-        
-        return $item->fresh();
     }
 
     public function removeItem(int $itemId): bool
     {
-        $cart = $this->getCart();
-        if (!$cart) return false;
+        try {
+            $cart = $this->getCart();
+            if (!$cart)
+                return false;
 
-        return (bool) $cart->items()->where('id', $itemId)->delete();
+            return (bool) $cart->items()->where('id', $itemId)->delete();
+        } catch (\Exception $e) {
+            Log::error('CartService::removeItem failed', [
+                'item_id' => $itemId,
+                'user_id' => Auth::id(),
+                'error' => $e->getMessage(),
+            ]);
+            return false;
+        }
     }
 
     public function clearCart(): void
     {
-        $cart = $this->getCart();
-        if ($cart) {
-            $cart->items()->delete();
+        try {
+            $cart = $this->getCart();
+            if ($cart) {
+                $cart->items()->delete();
+            }
+        } catch (\Exception $e) {
+            Log::error('CartService::clearCart failed', [
+                'user_id' => Auth::id(),
+                'error' => $e->getMessage(),
+            ]);
         }
     }
 
@@ -224,32 +273,41 @@ class CartService
      */
     public function getSubtotal(): float
     {
-        $cart = $this->getCart();
-        if (!$cart || $cart->items->isEmpty()) return 0;
+        try {
+            $cart = $this->getCart();
+            if (!$cart || $cart->items->isEmpty())
+                return 0;
 
-        // Build [product_id => quantity] map
-        $productQuantities = $cart->items->pluck('quantity', 'product_id')->toArray();
-        
-        // Get all products in single query
-        $products = Product::whereIn('id', array_keys($productQuantities))->get();
-        
-        // Build input for bulk pricing
-        $productsWithQty = $products->map(function ($product) use ($productQuantities) {
-            $product->quantity = $productQuantities[$product->id] ?? 1;
-            return $product;
-        });
+            // Build [product_id => quantity] map
+            $productQuantities = $cart->items->pluck('quantity', 'product_id')->toArray();
 
-        // Get all prices in single bulk operation
-        $prices = $this->pricingService->getBulkPrices($productsWithQty, Auth::user());
+            // Get all products in single query
+            $products = Product::whereIn('id', array_keys($productQuantities))->get();
 
-        // Calculate total
-        $total = 0;
-        foreach ($cart->items as $item) {
-            $unitPrice = $prices[$item->product_id]['price'] ?? $item->product->base_price;
-            $total += $item->quantity * $unitPrice;
+            // Build input for bulk pricing
+            $productsWithQty = $products->map(function ($product) use ($productQuantities) {
+                $product->quantity = $productQuantities[$product->id] ?? 1;
+                return $product;
+            });
+
+            // Get all prices in single bulk operation
+            $prices = $this->pricingService->getBulkPrices($productsWithQty, Auth::user());
+
+            // Calculate total
+            $total = 0;
+            foreach ($cart->items as $item) {
+                $unitPrice = $prices[$item->product_id]['price'] ?? $item->product->base_price;
+                $total += $item->quantity * $unitPrice;
+            }
+
+            return $total;
+        } catch (\Exception $e) {
+            Log::error('CartService::getSubtotal failed', [
+                'user_id' => Auth::id(),
+                'error' => $e->getMessage(),
+            ]);
+            return 0;
         }
-
-        return $total;
     }
 
     /**
@@ -263,7 +321,8 @@ class CartService
     public function validateStock(): array
     {
         $cart = $this->getCart();
-        if (!$cart) return [];
+        if (!$cart)
+            return [];
 
         $errors = [];
 
@@ -273,8 +332,9 @@ class CartService
 
         foreach ($cart->items as $item) {
             $product = $products[$item->product_id] ?? null;
-            if (!$product) continue;
-            
+            if (!$product)
+                continue;
+
             // Only check global stock - batch allocation happens at order time
             if ($item->quantity > $product->stock) {
                 $errors[] = [
@@ -311,17 +371,18 @@ class CartService
     public function refreshPrices(): array
     {
         $cart = $this->getCart();
-        if (!$cart || $cart->items->isEmpty()) return [];
+        if (!$cart || $cart->items->isEmpty())
+            return [];
 
         $user = Auth::user();
         $changes = [];
 
         // Build [product_id => quantity] map for bulk pricing
         $productQuantities = $cart->items->pluck('quantity', 'product_id')->toArray();
-        
+
         // Get all products in single query
         $products = Product::whereIn('id', array_keys($productQuantities))->get();
-        
+
         // Build input for bulk pricing
         $productsWithQty = $products->map(function ($product) use ($productQuantities) {
             $product->quantity = $productQuantities[$product->id] ?? 1;
@@ -334,11 +395,12 @@ class CartService
         // Update each item
         foreach ($cart->items as $item) {
             $priceInfo = $prices[$item->product_id] ?? null;
-            if (!$priceInfo) continue;
+            if (!$priceInfo)
+                continue;
 
             $currentPrice = $priceInfo['price'];
             $oldPrice = $item->price_at_add;
-            
+
             // If price differs, record the change
             if ($oldPrice !== null && abs($oldPrice - $currentPrice) > 0.01) {
                 $changes[] = [
@@ -350,7 +412,7 @@ class CartService
                     'source' => $priceInfo['source'],
                 ];
             }
-            
+
             // Always update to current B2B price
             $item->update(['price_at_add' => $currentPrice]);
         }
@@ -392,13 +454,13 @@ class CartService
         }
 
         $user = Auth::user();
-        
+
         // Build [product_id => quantity] map
         $productQuantities = $cart->items->pluck('quantity', 'product_id')->toArray();
-        
+
         // Get all products
         $products = Product::whereIn('id', array_keys($productQuantities))->get()->keyBy('id');
-        
+
         // Build input for bulk pricing
         $productsWithQty = $products->map(function ($product) use ($productQuantities) {
             $product->quantity = $productQuantities[$product->id] ?? 1;
@@ -454,7 +516,8 @@ class CartService
     public function validateMOQ(bool $autoFix = false): array
     {
         $cart = $this->getCart();
-        if (!$cart || $cart->items->isEmpty()) return [];
+        if (!$cart || $cart->items->isEmpty())
+            return [];
 
         $violations = [];
         $productIds = $cart->items->pluck('product_id')->toArray();
@@ -462,12 +525,13 @@ class CartService
 
         foreach ($cart->items as $item) {
             $product = $products[$item->product_id] ?? null;
-            if (!$product) continue;
+            if (!$product)
+                continue;
 
             $minQty = $product->min_order_qty ?? 1;
             $increment = $product->order_increment ?? 1;
             $currentQty = $item->quantity;
-            
+
             // Check MOQ
             if ($currentQty < $minQty) {
                 $violations[] = [
@@ -479,7 +543,7 @@ class CartService
                     'min_qty' => $minQty,
                     'corrected_qty' => $minQty,
                 ];
-                
+
                 if ($autoFix) {
                     $item->update(['quantity' => $minQty]);
                 }
@@ -491,7 +555,7 @@ class CartService
             if ($increment > 1 && $adjustedFromMin % $increment !== 0) {
                 // Round up to next valid increment
                 $correctedQty = $minQty + (intdiv($adjustedFromMin, $increment) + 1) * $increment;
-                
+
                 $violations[] = [
                     'type' => 'increment',
                     'item_id' => $item->id,
@@ -501,7 +565,7 @@ class CartService
                     'increment' => $increment,
                     'corrected_qty' => $correctedQty,
                 ];
-                
+
                 if ($autoFix) {
                     // Also recalculate price for new quantity
                     $priceInfo = $this->pricingService->getPrice($product, Auth::user(), $correctedQty);

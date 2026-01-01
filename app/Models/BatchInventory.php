@@ -46,7 +46,7 @@ class BatchInventory extends Model
 {
     use HasFactory, SoftDeletes;
 
-    protected $table = 'batch_inventory';
+    protected $table = 'batch_inventories';
 
     protected $fillable = [
         'product_id',
@@ -60,7 +60,6 @@ class BatchInventory extends Model
         'manufactured_at',
         'expires_at',
         'received_at',
-        'received_date',
         'cost_price',
         'purchase_price',
         'purchase_order_number',

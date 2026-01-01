@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services;
 
 use App\Models\DiscountRule;
@@ -8,6 +10,7 @@ use App\Models\OrderDiscount;
 use App\Models\Product;
 use App\Models\User;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Log;
 
 /**
  * DiscountService
@@ -29,35 +32,45 @@ class DiscountService
         Collection $items,
         float $orderTotal
     ): Collection {
-        $discounts = DiscountRule::available()
-            ->byPriority()
-            ->get();
-        
-        return $discounts->filter(function ($discount) use ($user, $items, $orderTotal) {
-            // Check if discount can be used by this user
-            if (!$discount->canBeUsedBy($user)) {
-                return false;
-            }
+        try {
+            $discounts = DiscountRule::available()
+                ->byPriority()
+                ->get();
             
-            // Check if any items match the discount targeting
-            if ($discount->product_id || $discount->brand_id || $discount->category_id) {
-                $hasMatchingItem = $items->contains(function ($item) use ($discount) {
-                    $product = $item['product'] ?? Product::find($item['product_id'] ?? null);
-                    return $product && $discount->appliesTo($product, null, 0, $item['quantity'] ?? 1);
-                });
-                
-                if (!$hasMatchingItem) {
+            return $discounts->filter(function ($discount) use ($user, $items, $orderTotal) {
+                // Check if discount can be used by this user
+                if (!$discount->canBeUsedBy($user)) {
                     return false;
                 }
-            }
+                
+                // Check if any items match the discount targeting
+                if ($discount->product_id || $discount->brand_id || $discount->category_id) {
+                    $hasMatchingItem = $items->contains(function ($item) use ($discount) {
+                        $product = $item['product'] ?? Product::find($item['product_id'] ?? null);
+                        return $product && $discount->appliesTo($product, null, 0, $item['quantity'] ?? 1);
+                    });
+                    
+                    if (!$hasMatchingItem) {
+                        return false;
+                    }
+                }
+                
+                // Check minimum order amount
+                if ($discount->min_order_amount && $orderTotal < $discount->min_order_amount) {
+                    return false;
+                }
+                
+                return true;
+            });
+        } catch (\Exception $e) {
+            Log::error('DiscountService::getApplicableDiscounts failed', [
+                'user_id' => $user->id ?? null,
+                'order_total' => $orderTotal,
+                'error' => $e->getMessage(),
+            ]);
             
-            // Check minimum order amount
-            if ($discount->min_order_amount && $orderTotal < $discount->min_order_amount) {
-                return false;
-            }
-            
-            return true;
-        });
+            return collect([]);
+        }
     }
 
     /**
@@ -69,66 +82,80 @@ class DiscountService
         Collection $items,
         float $orderTotal
     ): array {
-        $applicableDiscounts = $this->getApplicableDiscounts($user, $items, $orderTotal);
-        
-        if ($applicableDiscounts->isEmpty()) {
+        try {
+            $applicableDiscounts = $this->getApplicableDiscounts($user, $items, $orderTotal);
+            
+            if ($applicableDiscounts->isEmpty()) {
+                return [
+                    'discounts' => [],
+                    'total_discount' => 0,
+                    'final_amount' => $orderTotal,
+                ];
+            }
+            
+            // Separate stackable and non-stackable discounts
+            $stackable = $applicableDiscounts->where('is_stackable', true);
+            $nonStackable = $applicableDiscounts->where('is_stackable', false);
+            
+            // Calculate total if using best non-stackable discount
+            $bestNonStackable = null;
+            $bestNonStackableAmount = 0;
+            
+            foreach ($nonStackable as $discount) {
+                $amount = $this->calculateDiscountAmount($discount, $items, $orderTotal);
+                if ($amount > $bestNonStackableAmount) {
+                    $bestNonStackableAmount = $amount;
+                    $bestNonStackable = $discount;
+                }
+            }
+            
+            // Calculate total if using all stackable discounts
+            $stackableTotal = 0;
+            $appliedStackable = [];
+            $remainingAmount = $orderTotal;
+            
+            foreach ($stackable->sortByDesc('priority') as $discount) {
+                $amount = $this->calculateDiscountAmount($discount, $items, $remainingAmount);
+                if ($amount > 0) {
+                    $stackableTotal += $amount;
+                    $remainingAmount -= $amount;
+                    $appliedStackable[] = [
+                        'discount' => $discount,
+                        'amount' => $amount,
+                    ];
+                }
+            }
+            
+            // Determine best option
+            if ($bestNonStackableAmount >= $stackableTotal) {
+                return [
+                    'discounts' => $bestNonStackable ? [[
+                        'discount' => $bestNonStackable,
+                        'amount' => $bestNonStackableAmount,
+                    ]] : [],
+                    'total_discount' => $bestNonStackableAmount,
+                    'final_amount' => $orderTotal - $bestNonStackableAmount,
+                ];
+            }
+            
+            return [
+                'discounts' => $appliedStackable,
+                'total_discount' => $stackableTotal,
+                'final_amount' => $orderTotal - $stackableTotal,
+            ];
+        } catch (\Exception $e) {
+            Log::error('DiscountService::calculateBestDiscounts failed', [
+                'user_id' => $user->id ?? null,
+                'order_total' => $orderTotal,
+                'error' => $e->getMessage(),
+            ]);
+            
             return [
                 'discounts' => [],
                 'total_discount' => 0,
                 'final_amount' => $orderTotal,
             ];
         }
-        
-        // Separate stackable and non-stackable discounts
-        $stackable = $applicableDiscounts->where('is_stackable', true);
-        $nonStackable = $applicableDiscounts->where('is_stackable', false);
-        
-        // Calculate total if using best non-stackable discount
-        $bestNonStackable = null;
-        $bestNonStackableAmount = 0;
-        
-        foreach ($nonStackable as $discount) {
-            $amount = $this->calculateDiscountAmount($discount, $items, $orderTotal);
-            if ($amount > $bestNonStackableAmount) {
-                $bestNonStackableAmount = $amount;
-                $bestNonStackable = $discount;
-            }
-        }
-        
-        // Calculate total if using all stackable discounts
-        $stackableTotal = 0;
-        $appliedStackable = [];
-        $remainingAmount = $orderTotal;
-        
-        foreach ($stackable->sortByDesc('priority') as $discount) {
-            $amount = $this->calculateDiscountAmount($discount, $items, $remainingAmount);
-            if ($amount > 0) {
-                $stackableTotal += $amount;
-                $remainingAmount -= $amount;
-                $appliedStackable[] = [
-                    'discount' => $discount,
-                    'amount' => $amount,
-                ];
-            }
-        }
-        
-        // Determine best option
-        if ($bestNonStackableAmount >= $stackableTotal) {
-            return [
-                'discounts' => $bestNonStackable ? [[
-                    'discount' => $bestNonStackable,
-                    'amount' => $bestNonStackableAmount,
-                ]] : [],
-                'total_discount' => $bestNonStackableAmount,
-                'final_amount' => $orderTotal - $bestNonStackableAmount,
-            ];
-        }
-        
-        return [
-            'discounts' => $appliedStackable,
-            'total_discount' => $stackableTotal,
-            'final_amount' => $orderTotal - $stackableTotal,
-        ];
     }
 
     /**
@@ -250,61 +277,70 @@ class DiscountService
      */
     public function applyDiscountsToOrder(Order $order): Order
     {
-        $user = $order->user;
-        
-        if (!$user) {
+        try {
+            $user = $order->user;
+            
+            if (!$user) {
+                return $order;
+            }
+            
+            $items = $order->items->map(fn($item) => [
+                'product' => $item->product,
+                'product_id' => $item->product_id,
+                'quantity' => $item->quantity,
+                'unit_price' => $item->unit_price,
+            ]);
+            
+            $orderTotal = (float) ($order->subtotal_before_tax ?? $order->subtotal ?? 0);
+            $result = $this->calculateBestDiscounts($user, $items, $orderTotal);
+            
+            // Clear existing discounts
+            $order->discounts()->delete();
+            
+            $discountBreakdown = [];
+            
+            // Create discount records
+            foreach ($result['discounts'] as $discountData) {
+                $discount = $discountData['discount'];
+                $amount = $discountData['amount'];
+                
+                OrderDiscount::createFromRule(
+                    $order,
+                    $discount,
+                    $orderTotal,
+                    $amount,
+                    null,
+                    ['calculation_method' => $discount->discount_type]
+                );
+                
+                // Increment usage
+                $discount->incrementUsage();
+                
+                $discountBreakdown[] = [
+                    'code' => $discount->code,
+                    'name' => $discount->name,
+                    'type' => $discount->discount_type,
+                    'amount' => $amount,
+                ];
+            }
+            
+            // Update order totals
+            /** @phpstan-ignore-next-line */
+            $order->discount_amount = $result['total_discount'];
+            /** @phpstan-ignore-next-line */
+            $order->discount_breakdown = $discountBreakdown;
+            $order->recalculateTotals();
+            $order->save();
+            
+            return $order;
+        } catch (\Exception $e) {
+            Log::error('DiscountService::applyDiscountsToOrder failed', [
+                'order_id' => $order->id ?? null,
+                'error' => $e->getMessage(),
+            ]);
+            
             return $order;
         }
-        
-        $items = $order->items->map(fn($item) => [
-            'product' => $item->product,
-            'product_id' => $item->product_id,
-            'quantity' => $item->quantity,
-            'unit_price' => $item->unit_price,
-        ]);
-        
-        $orderTotal = (float) ($order->subtotal_before_tax ?? $order->subtotal ?? 0);
-        $result = $this->calculateBestDiscounts($user, $items, $orderTotal);
-        
-        // Clear existing discounts
-        $order->discounts()->delete();
-        
-        $discountBreakdown = [];
-        
-        // Create discount records
-        foreach ($result['discounts'] as $discountData) {
-            $discount = $discountData['discount'];
-            $amount = $discountData['amount'];
-            
-            OrderDiscount::createFromRule(
-                $order,
-                $discount,
-                $orderTotal,
-                $amount,
-                null,
-                ['calculation_method' => $discount->discount_type]
-            );
-            
-            // Increment usage
-            $discount->incrementUsage();
-            
-            $discountBreakdown[] = [
-                'code' => $discount->code,
-                'name' => $discount->name,
-                'type' => $discount->discount_type,
-                'amount' => $amount,
-            ];
-        }
-        
-        // Update order totals
-        /** @phpstan-ignore-next-line */
-        $order->discount_amount = $result['total_discount'];
-        /** @phpstan-ignore-next-line */
-        $order->discount_breakdown = $discountBreakdown;
-        $order->recalculateTotals();
-        $order->save();
-        
-        return $order;
     }
 
     /**
@@ -312,76 +348,89 @@ class DiscountService
      */
     public function applyPromoCode(Order $order, string $code): array
     {
-        $discount = DiscountRule::where('code', $code)
-            ->active()
-            ->valid()
-            ->first();
-        
-        if (!$discount) {
+        try {
+            $discount = DiscountRule::where('code', $code)
+                ->active()
+                ->valid()
+                ->first();
+            
+            if (!$discount) {
+                return [
+                    'success' => false,
+                    'message' => 'Kode promo tidak ditemukan atau sudah tidak berlaku',
+                ];
+            }
+            
+            if (!$discount->canBeUsedBy($order->user)) {
+                return [
+                    'success' => false,
+                    'message' => 'Kode promo tidak dapat digunakan',
+                ];
+            }
+            
+            /** @phpstan-ignore-next-line */
+            $orderTotal = (float) ($order->subtotal_before_tax ?? $order->subtotal ?? 0);
+            
+            if ($discount->min_order_amount && $orderTotal < $discount->min_order_amount) {
+                return [
+                    'success' => false,
+                    'message' => sprintf(
+                        'Minimum order Rp %s untuk menggunakan kode ini',
+                        number_format((float) $discount->min_order_amount, 0, ',', '.')
+                    ),
+                ];
+            }
+            
+            $items = $order->items->map(fn($item) => [
+                'product' => $item->product,
+                'quantity' => $item->quantity,
+                'unit_price' => $item->unit_price,
+            ]);
+            
+            $discountAmount = $this->calculateDiscountAmount($discount, $items, $orderTotal);
+            
+            if ($discountAmount <= 0) {
+                return [
+                    'success' => false,
+                    'message' => 'Kode promo tidak berlaku untuk pesanan ini',
+                ];
+            }
+            
+            // Apply the discount
+            OrderDiscount::createFromRule($order, $discount, $orderTotal, $discountAmount);
+            $discount->incrementUsage();
+            
+            /** @phpstan-ignore-next-line */
+            $order->discount_amount = (float) ($order->discount_amount ?? 0) + $discountAmount;
+            /** @phpstan-ignore-next-line */
+            $order->discount_breakdown = array_merge($order->discount_breakdown ?? [], [[
+                'code' => $discount->code,
+                'name' => $discount->name,
+                'type' => $discount->discount_type,
+                'amount' => $discountAmount,
+            ]]);
+            $order->recalculateTotals();
+            $order->save();
+            
             return [
-                'success' => false,
-                'message' => 'Kode promo tidak ditemukan atau sudah tidak berlaku',
-            ];
-        }
-        
-        if (!$discount->canBeUsedBy($order->user)) {
-            return [
-                'success' => false,
-                'message' => 'Kode promo tidak dapat digunakan',
-            ];
-        }
-        
-        /** @phpstan-ignore-next-line */
-        $orderTotal = (float) ($order->subtotal_before_tax ?? $order->subtotal ?? 0);
-        
-        if ($discount->min_order_amount && $orderTotal < $discount->min_order_amount) {
-            return [
-                'success' => false,
+                'success' => true,
                 'message' => sprintf(
-                    'Minimum order Rp %s untuk menggunakan kode ini',
-                    number_format((float) $discount->min_order_amount, 0, ',', '.')
+                    'Kode promo berhasil diterapkan! Hemat Rp %s',
+                    number_format($discountAmount, 0, ',', '.')
                 ),
+                'discount_amount' => $discountAmount,
             ];
-        }
-        
-        $items = $order->items->map(fn($item) => [
-            'product' => $item->product,
-            'quantity' => $item->quantity,
-            'unit_price' => $item->unit_price,
-        ]);
-        
-        $discountAmount = $this->calculateDiscountAmount($discount, $items, $orderTotal);
-        
-        if ($discountAmount <= 0) {
+        } catch (\Exception $e) {
+            Log::error('DiscountService::applyPromoCode failed', [
+                'order_id' => $order->id ?? null,
+                'code' => $code,
+                'error' => $e->getMessage(),
+            ]);
+            
             return [
                 'success' => false,
-                'message' => 'Kode promo tidak berlaku untuk pesanan ini',
+                'message' => 'Terjadi kesalahan saat menerapkan kode promo',
             ];
         }
-        
-        // Apply the discount
-        OrderDiscount::createFromRule($order, $discount, $orderTotal, $discountAmount);
-        $discount->incrementUsage();
-        
-        /** @phpstan-ignore-next-line */
-        $order->discount_amount = (float) ($order->discount_amount ?? 0) + $discountAmount;
-        /** @phpstan-ignore-next-line */
-        $order->discount_breakdown = array_merge($order->discount_breakdown ?? [], [[
-            'code' => $discount->code,
-            'name' => $discount->name,
-            'type' => $discount->discount_type,
-            'amount' => $discountAmount,
-        ]]);
-        $order->recalculateTotals();
-        $order->save();
-        
-        return [
-            'success' => true,
-            'message' => sprintf(
-                'Kode promo berhasil diterapkan! Hemat Rp %s',
-                number_format($discountAmount, 0, ',', '.')
-            ),
-            'discount_amount' => $discountAmount,
-        ];
     }
 }
