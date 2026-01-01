@@ -35,8 +35,34 @@
                 'value' => $product->bpom_number,
             ];
         }
+        
+        // BreadcrumbList schema for SEO
+        $breadcrumbData = [
+            '@context' => 'https://schema.org',
+            '@type' => 'BreadcrumbList',
+            'itemListElement' => [
+                [
+                    '@type' => 'ListItem',
+                    'position' => 1,
+                    'name' => __('nav.home'),
+                    'item' => route('home'),
+                ],
+                [
+                    '@type' => 'ListItem',
+                    'position' => 2,
+                    'name' => __('nav.products'),
+                    'item' => route('products.index'),
+                ],
+                [
+                    '@type' => 'ListItem',
+                    'position' => 3,
+                    'name' => $product->name,
+                ],
+            ],
+        ];
     @endphp
     <script type="application/ld+json">{!! json_encode($schemaData, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}</script>
+    <script type="application/ld+json">{!! json_encode($breadcrumbData, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}</script>
 
     <!-- Page Hero with Breadcrumb -->
     <section class="page-hero" style="text-align: left;">
@@ -230,8 +256,9 @@
             </div>
 
             <!-- Product Specs Link (B2B Style) -->
+            @if($product->spec_url ?? false)
             <div class="product-specs-link">
-                <a href="#" class="specs-download-btn">
+                <a href="{{ $product->spec_url }}" target="_blank" rel="noopener noreferrer" class="specs-download-btn">
                     <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                     </svg>
@@ -240,6 +267,7 @@
                 </a>
                 <p class="specs-note">{{ __('products.specs_note') }}</p>
             </div>
+            @endif
 
         </div> <!-- End Info Column -->
     </section> <!-- End Grid -->

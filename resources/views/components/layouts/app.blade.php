@@ -208,7 +208,7 @@
             <div class="footer-col footer-col-subscribe">
                 <h4>{{ __('nav.subscribe') }}</h4>
                 <p>{{ __('nav.subscribe_desc') }}</p>
-                <form class="footer-subscribe-form" action="#" method="POST">
+                <form class="footer-subscribe-form" @submit.prevent="alert('{{ __('nav.subscribe_thanks') }}')" novalidate>
                     @csrf
                     <input type="email" placeholder="Email" required>
                     <button type="submit">→</button>

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services;
 
 use App\Models\Cart;
@@ -15,19 +17,11 @@ use Illuminate\Support\Facades\Log;
 
 class OrderService
 {
-    protected InventoryService $inventoryService;
-    protected PricingService $pricingService;
-    protected CartService $cartService;
-
     public function __construct(
-        InventoryService $inventoryService, 
-        PricingService $pricingService,
-        CartService $cartService
-    ) {
-        $this->inventoryService = $inventoryService;
-        $this->pricingService = $pricingService;
-        $this->cartService = $cartService;
-    }
+        protected readonly InventoryService $inventoryService, 
+        protected readonly PricingService $pricingService,
+        protected readonly CartService $cartService
+    ) {}
     
     /**
      * Validate and correct MOQ violations before order creation.

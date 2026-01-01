@@ -12,10 +12,10 @@ use App\Services\OrderService;
 
 class CheckoutPage extends Component
 {
-    public $name;
-    public $phone;
-    public $address;
-    public $notes;
+    public string $name = '';
+    public string $phone = '';
+    public string $address = '';
+    public string $notes = '';
     public array $stockErrors = [];
     public array $priceChanges = [];
     public array $moqViolations = [];

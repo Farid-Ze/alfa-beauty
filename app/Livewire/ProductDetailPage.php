@@ -12,18 +12,18 @@ use Livewire\Component;
 #[Title('Product Details - B2B Hair Care')]
 class ProductDetailPage extends Component
 {
-    public $slug;
-    public $quantity = 1;
+    public string $slug = '';
+    public int $quantity = 1;
     
     // Cached product data to avoid repeated queries
     protected ?Product $cachedProduct = null;
     
     // Computed pricing properties
-    public $currentPrice;
-    public $originalPrice;
-    public $discountPercent;
-    public $priceSource;
-    public $priceTiers = [];
+    public float $currentPrice = 0;
+    public float $originalPrice = 0;
+    public float $discountPercent = 0;
+    public string $priceSource = '';
+    public array $priceTiers = [];
 
     protected CartService $cartService;
     protected PricingService $pricingService;

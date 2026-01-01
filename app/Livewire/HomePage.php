@@ -5,11 +5,19 @@ namespace App\Livewire;
 use App\Models\Brand;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Livewire\Component;
 
 class HomePage extends Component
 {
     public $brands;
+    
+    // Contact form fields
+    public string $contactName = '';
+    public string $contactEmail = '';
+    public string $contactSubject = '';
+    public string $contactPhone = '';
+    public string $contactMessage = '';
 
     /**
      * Cache TTL for featured brands (10 minutes)
@@ -41,5 +49,36 @@ class HomePage extends Component
     public function render()
     {
         return view('livewire.home-page');
+    }
+    
+    /**
+     * Handle contact form submission.
+     * 
+     * For MVP: Log the contact and show success message.
+     * Production: Send email notification to admin.
+     */
+    public function submitContact(): void
+    {
+        $this->validate([
+            'contactEmail' => 'required|email',
+            'contactName' => 'nullable|string|max:255',
+            'contactSubject' => 'nullable|string|max:255',
+            'contactPhone' => 'nullable|string|max:20',
+            'contactMessage' => 'nullable|string|max:2000',
+        ]);
+        
+        // Log for now, email integration can be added later
+        Log::channel('single')->info('Contact form submission', [
+            'name' => $this->contactName,
+            'email' => $this->contactEmail,
+            'subject' => $this->contactSubject,
+            'phone' => $this->contactPhone,
+            'message' => $this->contactMessage,
+        ]);
+        
+        // Reset form
+        $this->reset(['contactName', 'contactEmail', 'contactSubject', 'contactPhone', 'contactMessage']);
+        
+        session()->flash('contact_success', __('home.contact_success'));
     }
 }

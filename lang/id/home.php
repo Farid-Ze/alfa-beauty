@@ -43,6 +43,7 @@ return [
     'get_in_touch' => 'Sudah punya supplier?',
     'contact_subtitle' => 'Punya stok bukan berarti punya dukungan yang tepat. Mari audit efisiensi teknis Anda. Masukkan detail, kami hitung potensinya.',
     'send_message' => 'Upgrade Rantai Pasok Anda',
+    'contact_success' => 'Terima kasih atas pesan Anda! Kami akan menghubungi Anda dalam 24 jam.',
 
     // Testimonials
     'since' => 'Sejak',

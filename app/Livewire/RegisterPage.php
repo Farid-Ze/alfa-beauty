@@ -5,17 +5,18 @@ namespace App\Livewire;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\Rules\Password;
 use Livewire\Component;
 
 class RegisterPage extends Component
 {
-    public $name;
-    public $company_name;
-    public $email;
-    public $phone;
-    public $password;
-    public $password_confirmation;
+    public string $name = '';
+    public string $company_name = '';
+    public string $email = '';
+    public string $phone = '';
+    public string $password = '';
+    public string $password_confirmation = '';
 
     protected function rules()
     {
@@ -36,9 +37,26 @@ class RegisterPage extends Component
         ];
     }
 
+    /**
+     * Get the rate limiting throttle key for the request.
+     */
+    protected function throttleKey(): string
+    {
+        return 'register:' . request()->ip();
+    }
+
     public function register()
     {
+        // Rate limiting: max 3 registrations per minute per IP
+        if (RateLimiter::tooManyAttempts($this->throttleKey(), 3)) {
+            $seconds = RateLimiter::availableIn($this->throttleKey());
+            $this->addError('email', __('auth.throttle', ['seconds' => $seconds]));
+            return;
+        }
+
         $this->validate();
+
+        RateLimiter::hit($this->throttleKey());
 
         // Get Guest tier (default for new users)
         $guestTier = \App\Models\LoyaltyTier::where('slug', 'guest')->first();

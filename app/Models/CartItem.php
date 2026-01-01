@@ -5,6 +5,19 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * CartItem Model
+ *
+ * @property int $id
+ * @property int $cart_id
+ * @property int $product_id
+ * @property int $quantity
+ * @property float|null $price_at_add Price when item was added
+ * @property \Carbon\Carbon|null $created_at
+ * @property \Carbon\Carbon|null $updated_at
+ * @property-read Cart $cart
+ * @property-read Product $product
+ */
 class CartItem extends Model
 {
     /** @use HasFactory<\Database\Factories\CartItemFactory> */

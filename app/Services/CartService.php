@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services;
 
 use App\Models\Cart;
@@ -25,12 +27,9 @@ class CartService
     protected const COOKIE_NAME = 'cart_session_id';
     protected const COOKIE_LIFETIME = 60 * 24 * 30; // 30 days
 
-    protected PricingService $pricingService;
-
-    public function __construct(PricingService $pricingService)
-    {
-        $this->pricingService = $pricingService;
-    }
+    public function __construct(
+        protected readonly PricingService $pricingService
+    ) {}
 
     public function getCart(): ?Cart
     {

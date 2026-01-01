@@ -43,6 +43,7 @@ return [
     'get_in_touch' => 'Already have a supplier?',
     'contact_subtitle' => "Just because you have stock, doesn't mean you have the right support. Let's audit your technical efficiency. Drop your details, we'll do the math.",
     'send_message' => 'Upgrade Your Supply Chain',
+    'contact_success' => 'Thank you for your message! We will get back to you within 24 hours.',
 
     // Testimonials
     'since' => 'Since',

@@ -11,6 +11,24 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * 
  * Product reviews with star ratings and verification.
  * Users earn +50 points for approved reviews.
+ *
+ * @property int $id
+ * @property int $user_id
+ * @property int $product_id
+ * @property int|null $order_id
+ * @property int $rating 1-5 stars
+ * @property string|null $title
+ * @property string|null $content
+ * @property bool $is_verified Verified buyer
+ * @property bool $is_approved Admin moderated
+ * @property bool $points_awarded Track if bonus points given
+ * @property \Carbon\Carbon|null $approved_at
+ * @property int|null $approved_by
+ * @property \Carbon\Carbon|null $created_at
+ * @property \Carbon\Carbon|null $updated_at
+ * @property-read User $user
+ * @property-read Product $product
+ * @property-read Order|null $order
  */
 class Review extends Model
 {

@@ -5,6 +5,22 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * Category Model
+ *
+ * @property int $id
+ * @property string $name
+ * @property string $slug
+ * @property int|null $parent_id
+ * @property string|null $description
+ * @property string|null $icon
+ * @property int $sort_order
+ * @property \Carbon\Carbon|null $created_at
+ * @property \Carbon\Carbon|null $updated_at
+ * @property-read \Illuminate\Database\Eloquent\Collection<Product> $products
+ * @property-read Category|null $parent
+ * @property-read \Illuminate\Database\Eloquent\Collection<Category> $children
+ */
 class Category extends Model
 {
     /** @use HasFactory<\Database\Factories\CategoryFactory> */

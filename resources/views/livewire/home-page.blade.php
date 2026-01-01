@@ -288,8 +288,13 @@
             <h2 class="cta-contact-title">{{ __('home.get_in_touch') }}</h2>
             <p class="cta-contact-subtitle">{{ __('home.contact_subtitle') }}</p>
             
-            <form class="cta-contact-form" action="#" method="POST">
-                @csrf
+            @if(session('contact_success'))
+                <div class="alert alert-success" style="background: var(--success); color: white; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+                    {{ session('contact_success') }}
+                </div>
+            @endif
+            
+            <form class="cta-contact-form" wire:submit.prevent="submitContact">
                 {{-- Honeypot fields for spam protection (hidden from real users) --}}
                 <div style="position: absolute; left: -9999px;" aria-hidden="true">
                     <input type="text" name="website" tabindex="-1" autocomplete="off">
@@ -299,30 +304,34 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label for="contact-name">{{ __('checkout.name') }}</label>
-                        <input type="text" id="contact-name" name="name" placeholder="{{ __('checkout.name') }}">
+                        <input type="text" id="contact-name" wire:model="contactName" placeholder="{{ __('checkout.name') }}">
                     </div>
                     <div class="form-group">
                         <label for="contact-email">EMAIL *</label>
-                        <input type="email" id="contact-email" name="email" placeholder="Email" required>
+                        <input type="email" id="contact-email" wire:model="contactEmail" placeholder="Email" required>
+                        @error('contactEmail') <span class="error">{{ $message }}</span> @enderror
                     </div>
                 </div>
                 
                 <div class="form-group">
                     <label for="contact-subject">SUBJECT</label>
-                    <input type="text" id="contact-subject" name="subject" placeholder="Subject">
+                    <input type="text" id="contact-subject" wire:model="contactSubject" placeholder="Subject">
                 </div>
                 
                 <div class="form-group">
                     <label for="contact-phone">{{ __('checkout.phone') }}</label>
-                    <input type="tel" id="contact-phone" name="phone" placeholder="{{ __('checkout.phone') }}">
+                    <input type="tel" id="contact-phone" wire:model="contactPhone" placeholder="{{ __('checkout.phone') }}">
                 </div>
                 
                 <div class="form-group">
                     <label for="contact-message">COMMENT</label>
-                    <textarea id="contact-message" name="message" rows="4" placeholder="Comment"></textarea>
+                    <textarea id="contact-message" wire:model="contactMessage" rows="4" placeholder="Comment"></textarea>
                 </div>
                 
-                <button type="submit" class="cta-contact-btn">{{ __('home.send_message') }}</button>
+                <button type="submit" class="cta-contact-btn" wire:loading.attr="disabled">
+                    <span wire:loading.remove>{{ __('home.send_message') }}</span>
+                    <span wire:loading>{{ __('general.loading') }}</span>
+                </button>
             </form>
         </div>
     </section>
