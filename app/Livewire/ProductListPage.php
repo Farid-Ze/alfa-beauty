@@ -65,6 +65,19 @@ class ProductListPage extends Component
         $this->resetPage();
     }
 
+    /**
+     * Clear all filters and reset to default state.
+     */
+    public function clearFilters(): void
+    {
+        $this->selectedCategories = [];
+        $this->selectedBrands = [];
+        $this->priceMin = null;
+        $this->priceMax = null;
+        $this->search = '';
+        $this->resetPage();
+    }
+
     public function render()
     {
         $query = Product::query()

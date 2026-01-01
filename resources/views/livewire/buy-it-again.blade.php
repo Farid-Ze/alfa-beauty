@@ -2,8 +2,8 @@
     @if($products->isNotEmpty())
         <section class="buy-it-again-section">
             <div class="section-header">
-                <h2 class="section-title">Buy It Again</h2>
-                <p class="section-subtitle">Quick reorder from your purchase history</p>
+                <h2 class="section-title">{{ __('orders.buy_again') }}</h2>
+                <p class="section-subtitle">{{ __('orders.buy_again_desc') }}</p>
             </div>
             
             <div class="buy-again-grid">
@@ -62,8 +62,8 @@
                             wire:loading.attr="disabled"
                             class="buy-again-btn"
                         >
-                            <span wire:loading.remove wire:target="addToCart({{ $product->id }})">+ Reorder</span>
-                            <span wire:loading wire:target="addToCart({{ $product->id }})">Adding...</span>
+                            <span wire:loading.remove wire:target="addToCart({{ $product->id }})">+ {{ __('orders.buy_again') }}</span>
+                            <span wire:loading wire:target="addToCart({{ $product->id }})">{{ __('general.loading') }}...</span>
                         </button>
                     </div>
                 @endforeach

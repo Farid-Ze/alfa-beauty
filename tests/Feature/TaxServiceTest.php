@@ -2,10 +2,6 @@
 
 namespace Tests\Feature;
 
-use App\Models\Order;
-use App\Models\OrderItem;
-use App\Models\Product;
-use App\Models\User;
 use App\Services\TaxService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;

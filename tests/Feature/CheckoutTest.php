@@ -26,11 +26,12 @@ class CheckoutTest extends TestCase
         $this->seed(\Database\Seeders\ProductSeeder::class);
     }
 
-    public function test_guest_cannot_access_checkout_with_empty_cart(): void
+    public function test_guest_is_redirected_to_login_on_checkout(): void
     {
         $response = $this->get('/checkout');
 
-        $response->assertRedirect('/');
+        // Checkout requires authentication, guests are redirected to login
+        $response->assertRedirect('/login');
     }
 
     public function test_user_can_access_checkout_with_items_in_cart(): void

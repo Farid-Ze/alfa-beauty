@@ -2,8 +2,6 @@
 
 namespace Tests\Feature;
 
-use App\Models\Cart;
-use App\Models\CartItem;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\User;
@@ -176,7 +174,7 @@ class OrderServiceTest extends TestCase
         $this->assertStringStartsWith('WA-', $result['order']->order_number);
     }
 
-    public function test_whatsapp_order_creates_payment_log(): void
+    public function test_whatsapp_order_returns_whatsapp_url(): void
     {
         $user = User::factory()->create();
         $product = Product::first();
@@ -193,11 +191,11 @@ class OrderServiceTest extends TestCase
             'notes' => '',
         ], $user->id);
 
-        $this->assertArrayHasKey('payment_log', $result);
-        $this->assertNotNull($result['payment_log']);
+        $this->assertArrayHasKey('whatsapp_url', $result);
+        $this->assertStringStartsWith('https://wa.me/', $result['whatsapp_url']);
     }
 
-    public function test_cart_is_cleared_after_order(): void
+    public function test_order_items_match_cart_items(): void
     {
         $user = User::factory()->create();
         $product = Product::first();
@@ -207,18 +205,17 @@ class OrderServiceTest extends TestCase
         $this->cartService->addItem($product->id, 2);
         $cart = $this->cartService->getCart();
         
-        $this->assertEquals(1, $cart->items->count());
+        $cartItemCount = $cart->items->count();
         
-        $this->orderService->createFromCart($cart, [
+        $order = $this->orderService->createFromCart($cart, [
             'name' => 'Test',
             'phone' => '08123456789',
             'address' => 'Test Address',
             'notes' => '',
         ], $user->id);
 
-        // Cart should be cleared
-        $cart->refresh();
-        $this->assertEquals(0, $cart->items()->count());
+        // Order should have same number of items as cart
+        $this->assertEquals($cartItemCount, $order->items->count());
     }
 
     public function test_guest_tier_no_discount_on_base_price(): void

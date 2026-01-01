@@ -6,7 +6,11 @@
     </section>
 
     <!-- Mobile Filter Toggle -->
-    <button class="mobile-filter-toggle" onclick="document.querySelector('.sidebar').classList.toggle('active')">
+    <button 
+        class="mobile-filter-toggle" 
+        x-data
+        x-on:click="document.querySelector('.sidebar').classList.toggle('active')"
+    >
         ☰ {{ __('products.filter_products') }}
     </button>
 
@@ -66,7 +70,7 @@
             <!-- Clear Filters -->
             @if(!empty($selectedCategories) || !empty($selectedBrands) || $priceMin || $priceMax || $search)
                 <button 
-                    wire:click="$set('selectedCategories', []); $set('selectedBrands', []); $set('priceMin', null); $set('priceMax', null); $set('search', '')" 
+                    wire:click="clearFilters" 
                     class="clear-filters-btn"
                 >
                     {{ __('products.clear_filters') }}

@@ -8,7 +8,8 @@ use Livewire\Component;
 
 class CartDrawer extends Component
 {
-    public $isOpen = false;
+    // Note: Cart drawer open/close state is managed by Alpine.js in the view
+    // for smoother transitions. Livewire handles data updates only.
 
     protected CartService $cartService;
 
@@ -20,7 +21,7 @@ class CartDrawer extends Component
     #[On('cart-updated')]
     public function refresh() 
     {
-        // This triggers re-render
+        // This triggers re-render to update cart data
     }
 
     public function render()
@@ -33,12 +34,6 @@ class CartDrawer extends Component
             'subtotal' => $cartData['subtotal'],
             'itemCount' => $cartData['item_count'],
         ]);
-    }
-
-    #[On('toggle-cart')]
-    public function toggle()
-    {
-        $this->isOpen = !$this->isOpen;
     }
 
     public function removeItem(int $itemId)

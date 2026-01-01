@@ -110,6 +110,22 @@ class Product extends Model
     }
 
     /**
+     * Get product reviews.
+     */
+    public function reviews()
+    {
+        return $this->hasMany(Review::class);
+    }
+
+    /**
+     * Get approved product reviews.
+     */
+    public function approvedReviews()
+    {
+        return $this->reviews()->approved();
+    }
+
+    /**
      * Get active batch inventory.
      */
     public function activeBatches()

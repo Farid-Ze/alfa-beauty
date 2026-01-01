@@ -17,7 +17,7 @@ use Livewire\Component;
 class ReviewForm extends Component
 {
     public Product $product;
-    public ?Order $order = null;
+    public ?int $orderId = null;
     
     public int $rating = 5;
     public string $title = '';
@@ -36,7 +36,7 @@ class ReviewForm extends Component
     public function mount(Product $product, ?Order $order = null)
     {
         $this->product = $product;
-        $this->order = $order;
+        $this->orderId = $order?->id;
         
         // Check if user already reviewed this product
         if (Auth::check()) {
@@ -63,16 +63,18 @@ class ReviewForm extends Component
         $this->validate();
 
         // Check if user has purchased this product (verified buyer)
-        $isVerified = $this->order !== null || 
-            Order::where('user_id', Auth::id())
-                ->whereHas('items', fn($q) => $q->where('product_id', $this->product->id))
-                ->where('payment_status', 'paid')
-                ->exists();
+        $hasOrderFromMount = $this->orderId !== null;
+        $hasPaidOrder = Order::where('user_id', Auth::id())
+            ->whereHas('items', fn($q) => $q->where('product_id', $this->product->id))
+            ->where('payment_status', 'paid')
+            ->exists();
+        
+        $isVerified = $hasOrderFromMount || $hasPaidOrder;
 
         Review::create([
             'user_id' => Auth::id(),
             'product_id' => $this->product->id,
-            'order_id' => $this->order?->id,
+            'order_id' => $this->orderId,
             'rating' => $this->rating,
             'title' => $this->title ?: null,
             'content' => $this->content,

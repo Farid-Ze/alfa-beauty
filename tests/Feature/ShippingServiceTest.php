@@ -7,7 +7,6 @@ use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\User;
 use App\Models\LoyaltyTier;
-use App\Models\CustomerOrderSetting;
 use App\Services\ShippingService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -112,10 +111,10 @@ class ShippingServiceTest extends TestCase
         $this->assertEquals('papua_maluku', $zone);
     }
 
-    public function test_unknown_address_defaults_to_jabodetabek(): void
+    public function test_unknown_address_defaults_to_jawa(): void
     {
         $zone = $this->shippingService->detectZoneFromAddress('Unknown Location XYZ');
-        $this->assertEquals('jabodetabek', $zone);
+        $this->assertEquals('jawa', $zone);
     }
 
     public function test_calculate_order_weight(): void
@@ -139,7 +138,7 @@ class ShippingServiceTest extends TestCase
             'product_id' => $product->id,
             'quantity' => 2,
             'unit_price' => $product->base_price,
-            'line_total' => $product->base_price * 2,
+            'total_price' => $product->base_price * 2,
         ]);
 
         $order->load('items.product');
@@ -171,7 +170,7 @@ class ShippingServiceTest extends TestCase
             'product_id' => $product->id,
             'quantity' => 1,
             'unit_price' => $product->base_price,
-            'line_total' => $product->base_price,
+            'total_price' => $product->base_price,
         ]);
 
         $order->load('items.product');
@@ -184,15 +183,13 @@ class ShippingServiceTest extends TestCase
         $this->assertArrayHasKey('base_cost', $result);
     }
 
-    public function test_free_shipping_for_premium_tier(): void
+    public function test_free_shipping_for_gold_tier(): void
     {
-        $premiumTier = LoyaltyTier::where('slug', 'premium')->first();
-        
-        // Ensure premium tier has free shipping
-        $premiumTier->update(['free_shipping' => true]);
+        // Gold tier has free_shipping = true by default
+        $goldTier = LoyaltyTier::where('slug', 'gold')->first();
         
         $user = User::factory()->create([
-            'loyalty_tier_id' => $premiumTier->id,
+            'loyalty_tier_id' => $goldTier->id,
         ]);
         
         $product = Product::first();
@@ -213,7 +210,7 @@ class ShippingServiceTest extends TestCase
             'product_id' => $product->id,
             'quantity' => 1,
             'unit_price' => $product->base_price,
-            'line_total' => $product->base_price,
+            'total_price' => $product->base_price,
         ]);
 
         $order->load('items.product', 'user.loyaltyTier');

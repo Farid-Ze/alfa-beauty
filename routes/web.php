@@ -7,13 +7,13 @@ Route::get('/', App\Livewire\HomePage::class)->name('home');
 Route::get('/products', App\Livewire\ProductListPage::class)->name('products.index');
 Route::get('/products/{slug}', App\Livewire\ProductDetailPage::class)->name('products.show');
 Route::get('/brands/{slug}', App\Livewire\BrandDetail::class)->name('brands.show');
-Route::get('/checkout', App\Livewire\CheckoutPage::class)->name('checkout');
+Route::get('/checkout', App\Livewire\CheckoutPage::class)->middleware('auth')->name('checkout');
 Route::get('/orders', \App\Livewire\MyOrders::class)->middleware('auth')->name('orders');
-Route::get('/checkout/success/{order}', \App\Livewire\OrderSuccess::class)->name('checkout.success');
+Route::get('/checkout/success/{order}', \App\Livewire\OrderSuccess::class)->middleware('auth')->name('checkout.success');
 Route::get('/register', App\Livewire\RegisterPage::class)->name('register');
 Route::get('/login', App\Livewire\LoginPage::class)->name('login');
 Route::get('/logout', function () {
-    auth()->logout();
+    \Illuminate\Support\Facades\Auth::logout();
     request()->session()->invalidate();
     request()->session()->regenerateToken();
     return redirect('/');

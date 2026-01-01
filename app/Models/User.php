@@ -91,6 +91,22 @@ class User extends Authenticatable
     }
 
     /**
+     * Get user's cart.
+     */
+    public function cart()
+    {
+        return $this->hasOne(Cart::class);
+    }
+
+    /**
+     * Get user's reviews.
+     */
+    public function reviews()
+    {
+        return $this->hasMany(Review::class);
+    }
+
+    /**
      * Get customer payment terms.
      */
     public function paymentTerm()
