@@ -38,16 +38,24 @@ class ProductReviews extends Component
             ->take($this->perPage)
             ->get();
 
-        $totalReviews = Review::getReviewCount($this->product->id);
-        $averageRating = Review::getAverageRating($this->product->id);
+        // OPTIMIZED: Single query for stats instead of multiple COUNT queries
+        // Fetches total, average, and distribution in one database call
+        $stats = Review::where('product_id', $this->product->id)
+            ->approved()
+            ->selectRaw('COUNT(*) as total, AVG(rating) as average, rating')
+            ->groupBy('rating')
+            ->get();
 
-        // Rating distribution
+        $totalReviews = $stats->sum('total');
+        $averageRating = $totalReviews > 0 
+            ? round($stats->sum(fn($s) => $s->rating * $s->total) / $totalReviews, 1) 
+            : 0;
+
+        // Build distribution from grouped stats
+        $ratingCounts = $stats->pluck('total', 'rating');
         $distribution = [];
         for ($i = 5; $i >= 1; $i--) {
-            $count = Review::where('product_id', $this->product->id)
-                ->approved()
-                ->where('rating', $i)
-                ->count();
+            $count = $ratingCounts->get($i, 0);
             $distribution[$i] = [
                 'count' => $count,
                 'percent' => $totalReviews > 0 ? round(($count / $totalReviews) * 100) : 0,

@@ -16,4 +16,11 @@ return [
     'item_added' => ':name ditambahkan ke keranjang',
     'item_removed' => 'Produk dihapus dari keranjang',
     'cart_updated' => 'Keranjang diperbarui',
+    
+    // Error Messages
+    'out_of_stock' => ':product sedang habis stok',
+    'insufficient_stock' => 'Stok tidak cukup untuk :product',
+    'product_not_found' => 'Produk tidak ditemukan',
+    'add_failed' => 'Gagal menambahkan ke keranjang. Silakan coba lagi.',
+    'update_failed' => 'Gagal memperbarui keranjang. Silakan coba lagi.',
 ];

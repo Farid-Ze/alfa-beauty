@@ -21,7 +21,16 @@ class Brand extends Model
     /** @use HasFactory<\Database\Factories\BrandFactory> */
     use HasFactory;
 
-    protected $guarded = [];
+    protected $fillable = [
+        'name',
+        'slug',
+        'logo_url',
+        'description',
+        'origin_country',
+        'is_own_brand',
+        'is_featured',
+        'sort_order',
+    ];
 
     public function products()
     {

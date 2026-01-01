@@ -72,7 +72,7 @@ class CleanupOrphanedOrders extends Command
 
         if ($orphanedOrders->isEmpty()) {
             $this->info("✅ No orphaned orders found. System is clean.");
-            return Command::SUCCESS;
+            return self::SUCCESS;
         }
 
         $this->info("📋 Found {$orphanedOrders->count()} orphaned order(s):");
@@ -96,13 +96,13 @@ class CleanupOrphanedOrders extends Command
 
         if ($dryRun) {
             $this->warn("🛑 Dry run complete. Run without --dry-run to cancel these orders.");
-            return Command::SUCCESS;
+            return self::SUCCESS;
         }
 
         // Confirm before proceeding
         if (!$this->confirm("Cancel these {$orphanedOrders->count()} orders and release stock?")) {
             $this->info("Operation cancelled by user.");
-            return Command::SUCCESS;
+            return self::SUCCESS;
         }
 
         $cancelled = 0;
@@ -177,6 +177,6 @@ class CleanupOrphanedOrders extends Command
         }
         $this->info("   📦 Stock released and available for new orders.");
 
-        return $errors > 0 ? Command::FAILURE : Command::SUCCESS;
+        return $errors > 0 ? self::FAILURE : self::SUCCESS;
     }
 }

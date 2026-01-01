@@ -16,4 +16,11 @@ return [
     'item_added' => ':name added to cart',
     'item_removed' => 'Item removed from cart',
     'cart_updated' => 'Cart updated',
+    
+    // Error Messages
+    'out_of_stock' => ':product is out of stock',
+    'insufficient_stock' => 'Insufficient stock for :product',
+    'product_not_found' => 'Product not found',
+    'add_failed' => 'Failed to add item to cart. Please try again.',
+    'update_failed' => 'Failed to update cart. Please try again.',
 ];

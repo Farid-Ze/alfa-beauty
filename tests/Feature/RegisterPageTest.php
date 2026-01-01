@@ -136,10 +136,10 @@ class RegisterPageTest extends TestCase
             ->set('company_name', 'New Company')
             ->set('email', 'newuser@example.com')
             ->set('phone', '08123456789')
-            ->set('password', 'password123')
-            ->set('password_confirmation', 'password123')
+            ->set('password', 'Password123!')  // Strong password
+            ->set('password_confirmation', 'Password123!')
             ->call('register')
-            ->assertRedirect('/');
+            ->assertRedirect(route('verification.notice'));
         
         $this->assertDatabaseHas('users', [
             'email' => 'newuser@example.com',
@@ -157,8 +157,8 @@ class RegisterPageTest extends TestCase
             ->set('company_name', 'New Company')
             ->set('email', 'tiertest@example.com')
             ->set('phone', '08123456789')
-            ->set('password', 'password123')
-            ->set('password_confirmation', 'password123')
+            ->set('password', 'Password123!')  // Strong password
+            ->set('password_confirmation', 'Password123!')
             ->call('register');
         
         $user = User::where('email', 'tiertest@example.com')->first();

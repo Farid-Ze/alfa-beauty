@@ -56,4 +56,13 @@ return [
     'whatsapp_error' => 'Gagal memproses checkout WhatsApp',
     'stock_warning' => 'Beberapa produk stoknya tidak mencukupi',
     'moq_adjusted' => 'Jumlah pesanan telah disesuaikan dengan ketentuan minimum untuk: :products',
+    
+    // B2B Pricing
+    'price_updated' => 'Harga Telah Diperbarui',
+    'price_updated_desc' => 'Beberapa harga telah disesuaikan dengan harga B2B terbaru.',
+    'you_save' => 'Anda hemat',
+    'with_b2b_price' => 'dengan harga B2B!',
+    'special_price' => 'Harga Khusus',
+    'volume_discount' => 'Diskon Volume',
+    'loyalty_discount' => 'Diskon Loyalitas',
 ];

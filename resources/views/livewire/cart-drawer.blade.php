@@ -58,9 +58,9 @@
                         
                         <!-- Price Source Badge (B2B indicator) -->
                         @if(isset($item['price_source']) && $item['price_source'] === 'customer_price_list')
-                            <span class="price-source-tag">Harga Khusus</span>
+                            <span class="price-source-tag">{{ __('products.special_price') }}</span>
                         @elseif(isset($item['price_source']) && $item['price_source'] === 'volume_tier')
-                            <span class="price-source-tag">Diskon Volume</span>
+                            <span class="price-source-tag">{{ __('products.volume_discounts') }}</span>
                         @endif
 
                         <div class="cart-item-meta">
@@ -127,9 +127,9 @@
         <div class="cart-footer">
             @if($totalSavings > 0)
             <div class="savings-banner">
-                <span class="savings-banner-text">🎉 Anda hemat </span>
+                <span class="savings-banner-text">🎉 {{ __('checkout.you_save') }} </span>
                 <span class="savings-banner-amount">Rp {{ number_format($totalSavings, 0, ',', '.') }}</span>
-                <span class="savings-banner-text"> dengan harga B2B!</span>
+                <span class="savings-banner-text"> {{ __('checkout.with_b2b_price') }}</span>
             </div>
             @endif
             

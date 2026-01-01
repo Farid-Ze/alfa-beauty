@@ -6,7 +6,10 @@ use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
 use App\Services\PricingService;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
+use Livewire\Attributes\Computed;
 use Livewire\Attributes\Title;
 use Livewire\Attributes\Url;
 use Livewire\Component;
@@ -40,9 +43,42 @@ class ProductListPage extends Component
     
     protected PricingService $pricingService;
     
+    /**
+     * Cache TTL for brands/categories (5 minutes)
+     */
+    private const FILTER_CACHE_TTL = 300;
+    
     public function boot(PricingService $pricingService)
     {
         $this->pricingService = $pricingService;
+    }
+
+    /**
+     * Get brands with products (cached to prevent repeated queries on re-render)
+     * Uses Livewire computed property + application cache
+     */
+    #[Computed]
+    public function brands(): Collection
+    {
+        return Cache::remember('product_list_brands', self::FILTER_CACHE_TTL, function () {
+            return Brand::whereHas('products', function ($query) {
+                $query->where('is_active', true);
+            })->orderBy('name')->get();
+        });
+    }
+
+    /**
+     * Get categories with products (cached to prevent repeated queries on re-render)
+     * Uses Livewire computed property + application cache
+     */
+    #[Computed]
+    public function categories(): Collection
+    {
+        return Cache::remember('product_list_categories', self::FILTER_CACHE_TTL, function () {
+            return Category::whereHas('products', function ($query) {
+                $query->where('is_active', true);
+            })->orderBy('name')->get();
+        });
     }
 
     public function updatedSearch()
@@ -145,8 +181,8 @@ class ProductListPage extends Component
         return view('livewire.product-list-page', [
             'products' => $products,
             'prices' => $prices,
-            'brands' => Brand::whereHas('products')->get(),
-            'categories' => Category::whereHas('products')->get(),
+            'brands' => $this->brands,
+            'categories' => $this->categories,
         ]);
     }
 }

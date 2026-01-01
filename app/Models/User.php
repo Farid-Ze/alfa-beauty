@@ -2,11 +2,13 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Filament\Models\Contracts\FilamentUser;
+use Filament\Panel;
 
 /**
  * User Model
@@ -17,6 +19,7 @@ use Laravel\Sanctum\HasApiTokens;
  * @property string $email
  * @property string|null $phone
  * @property string $password
+ * @property string|null $role
  * @property int $points
  * @property float $total_spend
  * @property int|null $loyalty_tier_id
@@ -28,8 +31,10 @@ use Laravel\Sanctum\HasApiTokens;
  * @property \Carbon\Carbon|null $updated_at
  * @property-read LoyaltyTier|null $loyaltyTier
  * @property-read CustomerPaymentTerm|null $paymentTerm
+ * @property-read \Illuminate\Database\Eloquent\Collection|Review[] $reviews
+ * @property-read Cart|null $cart
  */
-class User extends Authenticatable
+class User extends Authenticatable implements FilamentUser, MustVerifyEmail
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable, HasApiTokens;
@@ -283,6 +288,32 @@ class User extends Authenticatable
     public function getTierColorAttribute(): string
     {
         return $this->loyaltyTier?->badge_color ?? '#808080';
+    }
+
+    /**
+     * Determine if the user can access the Filament admin panel.
+     * Only users with 'admin' or 'staff' roles can access.
+     */
+    public function canAccessPanel(Panel $panel): bool
+    {
+        // Allow access only for admin and staff roles
+        return in_array($this->role, ['admin', 'staff']);
+    }
+
+    /**
+     * Check if user is an admin.
+     */
+    public function isAdmin(): bool
+    {
+        return $this->role === 'admin';
+    }
+
+    /**
+     * Check if user is staff.
+     */
+    public function isStaff(): bool
+    {
+        return in_array($this->role, ['admin', 'staff']);
     }
 }
 

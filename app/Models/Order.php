@@ -19,6 +19,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property float|null $shipping_cost
  * @property float|null $subtotal
  * @property float|null $discount_amount
+ * @property int $discount_percent
  * @property float|null $subtotal_before_tax
  * @property float|null $tax_rate
  * @property float|null $tax_amount
@@ -43,7 +44,33 @@ class Order extends Model
     /** @use HasFactory<\Database\Factories\OrderFactory> */
     use HasFactory;
 
-    protected $guarded = [];
+    protected $fillable = [
+        'user_id',
+        'order_number',
+        'status',
+        'total_amount',
+        'payment_method',
+        'payment_status',
+        'shipping_address',
+        'shipping_method',
+        'shipping_cost',
+        'notes',
+        'subtotal',
+        'discount_amount',
+        'discount_percent',
+        'discount_breakdown',
+        'subtotal_before_tax',
+        'tax_rate',
+        'tax_amount',
+        'is_tax_inclusive',
+        'e_faktur_number',
+        'e_faktur_date',
+        'amount_paid',
+        'balance_due',
+        'payment_term_days',
+        'payment_due_date',
+        'last_payment_date',
+    ];
 
     protected $casts = [
         'total_amount' => 'float',

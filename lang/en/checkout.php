@@ -56,4 +56,13 @@ return [
     'whatsapp_error' => 'Failed to process WhatsApp checkout',
     'stock_warning' => 'Some products have insufficient stock',
     'moq_adjusted' => 'Order quantities have been adjusted to meet minimum requirements for: :products',
+    
+    // B2B Pricing
+    'price_updated' => 'Prices Updated',
+    'price_updated_desc' => 'Some prices have been adjusted to reflect the latest B2B pricing.',
+    'you_save' => 'You save',
+    'with_b2b_price' => 'with B2B pricing!',
+    'special_price' => 'Special Price',
+    'volume_discount' => 'Volume Discount',
+    'loyalty_discount' => 'Loyalty Discount',
 ];

@@ -9,7 +9,7 @@
 @endphp
 <article class="product-card">
     <a href="{{ route('products.show', $product->slug) }}" class="product-image">
-        <img src="{{ isset($product->images[0]) ? url($product->images[0]) : asset('images/product-color.png') }}" alt="{{ $product->name }}">
+        <img src="{{ isset($product->images[0]) ? url($product->images[0]) : asset('images/product-color.png') }}" alt="{{ $product->name }}" loading="lazy">
         
         <!-- B2B Discount Badge -->
         @if($hasDiscount)
@@ -33,13 +33,13 @@
                 Rp {{ number_format($displayPrice, 0, ',', '.') }}
             </span>
             @if($priceSource === 'customer_price_list')
-                <span class="price-source-tag">Harga Khusus</span>
+                <span class="price-source-tag">{{ __('products.special_price') }}</span>
             @elseif($priceSource === 'volume_tier')
-                <span class="price-source-tag">Diskon Volume</span>
+                <span class="price-source-tag">{{ __('products.volume_discounts') }}</span>
             @elseif($priceSource === 'loyalty_tier')
-                <span class="price-source-tag">Diskon Loyalty</span>
+                <span class="price-source-tag">{{ __('products.loyalty_discount') }}</span>
             @elseif($hasVolumePricing)
-                <span class="price-source-tag">Lihat Detail</span>
+                <span class="price-source-tag">{{ __('products.view_details') }}</span>
             @else
                 <span class="price-points">+{{ $product->points }} {{ __('general.pts') }}</span>
             @endif

@@ -650,14 +650,132 @@ img {
     margin-left: var(--space-sm);
 }
 
-/* --- Toast Notification --- */
+/* --- Toast Notification System --- */
+.toast-container {
+    position: fixed;
+    top: 90px;
+    right: var(--space-md);
+    z-index: 2100;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+    max-width: 400px;
+    width: calc(100% - 2rem);
+    pointer-events: none;
+}
+
 .toast {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 16px;
+    background: var(--white);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-lg);
+    border-left: 4px solid var(--gray-400);
+    pointer-events: auto;
+}
+
+.toast-success {
+    border-left-color: var(--green);
+}
+
+.toast-success .toast-icon {
+    color: var(--green);
+}
+
+.toast-error {
+    border-left-color: var(--red);
+}
+
+.toast-error .toast-icon {
+    color: var(--red);
+}
+
+.toast-warning {
+    border-left-color: var(--orange);
+}
+
+.toast-warning .toast-icon {
+    color: var(--orange);
+}
+
+.toast-info {
+    border-left-color: #3b82f6;
+}
+
+.toast-info .toast-icon {
+    color: #3b82f6;
+}
+
+.toast-icon {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+}
+
+.toast-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.toast-message {
+    margin: 0;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--black);
+    line-height: 1.4;
+}
+
+.toast-close {
+    flex-shrink: 0;
+    padding: 2px;
+    background: none;
+    border: none;
+    color: var(--gray-400);
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.toast-close:hover {
+    color: var(--black);
+}
+
+/* Toast Animations */
+.toast-enter {
+    transition: all 0.3s ease-out;
+}
+
+.toast-enter-start {
+    opacity: 0;
+    transform: translateX(20px);
+}
+
+.toast-enter-end {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.toast-leave {
+    transition: all 0.2s ease-in;
+}
+
+.toast-leave-start {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.toast-leave-end {
+    opacity: 0;
+    transform: translateX(20px);
+}
+
+/* Legacy toast (for JS implementations) */
+.toast-legacy {
     position: fixed;
     top: 90px;
     left: var(--space-md);
-    /* Moved to left to avoid cart drawer collision */
     transform: translateX(-20px);
-    /* Animate from left */
     background: var(--black);
     color: var(--white);
     padding: 14px 18px;
@@ -673,7 +791,7 @@ img {
     max-width: 320px;
 }
 
-.toast::before {
+.toast-legacy::before {
     content: '✓';
     display: flex;
     align-items: center;
@@ -688,7 +806,7 @@ img {
     flex-shrink: 0;
 }
 
-.toast.show {
+.toast-legacy.show {
     transform: translateX(0);
     opacity: 1;
 }

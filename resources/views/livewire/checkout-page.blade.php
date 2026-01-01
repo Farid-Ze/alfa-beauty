@@ -14,8 +14,8 @@
                 <!-- Price Change Alert -->
                 @if(!empty($priceChanges))
                     <div class="alert-banner alert-banner--warning">
-                        <strong>⚠️ Harga Telah Diperbarui</strong>
-                        <p>Beberapa harga telah disesuaikan dengan harga B2B terbaru.</p>
+                        <strong>⚠️ {{ __('checkout.price_updated') }}</strong>
+                        <p>{{ __('checkout.price_updated_desc') }}</p>
                     </div>
                 @endif
 
@@ -75,9 +75,9 @@
                 <!-- B2B Savings Banner -->
                 @if($totalSavings > 0)
                     <div class="savings-banner">
-                        <span class="savings-banner-text">🎉 Anda hemat </span>
+                        <span class="savings-banner-text">🎉 {{ __('checkout.you_save') }} </span>
                         <span class="savings-banner-amount">Rp {{ number_format($totalSavings, 0, ',', '.') }}</span>
-                        <span class="savings-banner-text"> dengan harga B2B!</span>
+                        <span class="savings-banner-text"> {{ __('checkout.with_b2b_price') }}</span>
                     </div>
                 @endif
 
@@ -97,7 +97,7 @@
                                 <p class="summary-item-name">{{ $product->name }}</p>
                                 @if($hasDiscount)
                                     <span class="price-source-tag">
-                                        {{ $item['price_source'] === 'customer_price_list' ? 'Harga Khusus' : 'Diskon Volume' }}
+                                        {{ $item['price_source'] === 'customer_price_list' ? __('checkout.special_price') : __('checkout.volume_discount') }}
                                     </span>
                                 @endif
                                 <p class="summary-item-price {{ $hasDiscount ? 'price-current-discounted' : '' }}">

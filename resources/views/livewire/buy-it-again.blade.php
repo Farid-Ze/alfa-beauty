@@ -48,11 +48,11 @@
                                     Rp {{ number_format($displayPrice, 0, ',', '.') }}
                                 </span>
                                 @if($priceSource === 'customer_price_list')
-                                    <span class="price-source-tag">Harga Khusus</span>
+                                    <span class="price-source-tag">{{ __('products.special_price') }}</span>
                                 @elseif($priceSource === 'volume_tier')
-                                    <span class="price-source-tag">Diskon Volume</span>
+                                    <span class="price-source-tag">{{ __('products.volume_discounts') }}</span>
                                 @elseif($priceSource === 'loyalty_tier')
-                                    <span class="price-source-tag">Diskon Loyalty</span>
+                                    <span class="price-source-tag">{{ __('products.loyalty_discount') }}</span>
                                 @endif
                             </div>
                         </div>

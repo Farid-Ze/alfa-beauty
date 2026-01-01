@@ -4,7 +4,6 @@ namespace App\Livewire;
 
 use App\Models\Order;
 use App\Models\PointTransaction;
-use Livewire\Attributes\Layout;
 use Livewire\Component;
 
 class OrderSuccess extends Component

@@ -35,7 +35,7 @@
                 <a href="{{ route('products.show', $featuredProduct->slug) }}" class="editorial-product-wrapper">
                     <div class="editorial-product-image">
                         @if($featuredProduct->images && count($featuredProduct->images) > 0)
-                            <img src="{{ url($featuredProduct->images[0]) }}" alt="{{ $featuredProduct->name }}">
+                            <img src="{{ url($featuredProduct->images[0]) }}" alt="{{ $featuredProduct->name }}" loading="lazy">
                         @else
                             <div class="editorial-product-placeholder">
                                 <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="0.5">
@@ -94,7 +94,7 @@
             <a href="{{ route('brands.show', $other->slug) }}" class="nav-brand-item">
                 @if($other->logo_url)
                     <div class="nav-brand-logo">
-                        <img src="{{ url($other->logo_url) }}" alt="{{ $other->name }}">
+                        <img src="{{ url($other->logo_url) }}" alt="{{ $other->name }}" loading="lazy">
                     </div>
                 @else
                     <span class="nav-brand-name">{{ $other->name }}</span>

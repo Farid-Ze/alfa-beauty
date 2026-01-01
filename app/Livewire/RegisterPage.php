@@ -5,7 +5,7 @@ namespace App\Livewire;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Livewire\Attributes\Layout;
+use Illuminate\Validation\Rules\Password;
 use Livewire\Component;
 
 class RegisterPage extends Component
@@ -17,13 +17,24 @@ class RegisterPage extends Component
     public $password;
     public $password_confirmation;
 
-    protected $rules = [
-        'name' => 'required|min:3',
-        'company_name' => 'required|min:3',
-        'email' => 'required|email|unique:users,email',
-        'phone' => 'required|numeric|min_digits:10',
-        'password' => 'required|min:6|confirmed',
-    ];
+    protected function rules()
+    {
+        return [
+            'name' => 'required|min:3|max:255',
+            'company_name' => 'required|min:3|max:255',
+            'email' => 'required|email|unique:users,email',
+            'phone' => 'required|numeric|min_digits:10|max_digits:15',
+            'password' => [
+                'required',
+                'confirmed',
+                Password::min(8)
+                    ->letters()
+                    ->mixedCase()
+                    ->numbers()
+                    ->symbols(),
+            ],
+        ];
+    }
 
     public function register()
     {
@@ -43,9 +54,14 @@ class RegisterPage extends Component
             'total_spend' => 0,
         ]);
 
+        // Send email verification notification
+        $user->sendEmailVerificationNotification();
+
         Auth::login($user);
 
-        return redirect()->intended('/');
+        session()->flash('message', __('auth.verification_sent'));
+
+        return redirect()->route('verification.notice');
     }
 
     public function render()

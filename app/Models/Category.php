@@ -10,7 +10,14 @@ class Category extends Model
     /** @use HasFactory<\Database\Factories\CategoryFactory> */
     use HasFactory;
 
-    protected $guarded = [];
+    protected $fillable = [
+        'name',
+        'slug',
+        'parent_id',
+        'description',
+        'icon',
+        'sort_order',
+    ];
 
     public function products()
     {

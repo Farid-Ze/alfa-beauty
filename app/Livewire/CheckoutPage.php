@@ -159,8 +159,9 @@ class CheckoutPage extends Component
             \Illuminate\Support\Facades\Log::error('Checkout placeOrder failed', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
+                'user_id' => Auth::id(),
             ]);
-            session()->flash('error', __('checkout.order_error') . ': ' . $e->getMessage());
+            session()->flash('error', __('checkout.order_error'));
         }
     }
 
@@ -210,8 +211,9 @@ class CheckoutPage extends Component
             \Illuminate\Support\Facades\Log::error('Checkout via WhatsApp failed', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
+                'user_id' => Auth::id(),
             ]);
-            session()->flash('error', __('checkout.whatsapp_error') . ': ' . $e->getMessage());
+            session()->flash('error', __('checkout.whatsapp_error'));
         }
     }
 

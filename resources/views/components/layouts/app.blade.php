@@ -1,16 +1,74 @@
 <!DOCTYPE html>
-<html lang="id" style="scroll-behavior: smooth;">
+<html lang="{{ app()->getLocale() }}" style="scroll-behavior: smooth;">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Alfa Beauty | Professional Hair Care</title>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    
+    {{-- Primary Meta Tags --}}
+    <title>{{ $title ?? 'Alfa Beauty | Professional Hair Care B2B' }}</title>
+    <meta name="title" content="{{ $title ?? 'Alfa Beauty | Professional Hair Care B2B' }}">
+    <meta name="description" content="{{ $metaDescription ?? 'Distributor resmi produk hair care profesional. Alfaparf Milano, Farmavita, Montibello & Salsa Cosmetic. Harga grosir untuk salon & barber.' }}">
+    <meta name="keywords" content="{{ $metaKeywords ?? 'hair care b2b, salon supplies, alfaparf indonesia, farmavita, keratin treatment, pewarna rambut profesional' }}">
+    <meta name="author" content="Alfa Beauty">
+    <meta name="robots" content="{{ $metaRobots ?? 'index, follow' }}">
+    
+    {{-- Open Graph / Facebook --}}
+    <meta property="og:type" content="{{ $ogType ?? 'website' }}">
+    <meta property="og:url" content="{{ url()->current() }}">
+    <meta property="og:title" content="{{ $title ?? 'Alfa Beauty | Professional Hair Care B2B' }}">
+    <meta property="og:description" content="{{ $metaDescription ?? 'Distributor resmi produk hair care profesional untuk salon dan barber di Indonesia.' }}">
+    <meta property="og:image" content="{{ $ogImage ?? asset('images/og-default.webp') }}">
+    <meta property="og:site_name" content="Alfa Beauty">
+    <meta property="og:locale" content="{{ app()->getLocale() == 'id' ? 'id_ID' : 'en_US' }}">
+    
+    {{-- Twitter --}}
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:url" content="{{ url()->current() }}">
+    <meta name="twitter:title" content="{{ $title ?? 'Alfa Beauty | Professional Hair Care B2B' }}">
+    <meta name="twitter:description" content="{{ $metaDescription ?? 'Distributor resmi produk hair care profesional untuk salon dan barber di Indonesia.' }}">
+    <meta name="twitter:image" content="{{ $ogImage ?? asset('images/og-default.webp') }}">
+    
+    {{-- Canonical URL --}}
+    <link rel="canonical" href="{{ $canonical ?? url()->current() }}">
+    
+    {{-- Favicon --}}
+    <link rel="icon" type="image/webp" href="{{ asset('images/logo.webp') }}">
+    <link rel="apple-touch-icon" href="{{ asset('images/apple-touch-icon.webp') }}">
+    
+    {{-- Fonts & Styles --}}
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ asset('css/' . (app()->environment('production') ? 'main.min.css' : 'main.css')) }}?v=2.1">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
+    
+    {{-- JSON-LD Structured Data --}}
+    <script type="application/ld+json">
+    {
+        "@@context": "https://schema.org",
+        "@@type": "Organization",
+        "name": "Alfa Beauty",
+        "url": "{{ url('/') }}",
+        "logo": "{{ asset('images/logo.webp') }}",
+        "description": "Distributor resmi produk hair care profesional di Indonesia",
+        "address": {
+            "@@type": "PostalAddress",
+            "addressCountry": "ID"
+        },
+        "contactPoint": {
+            "@@type": "ContactPoint",
+            "telephone": "+62-812-3456-7890",
+            "contactType": "sales"
+        }
+    }
+    </script>
+    @stack('structured-data')
 </head>
 <body>
+    {{-- Toast Notification System --}}
+    <x-toast-notifications />
+
     @php
         $isHomepage = request()->routeIs('home');
     @endphp
@@ -58,7 +116,7 @@
                     </span>
                 </div>
             @endauth
-            <button @click="Livewire.dispatch('toggle-cart')" class="nav-cart">
+            <button @click="$dispatch('toggle-cart')" class="nav-cart">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M9 22C9.55228 22 10 21.5523 10 21C10 20.4477 9.55228 20 9 20C8.44772 20 8 20.4477 8 21C8 21.5523 8.44772 22 9 22Z"/>
                     <path d="M20 22C20.5523 22 21 21.5523 21 21C21 20.4477 20.5523 20 20 20C19.4477 20 19 20.4477 19 21C19 21.5523 19.4477 22 20 22Z"/>
@@ -144,7 +202,7 @@
                             <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/>
                         </svg>
                     </a>
-                    <a href="https://wa.me/6281234567890" target="_blank" rel="noopener" aria-label="WhatsApp">
+                    <a href="https://wa.me/{{ config('services.whatsapp.business_number') }}" target="_blank" rel="noopener" aria-label="WhatsApp">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
                             <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
                         </svg>
@@ -193,14 +251,14 @@
         </div>
 
         <!-- Bottom Bar -->
-        <div class="footer-bottom">
+        <div class="footer-bottom" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; padding: 1.5rem 2rem; border-top: 1px solid rgba(255,255,255,0.1);">
             <div class="footer-bottom-left">
-                <span>© {{ date('Y') }} Alfa Beauty</span>
+                <span style="color: rgba(255,255,255,0.6); font-size: 0.8125rem;">© {{ date('Y') }} Alfa Beauty</span>
             </div>
-            <div class="footer-bottom-right">
-                <a href="/refund">{{ __('nav.refund_policy') }}</a>
-                <a href="/privacy">{{ __('nav.privacy') }}</a>
-                <a href="/terms">{{ __('nav.terms') }}</a>
+            <div class="footer-bottom-right" style="display: flex; gap: 1.5rem;">
+                <a href="/refund" style="color: rgba(255,255,255,0.6); font-size: 0.8125rem; text-decoration: none; transition: color 0.2s;">{{ __('nav.refund_policy') }}</a>
+                <a href="/privacy" style="color: rgba(255,255,255,0.6); font-size: 0.8125rem; text-decoration: none; transition: color 0.2s;">{{ __('nav.privacy') }}</a>
+                <a href="/terms" style="color: rgba(255,255,255,0.6); font-size: 0.8125rem; text-decoration: none; transition: color 0.2s;">{{ __('nav.terms') }}</a>
             </div>
         </div>
     </footer>

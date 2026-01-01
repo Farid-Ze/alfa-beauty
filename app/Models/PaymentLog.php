@@ -53,6 +53,7 @@ class PaymentLog extends Model
     const STATUS_CONFIRMED = 'confirmed';
     const STATUS_FAILED = 'failed';
     const STATUS_REFUNDED = 'refunded';
+    const STATUS_CANCELLED = 'cancelled';
 
     /**
      * Get the order associated with this payment.

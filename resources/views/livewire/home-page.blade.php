@@ -2,7 +2,7 @@
     <!-- Hero Banner -->
     <section class="hero">
         <div class="hero-bg">
-            <img src="{{ asset('images/hero-salon.png') }}" alt="Alfa Beauty Professional Salon" class="hero-image">
+            <img src="{{ asset('images/hero-salon.webp') }}" alt="Alfa Beauty Professional Salon" class="hero-image" fetchpriority="high">
         </div>
         <div class="hero-content">
             <h1 class="hero-title">
@@ -42,7 +42,7 @@
             <a href="{{ route('brands.show', $brand->slug) }}" class="brand-item" data-index="{{ str_pad($index + 1, 2, '0', STR_PAD_LEFT) }}">
                 @if($brand->logo_url)
                     <div class="brand-logo-display">
-                        <img src="{{ url($brand->logo_url) }}" alt="{{ $brand->name }}">
+                        <img src="{{ url($brand->logo_url) }}" alt="{{ $brand->name }}" loading="lazy">
                     </div>
                 @else
                     <span class="brand-name">{{ $brand->name }}</span>
@@ -70,7 +70,7 @@
     <!-- Company Profile -->
     <section class="company" id="about">
         <div class="company-visual">
-            <img src="{{ asset('images/brands-interior.png') }}" alt="Alfa Beauty Facility" class="company-image">
+            <img src="{{ asset('images/brands-interior.webp') }}" alt="Alfa Beauty Facility" class="company-image" loading="lazy">
             
             <!-- Desktop Headline: Structural Split -->
             <div class="company-headline-desktop">

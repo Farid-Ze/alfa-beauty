@@ -43,4 +43,19 @@ return [
     'register_success' => 'Account created successfully',
     'logout_success' => 'You have been logged out',
     'invalid_credentials' => 'Invalid email or password',
+    
+    // Trust Elements
+    'secure_login' => 'Secure Login',
+    'verified_partner' => 'Verified Partner',
+    'nib_verified' => 'NIB Verified',
+    'wholesale_prices' => 'Wholesale Prices',
+    
+    // Email Verification
+    'verify_email_title' => 'Verify Your Email',
+    'verify_email_description' => 'Thanks for registering! Please verify your email address by clicking the link we sent you.',
+    'verify_email_check_inbox' => 'Please check your inbox for the verification link. If you didn\'t receive the email, click below to request another.',
+    'verification_sent' => 'A new verification link has been sent to your email address.',
+    'email_verified' => 'Your email has been verified!',
+    'resend_verification' => 'Resend Verification Email',
+    'logout' => 'Log Out',
 ];

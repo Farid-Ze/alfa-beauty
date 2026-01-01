@@ -43,4 +43,19 @@ return [
     'register_success' => 'Akun berhasil dibuat',
     'logout_success' => 'Anda telah keluar',
     'invalid_credentials' => 'Email atau kata sandi salah',
+    
+    // Trust Elements
+    'secure_login' => 'Login Aman',
+    'verified_partner' => 'Partner Terverifikasi',
+    'nib_verified' => 'NIB Terverifikasi',
+    'wholesale_prices' => 'Harga Grosir',
+    
+    // Verifikasi Email
+    'verify_email_title' => 'Verifikasi Email Anda',
+    'verify_email_description' => 'Terima kasih telah mendaftar! Silakan verifikasi alamat email Anda dengan mengklik tautan yang kami kirimkan.',
+    'verify_email_check_inbox' => 'Silakan periksa inbox Anda untuk tautan verifikasi. Jika Anda tidak menerima email, klik di bawah untuk meminta yang baru.',
+    'verification_sent' => 'Tautan verifikasi baru telah dikirim ke alamat email Anda.',
+    'email_verified' => 'Email Anda telah diverifikasi!',
+    'resend_verification' => 'Kirim Ulang Email Verifikasi',
+    'logout' => 'Keluar',
 ];

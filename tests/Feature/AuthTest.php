@@ -46,10 +46,10 @@ class AuthTest extends TestCase
             ->set('company_name', 'Test Company')
             ->set('email', 'test@example.com')
             ->set('phone', '08123456789')
-            ->set('password', 'password123')
-            ->set('password_confirmation', 'password123')
+            ->set('password', 'Password123!')  // Strong password with symbols
+            ->set('password_confirmation', 'Password123!')
             ->call('register')
-            ->assertRedirect('/');
+            ->assertRedirect(route('verification.notice'));
         
         $this->assertDatabaseHas('users', [
             'email' => 'test@example.com',
@@ -130,8 +130,8 @@ class AuthTest extends TestCase
             ->set('company_name', 'Test Company')
             ->set('email', 'test@example.com')
             ->set('phone', '08123456789')
-            ->set('password', 'password123')
-            ->set('password_confirmation', 'password123')
+            ->set('password', 'Password123!')  // Strong password with symbols
+            ->set('password_confirmation', 'Password123!')
             ->call('register');
 
         $user = User::where('email', 'test@example.com')->first();

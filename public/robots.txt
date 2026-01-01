@@ -1,2 +1,22 @@
+# Alfa Beauty - robots.txt
+# https://alfabeauty.id
+
 User-agent: *
-Disallow:
+Allow: /
+Disallow: /admin
+Disallow: /admin/*
+Disallow: /login
+Disallow: /register
+Disallow: /logout
+Disallow: /checkout
+Disallow: /checkout/*
+Disallow: /orders
+Disallow: /api/
+Disallow: /_debugbar/
+Disallow: /livewire/
+
+# Sitemap
+Sitemap: https://alfabeauty.id/sitemap.xml
+
+# Crawl-delay for polite bots
+Crawl-delay: 1

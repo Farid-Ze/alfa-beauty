@@ -19,20 +19,51 @@ class BuyItAgain extends Component
         $this->pricingService = $pricingService;
     }
 
-    public function addToCart($productId)
+    public function addToCart($productId): void
     {
-        $product = \App\Models\Product::find($productId);
-        
-        if (!$product) {
-            return;
-        }
+        try {
+            $product = \App\Models\Product::find($productId);
+            
+            if (!$product) {
+                $this->dispatch('notify', [
+                    'type' => 'error',
+                    'message' => __('cart.product_not_found'),
+                ]);
+                return;
+            }
 
-        // Use CartService with B2B pricing integration
-        $this->cartService->addItem($productId);
-        
-        $this->dispatch('cart-updated');
-        $this->dispatch('product-added-to-cart', name: $product->name);
-        $this->dispatch('toggle-cart'); // Open cart drawer
+            // Validate stock availability
+            if ($product->stock <= 0) {
+                $this->dispatch('notify', [
+                    'type' => 'error',
+                    'message' => __('cart.out_of_stock', ['product' => $product->name]),
+                ]);
+                return;
+            }
+            
+            // Validate minimum order quantity
+            $minQty = $product->min_order_qty ?? 1;
+            if ($product->stock < $minQty) {
+                $this->dispatch('notify', [
+                    'type' => 'error',
+                    'message' => __('cart.insufficient_stock', ['product' => $product->name]),
+                ]);
+                return;
+            }
+
+            // Use CartService with B2B pricing integration
+            $this->cartService->addItem($productId);
+            
+            $this->dispatch('cart-updated');
+            $this->dispatch('product-added-to-cart', name: $product->name);
+            $this->dispatch('toggle-cart');
+        } catch (\Exception $e) {
+            $this->dispatch('notify', [
+                'type' => 'error',
+                'message' => __('cart.add_failed'),
+            ]);
+            report($e);
+        }
     }
     
     public function render()

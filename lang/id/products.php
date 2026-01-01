@@ -55,6 +55,11 @@ return [
     'buy_more_save_more' => 'Beli lebih banyak, hemat lebih besar',
     'min_order' => 'Minimal order: :qty unit',
     'price_valid_until' => 'Harga berlaku sampai :date',
+    'special_price_title' => 'Harga Khusus untuk Anda',
+    'special_price_desc' => 'Anda mendapat harga spesial sebagai pelanggan B2B',
+    'loyalty_discount' => 'Diskon Loyalitas',
+    'view_details' => 'Lihat Detail',
+    'save_percent' => 'Hemat :percent%',
     
     // Results
     'showing_results' => 'Menampilkan :count produk',

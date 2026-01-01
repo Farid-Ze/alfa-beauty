@@ -79,7 +79,7 @@ class SyncInventory extends Command
 
             if (empty($discrepancies)) {
                 $this->info("✅ All products are in sync! No discrepancies found.");
-                return Command::SUCCESS;
+                return self::SUCCESS;
             }
 
             $this->warn("⚠️ Found " . count($discrepancies) . " discrepancy(ies):");
@@ -88,7 +88,7 @@ class SyncInventory extends Command
                 $discrepancies
             );
 
-            return Command::SUCCESS;
+            return self::SUCCESS;
         }
 
         // Actually sync
@@ -96,7 +96,7 @@ class SyncInventory extends Command
 
         if (empty($results)) {
             $this->info("✅ All products are in sync! No changes needed.");
-            return Command::SUCCESS;
+            return self::SUCCESS;
         }
 
         $this->info("📊 Synced " . count($results) . " product(s):");
@@ -111,6 +111,6 @@ class SyncInventory extends Command
             ])->toArray()
         );
 
-        return Command::SUCCESS;
+        return self::SUCCESS;
     }
 }

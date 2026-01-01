@@ -18,7 +18,7 @@ use App\Http\Controllers\Api\V1\OrderController;
 |
 */
 
-Route::prefix('v1')->name('api.v1.')->group(function () {
+Route::prefix('v1')->name('api.v1.')->middleware(['throttle:api'])->group(function () {
     // Public endpoints
     Route::get('products', [ProductController::class, 'index'])->name('products.index');
     Route::get('products/{slug}', [ProductController::class, 'show'])->name('products.show');

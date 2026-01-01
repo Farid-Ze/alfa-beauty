@@ -47,6 +47,20 @@ return [
     'download_specs' => 'Download Specifications',
     'specs_note' => 'Technical specifications and MSDS available',
     
+    // B2B Pricing
+    'volume_discounts' => 'Volume Discounts',
+    'special_price' => 'Special Price',
+    'customer_price' => 'Customer Price',
+    'you_save' => 'You save',
+    'buy_more_save_more' => 'Buy more, save more',
+    'min_order' => 'Minimum order: :qty units',
+    'price_valid_until' => 'Price valid until :date',
+    'special_price_title' => 'Special Price for You',
+    'special_price_desc' => 'You get a special price as a B2B customer',
+    'loyalty_discount' => 'Loyalty Discount',
+    'view_details' => 'View Details',
+    'save_percent' => 'Save :percent%',
+    
     // Results
     'showing_results' => 'Showing :count products',
     'no_products' => 'No products found',

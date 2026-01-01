@@ -428,19 +428,61 @@ class OrderService
                 $paymentLog->confirm($adminUserId, $referenceNumber);
             }
 
+            // Complete order BEFORE updating status (award points, update tier)
+            // This must be done before setting payment_status to 'paid' because
+            // completeOrder checks for pending status
+            if ($order->user_id && $order->payment_status !== Order::PAYMENT_PAID) {
+                $this->awardPointsAndUpdateSpend($order);
+            }
+
             // Update order status
             $order->update([
                 'payment_status' => Order::PAYMENT_PAID,
                 'status' => Order::STATUS_PROCESSING,
             ]);
 
-            // Complete order (award points, update tier)
-            if ($order->user_id) {
-                $this->completeOrder($order);
-            }
-
             return true;
         });
+    }
+
+    /**
+     * Award points and update total spend for an order.
+     * Extracted from completeOrder to avoid status check issues.
+     */
+    protected function awardPointsAndUpdateSpend(Order $order): void
+    {
+        $user = User::find($order->user_id);
+        if (!$user) return;
+
+        // 1. Calculate Points
+        // Rule: 1 Point per 10.000 spent
+        $basePoints = floor($order->total_amount / 10000);
+        
+        // Apply Tier Multiplier
+        $multiplier = $user->loyaltyTier?->point_multiplier ?? 1.0;
+        $earnedPoints = (int) floor($basePoints * $multiplier);
+
+        if ($earnedPoints > 0) {
+            // 2. Record Transaction
+            $user->pointTransactions()->create([
+                'order_id' => $order->id,
+                'amount' => $earnedPoints,
+                'type' => 'earn',
+                'description' => "Order #{$order->order_number}",
+            ]);
+
+            // 3. Update User Balance
+            $user->increment('points', $earnedPoints);
+        }
+
+        // 4. Update Total Spend & Check Tier Upgrade
+        $previousTierId = $user->loyalty_tier_id;
+        $user->increment('total_spend', $order->total_amount);
+        $this->checkTierUpgrade($user, $previousTierId);
+
+        // 5. Send payment received notification (queued)
+        $order->load('pointTransactions');
+        $user->notify(new PaymentReceived($order));
     }
 
     protected function checkTierUpgrade(User $user, ?int $previousTierId = null): void

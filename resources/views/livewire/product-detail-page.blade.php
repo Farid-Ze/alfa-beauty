@@ -112,10 +112,10 @@
                                 $isActiveTier = $hasVolumePricing && $quantity >= $tier['min_qty'] && ($tier['max_qty'] === null || $quantity <= $tier['max_qty']);
                             @endphp
                             <div class="volume-tier {{ $isActiveTier ? 'active' : '' }}">
-                                <div class="volume-tier-qty">{{ $tier['label'] }} unit</div>
+                                <div class="volume-tier-qty">{{ $tier['label'] }} {{ __('products.unit') }}</div>
                                 <div class="volume-tier-price">Rp {{ number_format($tier['unit_price'], 0, ',', '.') }}</div>
                                 @if($tier['discount_percent'])
-                                    <div class="volume-tier-discount">Hemat {{ number_format($tier['discount_percent'], 0) }}%</div>
+                                    <div class="volume-tier-discount">{{ __('products.save_percent', ['percent' => number_format($tier['discount_percent'], 0)]) }}</div>
                                 @endif
                             </div>
                         @endforeach
@@ -130,8 +130,8 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
                     </svg>
                     <div>
-                        <div class="customer-price-banner-title">Harga Khusus untuk Anda</div>
-                        <div class="customer-price-banner-subtitle">Anda mendapat harga spesial sebagai pelanggan B2B</div>
+                        <div class="customer-price-banner-title">{{ __('products.special_price_title') }}</div>
+                        <div class="customer-price-banner-subtitle">{{ __('products.special_price_desc') }}</div>
                     </div>
                 </div>
             @endif

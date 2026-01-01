@@ -29,7 +29,18 @@ class OrderItem extends Model
     /** @use HasFactory<\Database\Factories\OrderItemFactory> */
     use HasFactory;
 
-    protected $guarded = [];
+    protected $fillable = [
+        'order_id',
+        'product_id',
+        'quantity',
+        'unit_price',
+        'total_price',
+        'unit_price_before_tax',
+        'tax_rate',
+        'tax_amount',
+        'subtotal_before_tax',
+        'batch_allocations',
+    ];
 
     protected $casts = [
         'unit_price' => 'float',

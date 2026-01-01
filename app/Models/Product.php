@@ -35,13 +35,43 @@ use Illuminate\Database\Eloquent\Model;
  * @property \Carbon\Carbon|null $updated_at
  * @property-read Brand $brand
  * @property-read Category $category
+ * @property-read \Illuminate\Database\Eloquent\Collection|Review[] $reviews
+ * @property-read \Illuminate\Database\Eloquent\Collection|Review[] $approvedReviews
+ * @property-read \Illuminate\Database\Eloquent\Collection|ProductPriceTier[] $priceTiers
  */
 class Product extends Model
 {
     /** @use HasFactory<\Database\Factories\ProductFactory> */
     use HasFactory;
 
-    protected $guarded = [];
+    protected $fillable = [
+        'sku',
+        'name',
+        'slug',
+        'brand_id',
+        'category_id',
+        'base_price',
+        'stock',
+        'description',
+        'inci_list',
+        'how_to_use',
+        'is_halal',
+        'is_vegan',
+        'bpom_number',
+        'images',
+        'video_url',
+        'msds_url',
+        'is_active',
+        'is_featured',
+        'weight_grams',
+        'length_mm',
+        'width_mm',
+        'height_mm',
+        'selling_unit',
+        'units_per_case',
+        'min_order_qty',
+        'order_increment',
+    ];
 
     protected $casts = [
         'images' => 'array',
