@@ -8,7 +8,6 @@ use App\Contracts\InventoryServiceInterface;
 use App\Contracts\OrderServiceInterface;
 use App\Models\Cart;
 use App\Models\LoyaltyTier;
-use App\Models\AuditEvent;
 use App\Models\Order;
 use App\Models\OrderCancellation;
 use App\Models\PaymentLog;
@@ -37,9 +36,10 @@ class OrderService implements OrderServiceInterface
     }
 
     public function __construct(
-        protected readonly InventoryServiceInterface $inventoryService, 
+        protected readonly InventoryServiceInterface $inventoryService,
         protected readonly PricingService $pricingService,
-        protected readonly CartService $cartService
+        protected readonly CartService $cartService,
+        protected readonly AuditEventService $auditEventService,
     ) {}
 
     /**
@@ -285,7 +285,8 @@ class OrderService implements OrderServiceInterface
 
             $this->auditEvent([
                 'request_id' => $requestId,
-                'idempotency_key' => $idempotencyKey,
+                // Action-scoped deterministic idempotency key (avoid reusing request/order idempotency key)
+                'idempotency_key' => "order:created:{$order->id}",
                 'actor_user_id' => $userId,
                 'action' => 'order.created',
                 'entity_type' => Order::class,
@@ -517,7 +518,8 @@ class OrderService implements OrderServiceInterface
 
             $this->auditEvent([
                 'request_id' => $requestId,
-                'idempotency_key' => $idempotencyKey,
+                // Action-scoped deterministic idempotency key (avoid reusing request/order idempotency key)
+                'idempotency_key' => "order:created:{$order->id}",
                 'actor_user_id' => $userId,
                 'action' => 'order.created',
                 'entity_type' => Order::class,
@@ -861,7 +863,8 @@ class OrderService implements OrderServiceInterface
 
             $this->auditEvent([
                 'request_id' => request()?->attributes?->get('request_id'),
-                'idempotency_key' => $locked->idempotency_key,
+                // Action-scoped deterministic idempotency key (avoid reusing request/order idempotency key)
+                'idempotency_key' => "order:payment_confirmed:{$locked->id}",
                 'actor_user_id' => $adminUserId,
                 'action' => 'order.payment_confirmed',
                 'entity_type' => Order::class,
@@ -888,20 +891,29 @@ class OrderService implements OrderServiceInterface
 
     protected function auditEvent(array $payload): void
     {
-        try {
-            if (!Schema::hasTable('audit_events')) {
-                return;
-            }
+        $action = (string) ($payload['action'] ?? '');
+        $entityType = (string) ($payload['entity_type'] ?? '');
+        $entityId = $payload['entity_id'] ?? null;
 
-            AuditEvent::create($payload);
-        } catch (\Throwable $e) {
-            Log::warning('AuditEvent write failed', [
-                'error' => $e->getMessage(),
-                'action' => $payload['action'] ?? null,
-                'entity_type' => $payload['entity_type'] ?? null,
-                'entity_id' => $payload['entity_id'] ?? null,
-            ]);
+        // Best-effort deterministic idempotency key fallback for OrderService side-effects.
+        $idempotencyKey = $payload['idempotency_key'] ?? null;
+        if (!$idempotencyKey && $action && $entityType && $entityId) {
+            $typeKey = str_replace('\\', '.', ltrim($entityType, '\\'));
+            $idempotencyKey = "audit:{$action}:{$typeKey}:{$entityId}";
+            if (strlen($idempotencyKey) > 240) {
+                $idempotencyKey = 'audit:' . sha1($action . '|' . $entityType . '|' . (string) $entityId);
+            }
         }
+
+        $this->auditEventService->record(
+            action: $action,
+            entityType: $entityType,
+            entityId: is_numeric($entityId) ? (int) $entityId : null,
+            meta: (array) ($payload['meta'] ?? []),
+            idempotencyKey: is_string($idempotencyKey) ? $idempotencyKey : null,
+            requestId: $payload['request_id'] ?? null,
+            actorUserId: $payload['actor_user_id'] ?? null,
+        );
     }
 
     /**
