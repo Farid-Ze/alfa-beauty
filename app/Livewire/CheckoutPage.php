@@ -163,8 +163,9 @@ class CheckoutPage extends Component
             $this->cartService->clearCart();
             $this->dispatch('cart-updated');
 
-            // Livewire 3: Redirect without return for wire:click actions
-            $this->redirect(route('checkout.success', ['order' => $order->id]), navigate: false);
+            // Use JavaScript redirect for maximum compatibility with serverless
+            $successUrl = route('checkout.success', ['order' => $order->id]);
+            $this->js("window.location.href = '" . $successUrl . "'");
 
         } catch (\Exception $e) {
             \Illuminate\Support\Facades\Log::error('Checkout placeOrder failed', [
@@ -219,8 +220,9 @@ class CheckoutPage extends Component
             $this->cartService->clearCart();
             $this->dispatch('cart-updated');
 
-            // Livewire 3: Redirect without return for wire:click actions
-            $this->redirect(route('checkout.success', ['order' => $result['order']->id]), navigate: false);
+            // Use JavaScript redirect for maximum compatibility with serverless
+            $successUrl = route('checkout.success', ['order' => $result['order']->id]);
+            $this->js("window.location.href = '" . $successUrl . "'");
 
         } catch (\Exception $e) {
             \Illuminate\Support\Facades\Log::error('Checkout via WhatsApp failed', [
