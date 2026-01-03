@@ -3,6 +3,7 @@
 .env
 .env.*
 !.env.example
+!.env.testing
 .phpactor.json
 .phpunit.result.cache
 /.fleet
@@ -32,3 +33,5 @@ Thumbs.db
 compiled_view_debug.txt
 
 .vercel
+
+supabase/.temp/

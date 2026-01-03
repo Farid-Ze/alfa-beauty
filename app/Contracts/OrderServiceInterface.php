@@ -25,7 +25,7 @@ interface OrderServiceInterface
      * @throws \App\Exceptions\InsufficientStockException
      * @throws \App\Exceptions\InvalidOrderException
      */
-    public function createOrder(User $user, array $shippingData, ?string $notes = null): Order;
+    public function createOrder(User $user, array $shippingData, ?string $notes = null, ?string $idempotencyKey = null, ?string $requestId = null): Order;
 
     /**
      * Complete an order after payment confirmation.
@@ -43,7 +43,7 @@ interface OrderServiceInterface
      * @param string $reason The cancellation reason
      * @return Order The updated order
      */
-    public function cancelOrder(Order $order, string $reason): Order;
+    public function cancelOrder(Order $order, string $reasonCode, ?string $notes = null, ?int $cancelledBy = null): Order;
 
     /**
      * Get order by ID with authorization check.

@@ -5,6 +5,10 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\QueryException;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 
 /**
  * UserLoyaltyPeriod Model
@@ -14,6 +18,15 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class UserLoyaltyPeriod extends Model
 {
+        protected static function isUniqueConstraintViolation(QueryException $e): bool
+        {
+            $sqlState = $e->errorInfo[0] ?? null;
+            $driverCode = $e->errorInfo[1] ?? null;
+
+            // MySQL: SQLSTATE 23000 / driver 1062, Postgres: SQLSTATE 23505
+            return $sqlState === '23000' || $sqlState === '23505' || $driverCode === 1062;
+        }
+
     use HasFactory;
 
     protected $fillable = [
@@ -81,16 +94,7 @@ class UserLoyaltyPeriod extends Model
     {
         $now = now();
         $year = $now->year;
-        $quarter = $periodType === 'quarterly' ? ceil($now->month / 3) : null;
-        
-        $existing = self::where('user_id', $user->id)
-            ->where('period_year', $year)
-            ->where('period_quarter', $quarter)
-            ->first();
-            
-        if ($existing) {
-            return $existing;
-        }
+        $quarter = $periodType === 'quarterly' ? (int) ceil($now->month / 3) : null;
         
         // Calculate period dates
         if ($periodType === 'quarterly') {
@@ -101,16 +105,31 @@ class UserLoyaltyPeriod extends Model
             $periodEnd = $now->copy()->endOfYear();
         }
         
-        return self::create([
+        $lookup = [
             'user_id' => $user->id,
-            'loyalty_tier_id' => $user->loyalty_tier_id ?? LoyaltyTier::getDefaultTierId(),
             'period_year' => $year,
             'period_quarter' => $quarter,
+        ];
+
+        $defaults = [
+            'loyalty_tier_id' => $user->loyalty_tier_id ?? LoyaltyTier::getDefaultTierId(),
             'period_spend' => 0,
             'period_orders' => 0,
             'period_start' => $periodStart,
             'period_end' => $periodEnd,
-        ]);
+        ];
+
+        return DB::transaction(function () use ($lookup, $defaults) {
+            try {
+                return self::firstOrCreate($lookup, $defaults);
+            } catch (QueryException $e) {
+                if (!self::isUniqueConstraintViolation($e)) {
+                    throw $e;
+                }
+
+                return self::where($lookup)->firstOrFail();
+            }
+        });
     }
 
     /* ─────────────────────────────────────────────────────────────
@@ -119,39 +138,98 @@ class UserLoyaltyPeriod extends Model
 
     public function addSpend(float $amount): void
     {
-        $this->increment('period_spend', $amount);
-        $this->increment('period_orders');
-        
-        // Check if user qualifies for tier upgrade
-        $this->evaluateTierQualification();
+        DB::transaction(function () use ($amount) {
+            /** @var self $locked */
+            $locked = self::whereKey($this->id)->lockForUpdate()->firstOrFail();
+            $locked->increment('period_spend', $amount);
+            $locked->increment('period_orders');
+
+            // Check if user qualifies for tier upgrade
+            $locked->evaluateTierQualification();
+        });
     }
 
     public function evaluateTierQualification(): void
     {
-        $qualifyingTier = LoyaltyTier::where('min_total_spend', '<=', $this->period_spend)
-            ->orderByDesc('min_total_spend')
-            ->first();
-            
-        if ($qualifyingTier && $qualifyingTier->id !== $this->loyalty_tier_id) {
-            $this->update([
+        DB::transaction(function () {
+            /** @var self $lockedPeriod */
+            $lockedPeriod = self::whereKey($this->id)->lockForUpdate()->firstOrFail();
+
+            // NOTE: loyalty_tiers uses min_spend (lifetime threshold). The schema does not define min_total_spend.
+            $qualifyingTier = LoyaltyTier::where('min_spend', '<=', $lockedPeriod->period_spend)
+                ->orderByDesc('min_spend')
+                ->first();
+
+            if (!$qualifyingTier || $qualifyingTier->id === $lockedPeriod->loyalty_tier_id) {
+                return;
+            }
+
+            $previousPeriodTierId = $lockedPeriod->loyalty_tier_id;
+            $lockedPeriod->update([
                 'loyalty_tier_id' => $qualifyingTier->id,
                 'tier_qualified_at' => now(),
             ]);
-            
-            // Update user's tier
-            $this->user->update([
+
+            /** @var User|null $lockedUser */
+            $lockedUser = User::whereKey($lockedPeriod->user_id)->lockForUpdate()->first();
+            if (!$lockedUser) {
+                return;
+            }
+
+            $previousUserTierId = $lockedUser->loyalty_tier_id;
+            $lockedUser->update([
                 'loyalty_tier_id' => $qualifyingTier->id,
                 'tier_evaluated_at' => now(),
                 'tier_valid_until' => now()->addMonths($qualifyingTier->tier_validity_months ?? 12),
-                'current_period_spend' => $this->period_spend,
+                'current_period_spend' => $lockedPeriod->period_spend,
+            ]);
+
+            // Governance + traceability (non-fatal)
+            $quarter = $lockedPeriod->period_quarter !== null ? (string) $lockedPeriod->period_quarter : 'year';
+            $idempotencyKey = "loyalty_period.tier_qualified:user:{$lockedUser->id}:{$lockedPeriod->period_year}:{$quarter}:to:{$qualifyingTier->id}";
+
+            $this->auditEvent([
+                'request_id' => request()?->attributes?->get('request_id'),
+                'idempotency_key' => $idempotencyKey,
+                'actor_user_id' => null,
+                'action' => 'user.loyalty_tier_changed',
+                'entity_type' => User::class,
+                'entity_id' => $lockedUser->id,
+                'meta' => [
+                    'source' => 'loyalty_period',
+                    'period_year' => $lockedPeriod->period_year,
+                    'period_quarter' => $lockedPeriod->period_quarter,
+                    'period_spend' => $lockedPeriod->period_spend,
+                    'from_user_tier_id' => $previousUserTierId,
+                    'from_period_tier_id' => $previousPeriodTierId,
+                    'to_tier_id' => $qualifyingTier->id,
+                ],
+            ]);
+        });
+    }
+
+    protected function auditEvent(array $payload): void
+    {
+        try {
+            if (!Schema::hasTable('audit_events')) {
+                return;
+            }
+
+            AuditEvent::create($payload);
+        } catch (\Throwable $e) {
+            Log::warning('AuditEvent write failed', [
+                'error' => $e->getMessage(),
+                'action' => $payload['action'] ?? null,
+                'entity_type' => $payload['entity_type'] ?? null,
+                'entity_id' => $payload['entity_id'] ?? null,
             ]);
         }
     }
 
     public function getProgressToNextTierAttribute(): array
     {
-        $nextTier = LoyaltyTier::where('min_total_spend', '>', $this->period_spend)
-            ->orderBy('min_total_spend')
+        $nextTier = LoyaltyTier::where('min_spend', '>', $this->period_spend)
+            ->orderBy('min_spend')
             ->first();
             
         if (!$nextTier) {
@@ -162,8 +240,8 @@ class UserLoyaltyPeriod extends Model
             ];
         }
         
-        $amountNeeded = $nextTier->min_total_spend - $this->period_spend;
-        $progressPercent = ($this->period_spend / $nextTier->min_total_spend) * 100;
+        $amountNeeded = $nextTier->min_spend - $this->period_spend;
+        $progressPercent = ($this->period_spend / $nextTier->min_spend) * 100;
         
         return [
             'next_tier' => $nextTier,

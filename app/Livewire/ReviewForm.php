@@ -2,10 +2,13 @@
 
 namespace App\Livewire;
 
+use App\Models\AuditEvent;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\Review;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 use Livewire\Component;
 
 /**
@@ -71,16 +74,44 @@ class ReviewForm extends Component
         
         $isVerified = $hasOrderFromMount || $hasPaidOrder;
 
-        Review::create([
-            'user_id' => Auth::id(),
-            'product_id' => $this->product->id,
-            'order_id' => $this->orderId,
-            'rating' => $this->rating,
-            'title' => $this->title ?: null,
-            'content' => $this->content,
-            'is_verified' => $isVerified,
-            'is_approved' => false, // Requires admin moderation
-            'points_awarded' => false,
+        $review = Review::firstOrCreate(
+            [
+                'user_id' => Auth::id(),
+                'product_id' => $this->product->id,
+            ],
+            [
+                'order_id' => $this->orderId,
+                'rating' => $this->rating,
+                'title' => $this->title ?: null,
+                'content' => $this->content,
+                'is_verified' => $isVerified,
+                'is_approved' => false, // Requires admin moderation
+                'points_awarded' => false,
+            ]
+        );
+
+        if (!$review->wasRecentlyCreated) {
+            $this->alreadyReviewed = true;
+            $this->submitted = false;
+            $this->showForm = false;
+
+            session()->flash('info', __('reviews.already_reviewed'));
+            return;
+        }
+
+        $this->auditEvent([
+            'request_id' => request()?->attributes?->get('request_id'),
+            'idempotency_key' => "review.submit:user:" . Auth::id() . ":product:" . $this->product->id,
+            'actor_user_id' => Auth::id(),
+            'action' => 'review.submitted',
+            'entity_type' => Review::class,
+            'entity_id' => $review->id,
+            'meta' => [
+                'product_id' => $this->product->id,
+                'order_id' => $this->orderId,
+                'rating' => $this->rating,
+                'is_verified' => $isVerified,
+            ],
         ]);
 
         $this->submitted = true;
@@ -90,6 +121,24 @@ class ReviewForm extends Component
         $this->dispatch('review-submitted');
         
         session()->flash('success', __('reviews.submitted_pending_approval'));
+    }
+
+    protected function auditEvent(array $payload): void
+    {
+        try {
+            if (!Schema::hasTable('audit_events')) {
+                return;
+            }
+
+            AuditEvent::create($payload);
+        } catch (\Throwable $e) {
+            Log::warning('AuditEvent write failed', [
+                'error' => $e->getMessage(),
+                'action' => $payload['action'] ?? null,
+                'entity_type' => $payload['entity_type'] ?? null,
+                'entity_id' => $payload['entity_id'] ?? null,
+            ]);
+        }
     }
 
     public function render()

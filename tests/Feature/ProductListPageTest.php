@@ -33,7 +33,7 @@ class ProductListPageTest extends TestCase
     public function test_product_list_page_shows_products(): void
     {
         Livewire::test(ProductListPage::class)
-            ->assertSee('Product Catalog');
+            ->assertSee('Katalog Produk');
     }
 
     public function test_search_filters_products(): void

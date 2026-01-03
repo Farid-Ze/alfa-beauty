@@ -13,6 +13,10 @@ use Illuminate\Database\Eloquent\Model;
  * @property int $product_id
  * @property int $quantity
  * @property float $unit_price
+ * @property string|null $price_source
+ * @property float|null $original_unit_price
+ * @property float|null $discount_percent
+ * @property array|null $pricing_meta
  * @property float $total_price
  * @property float|null $unit_price_before_tax
  * @property float|null $subtotal_before_tax
@@ -34,6 +38,10 @@ class OrderItem extends Model
         'product_id',
         'quantity',
         'unit_price',
+        'price_source',
+        'original_unit_price',
+        'discount_percent',
+        'pricing_meta',
         'total_price',
         'unit_price_before_tax',
         'tax_rate',
@@ -44,12 +52,15 @@ class OrderItem extends Model
 
     protected $casts = [
         'unit_price' => 'float',
+        'original_unit_price' => 'float',
+        'discount_percent' => 'float',
         'total_price' => 'float',
         'unit_price_before_tax' => 'float',
         'subtotal_before_tax' => 'float',
         'tax_rate' => 'float',
         'tax_amount' => 'float',
         'batch_allocations' => 'array',
+        'pricing_meta' => 'array',
     ];
 
     public function order()

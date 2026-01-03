@@ -9,6 +9,9 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Log;
 
 /**
  * User Model
@@ -36,6 +39,45 @@ use Filament\Panel;
  */
 class User extends Authenticatable implements FilamentUser, MustVerifyEmail
 {
+    /** @var array<string, bool> */
+    protected static array $pointTransactionsColumnCache = [];
+
+    protected static function pointTransactionsHasColumn(string $column): bool
+    {
+        if (!array_key_exists($column, self::$pointTransactionsColumnCache)) {
+            self::$pointTransactionsColumnCache[$column] = Schema::hasColumn('point_transactions', $column);
+        }
+
+        return self::$pointTransactionsColumnCache[$column];
+    }
+
+    protected static function isUniqueConstraintViolation(\Illuminate\Database\QueryException $e): bool
+    {
+        $sqlState = $e->errorInfo[0] ?? null;
+        $driverCode = $e->errorInfo[1] ?? null;
+
+        // MySQL: SQLSTATE 23000 / driver 1062, Postgres: SQLSTATE 23505
+        return $sqlState === '23000' || $sqlState === '23505' || $driverCode === 1062;
+    }
+
+    protected function auditEvent(array $payload): void
+    {
+        try {
+            if (!Schema::hasTable('audit_events')) {
+                return;
+            }
+
+            \App\Models\AuditEvent::create($payload);
+        } catch (\Throwable $e) {
+            Log::warning('AuditEvent write failed', [
+                'error' => $e->getMessage(),
+                'action' => $payload['action'] ?? null,
+                'entity_type' => $payload['entity_type'] ?? null,
+                'entity_id' => $payload['entity_id'] ?? null,
+            ]);
+        }
+    }
+
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable, HasApiTokens;
 
@@ -182,17 +224,65 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
      * @param string|null $description Optional description
      * @return PointTransaction
      */
-    public function addPoints(int $points, string $type, ?int $orderId = null, ?string $description = null): PointTransaction
+    public function addPoints(
+        int $points,
+        string $type,
+        ?int $orderId = null,
+        ?string $description = null,
+        ?string $idempotencyKey = null,
+        ?string $requestId = null,
+    ): PointTransaction
     {
-        $this->increment('points', $points);
+        return DB::transaction(function () use ($points, $type, $orderId, $description, $idempotencyKey, $requestId) {
+            /** @var self $lockedUser */
+            $lockedUser = self::whereKey($this->id)->lockForUpdate()->firstOrFail();
 
-        return $this->pointTransactions()->create([
-            'type' => $type,
-            'amount' => $points,
-            'order_id' => $orderId,
-            'description' => $description ?? "Earned {$points} points",
-            'balance_after' => $this->fresh()->points,
-        ]);
+            $payload = [
+                'user_id' => $lockedUser->id,
+                'type' => $type,
+                'amount' => $points,
+                'order_id' => $orderId,
+                'description' => $description ?? "Earned {$points} points",
+            ];
+
+            if (self::pointTransactionsHasColumn('request_id')) {
+                $payload['request_id'] = $requestId ?? request()?->attributes?->get('request_id');
+            }
+
+            $useIdempotency = $idempotencyKey && self::pointTransactionsHasColumn('idempotency_key');
+            if ($useIdempotency) {
+                $payload['idempotency_key'] = $idempotencyKey;
+            }
+
+            $created = false;
+            if ($useIdempotency) {
+                try {
+                    $tx = PointTransaction::firstOrCreate(
+                        ['idempotency_key' => $idempotencyKey],
+                        $payload,
+                    );
+                    $created = $tx->wasRecentlyCreated;
+                } catch (\Illuminate\Database\QueryException $e) {
+                    if (!self::isUniqueConstraintViolation($e)) {
+                        throw $e;
+                    }
+                    $tx = PointTransaction::where('idempotency_key', $idempotencyKey)->firstOrFail();
+                }
+            } else {
+                $tx = $lockedUser->pointTransactions()->create($payload);
+                $created = true;
+            }
+
+            if ($created) {
+                $lockedUser->increment('points', $points);
+
+                if (self::pointTransactionsHasColumn('balance_after')) {
+                    $tx->forceFill(['balance_after' => $lockedUser->fresh()->points])->save();
+                }
+            }
+
+            return $tx;
+        });
     }
 
     /**
@@ -203,21 +293,72 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
      * @param int|null $orderId Related order ID
      * @return PointTransaction|false Returns false if insufficient points
      */
-    public function spendPoints(int $points, string $type, ?int $orderId = null): PointTransaction|false
+    public function spendPoints(
+        int $points,
+        string $type,
+        ?int $orderId = null,
+        ?string $idempotencyKey = null,
+        ?string $requestId = null,
+    ): PointTransaction|false
     {
-        if ($this->points < $points) {
-            return false;
-        }
+        return DB::transaction(function () use ($points, $type, $orderId, $idempotencyKey, $requestId) {
+            /** @var self $lockedUser */
+            $lockedUser = self::whereKey($this->id)->lockForUpdate()->firstOrFail();
 
-        $this->decrement('points', $points);
+            $useIdempotency = $idempotencyKey && self::pointTransactionsHasColumn('idempotency_key');
+            if ($useIdempotency) {
+                $existing = PointTransaction::where('idempotency_key', $idempotencyKey)->first();
+                if ($existing) {
+                    return $existing;
+                }
+            }
 
-        return $this->pointTransactions()->create([
-            'type' => $type,
-            'amount' => -$points, // Negative for spend
-            'order_id' => $orderId,
-            'description' => "Spent {$points} points",
-            'balance_after' => $this->fresh()->points,
-        ]);
+            if ($lockedUser->points < $points) {
+                return false;
+            }
+
+            $payload = [
+                'user_id' => $lockedUser->id,
+                'type' => $type,
+                'amount' => -$points, // Negative for spend
+                'order_id' => $orderId,
+                'description' => "Spent {$points} points",
+            ];
+
+            if (self::pointTransactionsHasColumn('request_id')) {
+                $payload['request_id'] = $requestId ?? request()?->attributes?->get('request_id');
+            }
+
+            $created = false;
+            if ($useIdempotency) {
+                $payload['idempotency_key'] = $idempotencyKey;
+                try {
+                    $tx = PointTransaction::firstOrCreate(
+                        ['idempotency_key' => $idempotencyKey],
+                        $payload,
+                    );
+                    $created = $tx->wasRecentlyCreated;
+                } catch (\Illuminate\Database\QueryException $e) {
+                    if (!self::isUniqueConstraintViolation($e)) {
+                        throw $e;
+                    }
+                    $tx = PointTransaction::where('idempotency_key', $idempotencyKey)->firstOrFail();
+                }
+            } else {
+                $tx = $lockedUser->pointTransactions()->create($payload);
+                $created = true;
+            }
+
+            if ($created) {
+                $lockedUser->decrement('points', $points);
+
+                if (self::pointTransactionsHasColumn('balance_after')) {
+                    $tx->forceFill(['balance_after' => $lockedUser->fresh()->points])->save();
+                }
+            }
+
+            return $tx;
+        });
     }
 
     /**
@@ -234,34 +375,56 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
      */
     public function updateTier(?float $additionalSpend = null): ?LoyaltyTier
     {
-        // Update total_spend if additional amount provided
-        if ($additionalSpend !== null && $additionalSpend > 0) {
-            $this->increment('total_spend', $additionalSpend);
-            $this->refresh();
-        }
+        return DB::transaction(function () use ($additionalSpend) {
+            /** @var self $lockedUser */
+            $lockedUser = self::whereKey($this->id)->lockForUpdate()->firstOrFail();
 
-        // Find the appropriate tier based on total_spend
-        $newTier = LoyaltyTier::where('min_spend', '<=', $this->total_spend)
-            ->orderByDesc('min_spend')
-            ->first();
+            // Update total_spend if additional amount provided
+            if ($additionalSpend !== null && $additionalSpend > 0) {
+                $lockedUser->increment('total_spend', $additionalSpend);
+                $lockedUser->refresh();
+            }
 
-        if ($newTier && $newTier->id !== $this->loyalty_tier_id) {
-            $oldTier = $this->loyaltyTier;
-            $this->update(['loyalty_tier_id' => $newTier->id]);
-            
-            // Log tier upgrade for analytics
-            /** @phpstan-ignore-next-line */
-            \Illuminate\Support\Facades\Log::info('User tier upgraded', [
-                'user_id' => $this->id,
-                'old_tier' => $oldTier?->name,
-                'new_tier' => $newTier->name,
-                'total_spend' => $this->total_spend,
-            ]);
+            // Find the appropriate tier based on total_spend
+            $newTier = LoyaltyTier::where('min_spend', '<=', $lockedUser->total_spend)
+                ->orderByDesc('min_spend')
+                ->first();
 
-            return $newTier;
-        }
+            if ($newTier && $newTier->id !== $lockedUser->loyalty_tier_id) {
+                $oldTier = $lockedUser->loyaltyTier;
+                $lockedUser->update(['loyalty_tier_id' => $newTier->id]);
 
-        return null;
+                $lockedUser->auditEvent([
+                    'request_id' => request()?->attributes?->get('request_id'),
+                    'idempotency_key' => $lockedUser->id ? "loyalty_tier.change:user:{$lockedUser->id}:to:{$newTier->id}" : null,
+                    'actor_user_id' => null,
+                    'action' => 'user.loyalty_tier_changed',
+                    'entity_type' => self::class,
+                    'entity_id' => $lockedUser->id,
+                    'meta' => [
+                        'from_tier_id' => $oldTier?->id,
+                        'from_tier_name' => $oldTier?->name,
+                        'to_tier_id' => $newTier->id,
+                        'to_tier_name' => $newTier->name,
+                        'total_spend' => $lockedUser->total_spend,
+                        'source' => 'updateTier',
+                    ],
+                ]);
+
+                // Log tier upgrade for analytics
+                /** @phpstan-ignore-next-line */
+                \Illuminate\Support\Facades\Log::info('User tier upgraded', [
+                    'user_id' => $lockedUser->id,
+                    'old_tier' => $oldTier?->name,
+                    'new_tier' => $newTier->name,
+                    'total_spend' => $lockedUser->total_spend,
+                ]);
+
+                return $newTier;
+            }
+
+            return null;
+        });
     }
 
     /**

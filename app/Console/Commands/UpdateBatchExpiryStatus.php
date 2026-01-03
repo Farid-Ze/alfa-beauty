@@ -42,18 +42,18 @@ class UpdateBatchExpiryStatus extends Command
 
         // Update all batches in one query
         $expiredCount = BatchInventory::where('expires_at', '<', $today)
-            ->whereRaw('is_expired = false')
+            ->where('is_expired', false)
             ->update(['is_expired' => true, 'is_active' => false]);
 
         $nearExpiryCount = BatchInventory::where('expires_at', '>=', $today)
             ->where('expires_at', '<=', $nearExpiryThreshold)
-            ->whereRaw('is_near_expiry = false')
-            ->whereRaw('is_expired = false')
+            ->where('is_near_expiry', false)
+            ->where('is_expired', false)
             ->update(['is_near_expiry' => true]);
 
         // Find batches no longer near expiry (in case threshold changed)
         $notNearExpiryCount = BatchInventory::where('expires_at', '>', $nearExpiryThreshold)
-            ->whereRaw('is_near_expiry = true')
+            ->where('is_near_expiry', true)
             ->update(['is_near_expiry' => false]);
 
         $this->info("📊 Expiry Status Update Complete:");

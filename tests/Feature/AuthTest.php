@@ -36,7 +36,7 @@ class AuthTest extends TestCase
         $response = $this->get('/register');
 
         $response->assertStatus(200);
-        $response->assertSee('Register');
+        $response->assertSee('Daftar Partner');
     }
 
     public function test_user_can_register_with_valid_data(): void

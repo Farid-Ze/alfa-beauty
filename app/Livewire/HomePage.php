@@ -30,17 +30,17 @@ class HomePage extends Component
         // Eliminates N+1 problem (was 8+ queries, now 1 query)
         // Added caching to reduce database load on homepage
         $this->brands = Cache::remember('homepage_featured_brands', self::BRANDS_CACHE_TTL, function () {
-            return Brand::whereRaw('is_featured = true')
+            return Brand::where('is_featured', true)
                 ->orderBy('sort_order')
                 ->take(4)
                 ->withCount(['products as product_count' => function ($query) {
-                    $query->whereRaw('is_active = true');
+                    $query->where('is_active', true);
                 }])
                 ->addSelect([
                     'total_stock' => DB::table('products')
                         ->selectRaw('COALESCE(SUM(stock), 0)')
                         ->whereColumn('brand_id', 'brands.id')
-                        ->whereRaw('is_active = true')
+                        ->where('is_active', true)
                 ])
                 ->get();
         });

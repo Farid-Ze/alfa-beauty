@@ -4,7 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\Order;
 use App\Models\PaymentLog;
-use App\Services\InventoryService;
+use App\Services\OrderService;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
@@ -45,7 +45,7 @@ class CleanupOrphanedOrders extends Command
     /**
      * Execute the console command.
      */
-    public function handle(InventoryService $inventoryService): int
+    public function handle(OrderService $orderService): int
     {
         $hours = (int) $this->option('hours');
         $dryRun = $this->option('dry-run');
@@ -112,48 +112,21 @@ class CleanupOrphanedOrders extends Command
             $this->line("Processing order #{$order->order_number}...");
 
             try {
-                DB::transaction(function () use ($order, $inventoryService, $hours) {
-                    // Release stock from batch allocations
-                    foreach ($order->items as $item) {
-                        if (!empty($item->batch_allocations)) {
-                            // Add product_id for legacy fallback
-                            $allocations = collect($item->batch_allocations)->map(function ($alloc) use ($item) {
-                                $alloc['product_id'] = $item->product_id;
-                                return $alloc;
-                            })->toArray();
+                $orderService->cancelOrder(
+                    $order,
+                    'payment_timeout',
+                    "[AUTO-CANCELLED] " . now()->toDateTimeString() . "\nOrder automatically cancelled after {$hours} hours without payment confirmation.",
+                    null,
+                );
 
-                            $inventoryService->releaseStock($allocations, "Order #{$order->order_number} auto-cancelled after {$hours} hours");
-                            
-                            $this->info("   ↩ Released {$item->quantity}x {$item->product->name} back to inventory");
-                        } else {
-                            // Fallback: just increment global stock
-                            $item->product->increment('stock', $item->quantity);
-                            $this->warn("   ↩ Released {$item->quantity}x {$item->product->name} (no batch data - legacy mode)");
-                        }
-                    }
-
-                    // Update order status
-                    $order->update([
-                        'status' => Order::STATUS_CANCELLED,
-                        'notes' => $order->notes . "\n\n[AUTO-CANCELLED] " . now()->toDateTimeString() . "\nOrder automatically cancelled after {$hours} hours without payment confirmation.",
-                    ]);
-
-                    // Update payment log if exists
-                    $order->paymentLogs()->update([
-                        'status' => PaymentLog::STATUS_CANCELLED,
-                        'metadata->cancelled_at' => now()->toIso8601String(),
-                        'metadata->cancelled_reason' => 'timeout',
-                    ]);
-
-                    Log::info('Orphaned order cancelled', [
-                        'order_number' => $order->order_number,
-                        'order_id' => $order->id,
-                        'user_id' => $order->user_id,
-                        'total_amount' => $order->total_amount,
-                        'items_count' => $order->items->count(),
-                        'age_hours' => $order->created_at->diffInHours(now()),
-                    ]);
-                });
+                Log::info('Orphaned order cancelled', [
+                    'order_number' => $order->order_number,
+                    'order_id' => $order->id,
+                    'user_id' => $order->user_id,
+                    'total_amount' => $order->total_amount,
+                    'items_count' => $order->items->count(),
+                    'age_hours' => $order->created_at->diffInHours(now()),
+                ]);
 
                 $this->info("   ✅ Order #{$order->order_number} cancelled, stock released.");
                 $cancelled++;

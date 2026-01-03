@@ -23,13 +23,13 @@ class BrandDetail extends Component
         // OPTIMIZED: Single query with stats via withCount and subquery
         $this->brand = Brand::where('slug', $slug)
             ->withCount(['products as product_count' => function ($query) {
-                $query->whereRaw('is_active = true');
+                $query->where('is_active', true);
             }])
             ->addSelect([
                 'total_stock' => DB::table('products')
                     ->selectRaw('COALESCE(SUM(stock), 0)')
                     ->whereColumn('brand_id', 'brands.id')
-                    ->whereRaw('is_active = true')
+                    ->where('is_active', true)
             ])
             ->firstOrFail();
         
@@ -39,13 +39,13 @@ class BrandDetail extends Component
         
         // Get featured product (single query with fallback)
         $this->featuredProduct = Product::where('brand_id', $this->brand->id)
-            ->whereRaw('is_active = true')
+            ->where('is_active', true)
             ->orderByRaw('is_featured DESC') // Featured first, then any
             ->first();
         
         // Get other brands for switcher
         $this->otherBrands = Brand::where('id', '!=', $this->brand->id)
-            ->whereRaw('is_featured = true')
+            ->where('is_featured', true)
             ->orderBy('sort_order')
             ->take(3)
             ->get();

@@ -24,6 +24,7 @@ $app = Application::configure(basePath: dirname(__DIR__))
         );
         
         // Global middleware for all requests
+        $middleware->append(\App\Http\Middleware\RequestCorrelation::class);
         $middleware->append(\App\Http\Middleware\SecurityHeaders::class);
         $middleware->append(\App\Http\Middleware\ForceHttps::class);
         

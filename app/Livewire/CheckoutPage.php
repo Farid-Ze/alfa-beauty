@@ -6,6 +6,7 @@ use App\Models\Order;
 use App\Services\CartService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Livewire\Component;
 
 use App\Services\OrderService;
@@ -140,7 +141,10 @@ class CheckoutPage extends Component
                 'notes' => $this->notes,
             ];
 
-            $order = $orderService->createFromCart($cart, $customerDetails, Auth::id());
+            $idempotencyKey = $this->buildIdempotencyKey('order', $cart, $customerDetails);
+            $requestId = request()?->attributes?->get('request_id') ?: (string) Str::uuid();
+
+            $order = $orderService->createFromCart($cart, $customerDetails, Auth::id(), $idempotencyKey, $requestId);
 
             // Trigger point calculation & tier upgrade
             // NOTE: In production, this should be called after payment confirmation
@@ -153,7 +157,8 @@ class CheckoutPage extends Component
             $this->cartService->clearCart();
             $this->dispatch('cart-updated');
 
-            return $this->redirectRoute('checkout.success', ['order' => $order->id]);
+            // Livewire 3: Use redirectRoute with navigate:false for full page redirect
+            return $this->redirectRoute('checkout.success', ['order' => $order->id], navigate: false);
 
         } catch (\Exception $e) {
             \Illuminate\Support\Facades\Log::error('Checkout placeOrder failed', [
@@ -194,7 +199,10 @@ class CheckoutPage extends Component
             ];
 
             // Create order and get WhatsApp URL
-            $result = $orderService->createWhatsAppOrder($cart, $customerDetails, Auth::id());
+            $idempotencyKey = $this->buildIdempotencyKey('whatsapp', $cart, $customerDetails);
+            $requestId = request()?->attributes?->get('request_id') ?: (string) Str::uuid();
+
+            $result = $orderService->createWhatsAppOrder($cart, $customerDetails, Auth::id(), $idempotencyKey, $requestId);
 
             // Store order ID in session for reference
             session()->put('whatsapp_order_id', $result['order']->id);
@@ -204,8 +212,9 @@ class CheckoutPage extends Component
             $this->cartService->clearCart();
             $this->dispatch('cart-updated');
 
-            // Redirect to WhatsApp (external URL, use navigate: false)
-            return $this->redirect($result['whatsapp_url'], navigate: false);
+            // Livewire 3 best practice: Use $this->js() for external URL redirect
+            $whatsappUrl = $result['whatsapp_url'];
+            $this->js('window.location.href = ' . json_encode($whatsappUrl) . ';');
 
         } catch (\Exception $e) {
             \Illuminate\Support\Facades\Log::error('Checkout via WhatsApp failed', [
@@ -234,6 +243,35 @@ class CheckoutPage extends Component
             'priceChanges' => $this->priceChanges,
             'totalSavings' => $totalSavings,
         ]);
+    }
+
+    protected function buildIdempotencyKey(string $channel, $cart, array $customerDetails): string
+    {
+        $userId = Auth::id();
+        $cartId = $cart?->id ?? 'no-cart';
+        $sessionId = session()->getId();
+
+        $items = $cart?->items
+            ?->map(fn($item) => ['product_id' => (int) $item->product_id, 'quantity' => (int) $item->quantity])
+            ->sortBy('product_id')
+            ->values()
+            ->toArray() ?? [];
+
+        $customerFingerprint = [
+            'name' => (string) ($customerDetails['name'] ?? ''),
+            'phone' => (string) ($customerDetails['phone'] ?? ''),
+            'address' => (string) ($customerDetails['address'] ?? ''),
+        ];
+
+        return hash('sha256', implode(':', [
+            'checkout',
+            $channel,
+            (string) $cartId,
+            json_encode($items, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+            json_encode($customerFingerprint, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+            (string) ($userId ?? 'guest'),
+            (string) $sessionId,
+        ]));
     }
 }
 

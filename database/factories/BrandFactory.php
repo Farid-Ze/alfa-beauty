@@ -17,7 +17,14 @@ class BrandFactory extends Factory
     public function definition(): array
     {
         return [
-            //
+            'name' => $this->faker->unique()->company(),
+            'slug' => $this->faker->unique()->slug(),
+            'logo_url' => null,
+            'description' => $this->faker->optional()->sentence(),
+            'origin_country' => $this->faker->optional()->country(),
+            'is_own_brand' => false,
+            'is_featured' => false,
+            'sort_order' => 0,
         ];
     }
 }

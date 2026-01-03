@@ -31,6 +31,10 @@
             "dest": "/images/$1"
         },
         {
+            "src": "/product-images/(.*)",
+            "dest": "/product-images/$1"
+        },
+        {
             "src": "/storage/(.*)",
             "dest": "/storage/$1"
         },
@@ -43,36 +47,18 @@
             "dest": "/favicon.$1"
         },
         {
+            "src": "/api/cache-clear",
+            "dest": "/api/cache-clear.php"
+        },
+        {
+            "src": "/api/cron/(.*)",
+            "dest": "/api/cron/$1.php"
+        },
+        {
             "src": "/(.*)",
             "dest": "/api/index.php"
         }
     ],
-    "env": {
-        "APP_ENV": "production",
-        "APP_DEBUG": "true",
-        "DB_CONNECTION": "pgsql",
-        "DB_HOST": "aws-0-ap-southeast-1.pooler.supabase.com",
-        "DB_PORT": "6543",
-        "DB_DATABASE": "postgres",
-        "DB_USERNAME": "postgres.mxdbqetwltjmydkddjul",
-        "DB_PASSWORD": "Galih123@",
-        "POSTGRES_URL": "postgresql://postgres.mxdbqetwltjmydkddjul:Galih123%40@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres?sslmode=require",
-        "FILESYSTEM_DISK": "local",
-        "AWS_ACCESS_KEY_ID": "83fa20dbc49b20c9d9cb3c98f9c2f624",
-        "AWS_SECRET_ACCESS_KEY": "22b93cee609b06c387e63cad9c0693d566153a9ff9fba05ae6807344403da4ec",
-        "AWS_DEFAULT_REGION": "ap-southeast-1",
-        "AWS_BUCKET": "products",
-        "AWS_URL": "https://mxdbqetwltjmydkddjul.supabase.co/storage/v1/object/public/products",
-        "AWS_ENDPOINT": "https://mxdbqetwltjmydkddjul.storage.supabase.co/storage/v1/s3",
-        "AWS_USE_PATH_STYLE_ENDPOINT": "false",
-        "LOG_CHANNEL": "stderr",
-        "QUEUE_CONNECTION": "sync",
-        "SESSION_DRIVER": "cookie",
-        "CACHE_STORE": "array",
-        "VIEW_COMPILED_PATH": "/tmp",
-        "APP_PACKAGES_CACHE": "/tmp/packages.php",
-        "APP_SERVICES_CACHE": "/tmp/services.php"
-    },
     "crons": [
         {
             "path": "/api/cron/cleanup-orders",

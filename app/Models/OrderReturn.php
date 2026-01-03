@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Str;
 
 /**
  * OrderReturn Model
@@ -56,6 +57,8 @@ class OrderReturn extends Model
         'approved_at',
         'received_at',
         'completed_at',
+        'inventory_restocked_at',
+        'loyalty_reversed_at',
     ];
 
     protected $casts = [
@@ -65,6 +68,8 @@ class OrderReturn extends Model
         'approved_at' => 'datetime',
         'received_at' => 'datetime',
         'completed_at' => 'datetime',
+        'inventory_restocked_at' => 'datetime',
+        'loyalty_reversed_at' => 'datetime',
     ];
 
     /* ─────────────────────────────────────────────────────────────
@@ -160,38 +165,38 @@ class OrderReturn extends Model
 
     public function approve(?int $processedBy = null): void
     {
-        $this->update([
-            'status' => 'approved',
-            'processed_by' => $processedBy,
-            'approved_at' => now(),
-        ]);
+        /** @var \App\Contracts\ReturnServiceInterface $service */
+        $service = app(\App\Contracts\ReturnServiceInterface::class);
+        $requestId = request()?->attributes?->get('request_id') ?: (string) Str::uuid();
+        $service->approveReturn($this, $processedBy, $requestId);
+        $this->refresh();
     }
 
     public function markReceived(): void
     {
-        $this->update([
-            'status' => 'received',
-            'received_at' => now(),
-        ]);
+        /** @var \App\Contracts\ReturnServiceInterface $service */
+        $service = app(\App\Contracts\ReturnServiceInterface::class);
+        $requestId = request()?->attributes?->get('request_id') ?: (string) Str::uuid();
+        $service->markReturnReceived($this, $this->processed_by, $requestId);
+        $this->refresh();
     }
 
     public function complete(): void
     {
-        $this->calculateRefundAmount();
-        $this->update([
-            'status' => 'completed',
-            'refund_status' => 'completed',
-            'completed_at' => now(),
-        ]);
+        /** @var \App\Contracts\ReturnServiceInterface $service */
+        $service = app(\App\Contracts\ReturnServiceInterface::class);
+        $requestId = request()?->attributes?->get('request_id') ?: (string) Str::uuid();
+        $service->completeReturn($this, $this->processed_by, $requestId);
+        $this->refresh();
     }
 
     public function reject(string $reason): void
     {
-        $this->update([
-            'status' => 'rejected',
-            'reason_notes' => $reason,
-            'refund_status' => 'declined',
-        ]);
+        /** @var \App\Contracts\ReturnServiceInterface $service */
+        $service = app(\App\Contracts\ReturnServiceInterface::class);
+        $requestId = request()?->attributes?->get('request_id') ?: (string) Str::uuid();
+        $service->rejectReturn($this, $reason, $this->processed_by, $requestId);
+        $this->refresh();
     }
 
     /* ─────────────────────────────────────────────────────────────

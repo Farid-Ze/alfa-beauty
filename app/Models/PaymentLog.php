@@ -100,6 +100,10 @@ class PaymentLog extends Model
      */
     public function confirm(int $confirmedBy, ?string $referenceNumber = null, ?string $notes = null): bool
     {
+        if ($this->status === self::STATUS_CONFIRMED) {
+            return true;
+        }
+
         return $this->update([
             'status' => self::STATUS_CONFIRMED,
             'confirmed_by' => $confirmedBy,

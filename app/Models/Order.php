@@ -11,6 +11,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * Order Model
  *
  * @property int $id
+ * @property string|null $request_id
+ * @property string|null $idempotency_key
  * @property int|null $user_id
  * @property string $order_number
  * @property string $status
@@ -45,6 +47,8 @@ class Order extends Model
     use HasFactory;
 
     protected $fillable = [
+        'request_id',
+        'idempotency_key',
         'user_id',
         'order_number',
         'status',
@@ -290,19 +294,20 @@ class Order extends Model
      */
     public function cancel(string $reasonCode, ?string $notes = null, ?int $cancelledBy = null): OrderCancellation
     {
+        // Idempotency: if already cancelled, return existing cancellation record.
+        if ($this->cancellation) {
+            return $this->cancellation;
+        }
+
         if (!$this->canBeCancelled()) {
             throw new \Exception('Order cannot be cancelled');
         }
 
-        $this->update(['status' => self::STATUS_CANCELLED]);
+        /** @var \App\Services\OrderService $orderService */
+        $orderService = app(\App\Services\OrderService::class);
+        $orderService->cancelOrder($this, $reasonCode, $notes, $cancelledBy);
 
-        return $this->cancellation()->create([
-            'cancelled_by' => $cancelledBy,
-            'reason_code' => $reasonCode,
-            'reason_notes' => $notes,
-            'refund_amount' => $this->amount_paid,
-            'refund_status' => $this->amount_paid > 0 ? 'pending' : 'completed',
-        ]);
+        return $this->fresh()->cancellation()->firstOrFail();
     }
 
     /**

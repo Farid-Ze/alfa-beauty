@@ -33,7 +33,7 @@ class BrandController extends Controller
 
         // Filter by featured
         if ($request->boolean('featured')) {
-            $query->whereRaw('is_featured = true');
+            $query->where('is_featured', true);
         }
 
         // Only brands with products

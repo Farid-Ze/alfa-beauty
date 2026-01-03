@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Contracts\InventoryServiceInterface;
 use App\Models\BatchInventory;
 use App\Models\OrderItem;
 use App\Models\Product;
@@ -21,7 +22,7 @@ use Illuminate\Support\Facades\Log;
  * 2. FIFO (First In First Out) - Fallback if no expiry data
  * 3. Near-expiry batches get priority to minimize losses
  */
-class InventoryService
+class InventoryService implements InventoryServiceInterface
 {
     /**
      * Default reservation timeout in hours.

@@ -5,6 +5,9 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 
 /**
  * Review Model (Testimonials)
@@ -121,25 +124,75 @@ class Review extends Model
      */
     public function approve(int $approvedBy): bool
     {
-        $this->update([
-            'is_approved' => true,
-            'approved_at' => now(),
-            'approved_by' => $approvedBy,
-        ]);
+        return DB::transaction(function () use ($approvedBy) {
+            /** @var self $locked */
+            $locked = self::whereKey($this->id)->lockForUpdate()->firstOrFail();
 
-        // Award bonus points if not already awarded
-        if (!$this->points_awarded && $this->user) {
-            $this->user->addPoints(
-                self::REVIEW_BONUS_POINTS,
-                'review',
-                null,
-                "Bonus review untuk produk: {$this->product?->name}"
-            );
-            
-            $this->update(['points_awarded' => true]);
+            // Idempotent: if already approved and points awarded, no-op.
+            if ($locked->is_approved && $locked->points_awarded) {
+                return true;
+            }
+
+            $locked->forceFill([
+                'is_approved' => true,
+                'approved_at' => now(),
+                'approved_by' => $approvedBy,
+            ])->save();
+
+            // Award bonus points if not already awarded
+            if (!$locked->points_awarded && $locked->user_id) {
+                $locked->loadMissing(['user', 'product']);
+                if ($locked->user) {
+                    $idempotencyKey = "earn:review:{$locked->id}:user:{$locked->user_id}";
+                    $locked->user->addPoints(
+                        self::REVIEW_BONUS_POINTS,
+                        'review',
+                        null,
+                        "Bonus review untuk produk: {$locked->product?->name}",
+                        $idempotencyKey,
+                        request()?->attributes?->get('request_id'),
+                    );
+
+                    $locked->forceFill(['points_awarded' => true])->save();
+
+                    $this->auditEvent([
+                        'request_id' => request()?->attributes?->get('request_id'),
+                        'idempotency_key' => $idempotencyKey,
+                        'actor_user_id' => $approvedBy,
+                        'action' => 'review.approved',
+                        'entity_type' => self::class,
+                        'entity_id' => $locked->id,
+                        'meta' => [
+                            'user_id' => $locked->user_id,
+                            'product_id' => $locked->product_id,
+                            'order_id' => $locked->order_id,
+                            'rating' => $locked->rating,
+                            'points_awarded' => self::REVIEW_BONUS_POINTS,
+                        ],
+                    ]);
+                }
+            }
+
+            return true;
+        });
+    }
+
+    protected function auditEvent(array $payload): void
+    {
+        try {
+            if (!Schema::hasTable('audit_events')) {
+                return;
+            }
+
+            AuditEvent::create($payload);
+        } catch (\Throwable $e) {
+            Log::warning('AuditEvent write failed', [
+                'error' => $e->getMessage(),
+                'action' => $payload['action'] ?? null,
+                'entity_type' => $payload['entity_type'] ?? null,
+                'entity_id' => $payload['entity_id'] ?? null,
+            ]);
         }
-
-        return true;
     }
 
     /**

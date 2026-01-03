@@ -25,11 +25,13 @@ class OrderCancellation extends Model
         'refund_status',
         'refund_method',
         'refund_completed_at',
+        'inventory_released_at',
     ];
 
     protected $casts = [
         'refund_amount' => 'decimal:2',
         'refund_completed_at' => 'datetime',
+        'inventory_released_at' => 'datetime',
     ];
 
     /* ─────────────────────────────────────────────────────────────

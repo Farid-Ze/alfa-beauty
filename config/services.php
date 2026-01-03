@@ -126,4 +126,19 @@ return [
         ],
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Loyalty
+    |--------------------------------------------------------------------------
+    */
+
+    'loyalty' => [
+        // Business rule toggle. Keep false unless explicitly desired.
+        'reverse_on_returns' => (bool) env('LOYALTY_REVERSE_ON_RETURNS', false),
+
+        // Optional: decrement users.total_spend by refunded amount.
+        // Note: tier downgrade is NOT applied; this is for spend tracking/reporting only.
+        'adjust_total_spend_on_returns' => (bool) env('LOYALTY_ADJUST_TOTAL_SPEND_ON_RETURNS', false),
+    ],
+
 ];

@@ -190,7 +190,7 @@ class ProductListPage extends Component
         }
 
         // Only active/in-stock logic if needed? For B2B, usually show all but mark OOS.
-        $query->whereRaw('is_active = true');
+        $query->where('is_active', true);
 
         $products = $query->paginate($this->perPage);
         

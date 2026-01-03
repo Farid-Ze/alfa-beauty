@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Validation\ValidationException;
 
 /**
  * ProductPriceTier Model
@@ -38,11 +39,18 @@ class ProductPriceTier extends Model
 
     /**
      * Check if this tier applies to a given quantity.
-     * Note: Only checks min_quantity since max_quantity column doesn't exist.
      */
     public function appliesTo(int $quantity): bool
     {
-        return $quantity >= $this->min_quantity;
+        if ($quantity < $this->min_quantity) {
+            return false;
+        }
+
+        if ($this->max_quantity === null) {
+            return true;
+        }
+
+        return $quantity <= $this->max_quantity;
     }
 
     /**
@@ -63,10 +71,65 @@ class ProductPriceTier extends Model
 
     /**
      * Scope to find the applicable tier for a quantity.
-     * Note: Only uses min_quantity since max_quantity column doesn't exist in database.
      */
     public function scopeForQuantity($query, int $quantity)
     {
-        return $query->where('min_quantity', '<=', $quantity);
+        return $query
+            ->where('min_quantity', '<=', $quantity)
+            ->where(function ($q) use ($quantity) {
+                $q->whereNull('max_quantity')
+                    ->orWhere('max_quantity', '>=', $quantity);
+            });
+    }
+
+    protected static function booted(): void
+    {
+        static::saving(function (self $model): void {
+            $hasUnit = $model->unit_price !== null;
+            $hasDiscount = $model->discount_percent !== null;
+
+            if ($hasUnit === $hasDiscount) {
+                throw ValidationException::withMessages([
+                    'unit_price' => 'Set either unit price or discount percent (not both).',
+                    'discount_percent' => 'Set either unit price or discount percent (not both).',
+                ]);
+            }
+
+            if ($model->min_quantity < 1) {
+                throw ValidationException::withMessages([
+                    'min_quantity' => 'Minimum quantity must be at least 1.',
+                ]);
+            }
+
+            if ($model->max_quantity !== null && $model->max_quantity < $model->min_quantity) {
+                throw ValidationException::withMessages([
+                    'max_quantity' => 'Maximum quantity must be greater than or equal to minimum quantity.',
+                ]);
+            }
+
+            if (empty($model->product_id)) {
+                return;
+            }
+
+            $newMin = (int) $model->min_quantity;
+            $newMax = $model->max_quantity === null ? null : (int) $model->max_quantity;
+
+            $overlaps = self::query()
+                ->where('product_id', $model->product_id)
+                ->when($model->exists, fn ($q) => $q->whereKeyNot($model->getKey()))
+                ->when($newMax !== null, fn ($q) => $q->where('min_quantity', '<=', $newMax))
+                ->where(function ($q) use ($newMin) {
+                    $q->whereNull('max_quantity')
+                        ->orWhere('max_quantity', '>=', $newMin);
+                })
+                ->exists();
+
+            if ($overlaps) {
+                throw ValidationException::withMessages([
+                    'min_quantity' => 'This tier overlaps an existing tier for the same product.',
+                    'max_quantity' => 'This tier overlaps an existing tier for the same product.',
+                ]);
+            }
+        });
     }
 }

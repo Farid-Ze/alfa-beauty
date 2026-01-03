@@ -6,10 +6,20 @@ use App\Contracts\CartServiceInterface;
 use App\Contracts\InventoryServiceInterface;
 use App\Contracts\OrderServiceInterface;
 use App\Contracts\PricingServiceInterface;
+use App\Contracts\ReturnServiceInterface;
 use App\Services\CartService;
 use App\Services\InventoryService;
 use App\Services\OrderService;
 use App\Services\PricingService;
+use App\Services\ReturnService;
+use App\Models\CustomerPriceList;
+use App\Models\LoyaltyTier;
+use App\Models\Product;
+use App\Models\ProductPriceTier;
+use App\Models\User;
+use App\Observers\PricingRuleAuditObserver;
+use App\Observers\PricingSourceAuditObserver;
+use App\Observers\UserAuditObserver;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Queue\Events\JobFailed;
@@ -32,6 +42,7 @@ class AppServiceProvider extends ServiceProvider
         CartServiceInterface::class => CartService::class,
         OrderServiceInterface::class => OrderService::class,
         InventoryServiceInterface::class => InventoryService::class,
+        ReturnServiceInterface::class => ReturnService::class,
     ];
 
     /**
@@ -58,6 +69,14 @@ class AppServiceProvider extends ServiceProvider
         $this->configureRateLimiting();
         $this->configureQueryLogging();
         $this->configureQueueFailedHandler();
+
+        CustomerPriceList::observe(PricingRuleAuditObserver::class);
+        ProductPriceTier::observe(PricingRuleAuditObserver::class);
+
+        Product::observe(new PricingSourceAuditObserver(['base_price']));
+        LoyaltyTier::observe(new PricingSourceAuditObserver(['discount_percent', 'point_multiplier', 'min_spend', 'free_shipping']));
+
+        User::observe(UserAuditObserver::class);
     }
 
     /**

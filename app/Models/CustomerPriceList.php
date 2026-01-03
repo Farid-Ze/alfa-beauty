@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Validation\ValidationException;
 
 /**
  * CustomerPriceList Model
@@ -108,6 +109,35 @@ class CustomerPriceList extends Model
         }
 
         return $basePrice;
+    }
+
+    protected static function booted(): void
+    {
+        static::saving(function (self $model): void {
+            $hasCustom = $model->custom_price !== null;
+            $hasDiscount = $model->discount_percent !== null;
+
+            if ($hasCustom === $hasDiscount) {
+                throw ValidationException::withMessages([
+                    'custom_price' => 'Set either custom price or discount percent (not both).',
+                    'discount_percent' => 'Set either custom price or discount percent (not both).',
+                ]);
+            }
+
+            $minQty = (int) ($model->min_quantity ?? 1);
+            if ($minQty < 1) {
+                throw ValidationException::withMessages([
+                    'min_quantity' => 'Minimum quantity must be at least 1.',
+                ]);
+            }
+
+            if ($model->valid_from && $model->valid_until && $model->valid_from > $model->valid_until) {
+                throw ValidationException::withMessages([
+                    'valid_from' => 'Valid from must be on or before valid until.',
+                    'valid_until' => 'Valid until must be on or after valid from.',
+                ]);
+            }
+        });
     }
 }
 

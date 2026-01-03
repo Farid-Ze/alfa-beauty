@@ -13,6 +13,8 @@ class PointTransaction extends Model
     protected $fillable = [
         'user_id',
         'order_id',
+        'request_id',
+        'idempotency_key',
         'amount',
         'type', // 'earn', 'redeem', 'adjust', 'purchase', 'bonus', 'review'
         'description',
