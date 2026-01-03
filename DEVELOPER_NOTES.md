@@ -128,6 +128,24 @@ npm run build
 cmd /c "npx -y clean-css-cli -o public/css/main.min.css public/css/main.css"
 ```
 
+### Supabase Schema Ops (Secure)
+
+Use the hardened script to push Supabase migrations.
+
+```powershell
+# Recommended: push migrations without linking (no password required if already linked)
+powershell -ExecutionPolicy Bypass -File .\scripts\supabase_link_and_push.ps1 -ProjectRef <your_project_ref> -NonInteractive
+
+# If you need to link a project on a new machine, run with -Link.
+# You will be prompted securely for the DB password (no echo).
+powershell -ExecutionPolicy Bypass -File .\scripts\supabase_link_and_push.ps1 -ProjectRef <your_project_ref> -Link -NonInteractive
+
+# Optional: use POSTGRES_PASSWORD from .env.local (less secure; avoid in shared terminals)
+powershell -ExecutionPolicy Bypass -File .\scripts\supabase_link_and_push.ps1 -ProjectRef <your_project_ref> -Link -UseEnvPassword -NonInteractive
+```
+
+Security note: if secrets are ever printed in logs or terminals, rotate Supabase DB credentials promptly and update local environment files.
+
 ---
 
 ## ⚠️ Important Notes

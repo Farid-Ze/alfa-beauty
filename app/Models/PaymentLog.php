@@ -19,6 +19,8 @@ class PaymentLog extends Model
 
     protected $fillable = [
         'order_id',
+        'request_id',
+        'idempotency_key',
         'payment_method',
         'provider',
         'amount',

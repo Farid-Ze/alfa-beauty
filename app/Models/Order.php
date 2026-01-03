@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Order Model
@@ -253,29 +254,81 @@ class Order extends Model
      */
     public function recordPayment(float $amount, string $method, ?string $reference = null): PaymentLog
     {
-        $paymentLog = $this->paymentLogs()->create([
-            'amount' => $amount,
-            'payment_method' => $method,
-            'transaction_reference' => $reference,
-            'status' => 'completed',
-            'paid_at' => now(),
-        ]);
+        return DB::transaction(function () use ($amount, $method, $reference) {
+            /** @var self $locked */
+            $locked = self::whereKey($this->id)->lockForUpdate()->firstOrFail();
 
-        /** @phpstan-ignore-next-line */
-        $this->amount_paid = (float) ($this->amount_paid ?? 0) + $amount;
-        /** @phpstan-ignore-next-line */
-        $this->balance_due = (float) ($this->total_amount ?? 0) - (float) $this->amount_paid;
-        $this->last_payment_date = now();
+            $amountNormalized = (float) $amount;
+            $idempotencyKey = $reference
+                ? "payment:order:{$locked->id}:ref:" . trim($reference)
+                : "payment:order:{$locked->id}:method:{$method}:amount:" . number_format($amountNormalized, 2, '.', '');
 
-        if ($this->balance_due <= 0) {
-            $this->payment_status = self::PAYMENT_PAID;
-        } elseif ($this->amount_paid > 0) {
-            $this->payment_status = 'partially_paid';
-        }
+            $attributes = ['order_id' => $locked->id, 'idempotency_key' => $idempotencyKey];
+            $values = [
+                'payment_method' => $method,
+                'amount' => $amountNormalized,
+                'currency' => 'IDR',
+                'status' => PaymentLog::STATUS_CONFIRMED,
+                'confirmed_at' => now(),
+            ];
 
-        $this->save();
+            if ($reference) {
+                $values['reference_number'] = trim($reference);
+            }
 
-        return $paymentLog;
+            $paymentLog = $locked->paymentLogs()->firstOrCreate($attributes, $values);
+
+            if ($paymentLog->status !== PaymentLog::STATUS_CONFIRMED) {
+                $paymentLog->forceFill([
+                    'status' => PaymentLog::STATUS_CONFIRMED,
+                    'confirmed_at' => $paymentLog->confirmed_at ?? now(),
+                ])->save();
+            }
+
+            $amountPaid = (float) $locked->paymentLogs()
+                ->where('status', PaymentLog::STATUS_CONFIRMED)
+                ->sum('amount');
+
+            $lastPaymentAt = $locked->paymentLogs()
+                ->where('status', PaymentLog::STATUS_CONFIRMED)
+                ->max('confirmed_at');
+
+            $locked->amount_paid = $amountPaid;
+            $locked->balance_due = (float) ($locked->total_amount ?? 0) - $amountPaid;
+            $locked->last_payment_date = $lastPaymentAt ? \Carbon\Carbon::parse($lastPaymentAt) : $locked->last_payment_date;
+
+            if ($locked->balance_due <= 0 && $amountPaid > 0) {
+                $locked->payment_status = self::PAYMENT_PAID;
+            } elseif ($amountPaid > 0) {
+                $locked->payment_status = 'partially_paid';
+            }
+
+            $locked->save();
+
+            try {
+                /** @var \App\Services\AuditEventService $audit */
+                $audit = app(\App\Services\AuditEventService::class);
+                $audit->record(
+                    'order.payment_recorded',
+                    self::class,
+                    $locked->id,
+                    [
+                        'payment_log_id' => $paymentLog->id,
+                        'payment_method' => $method,
+                        'amount' => $amountNormalized,
+                        'reference_number' => $reference,
+                        'status' => $paymentLog->status,
+                    ],
+                    "order:payment_recorded:{$locked->id}:{$paymentLog->id}",
+                    $locked->request_id,
+                    null,
+                );
+            } catch (\Throwable $e) {
+                // Non-fatal governance
+            }
+
+            return $paymentLog;
+        });
     }
 
     /**

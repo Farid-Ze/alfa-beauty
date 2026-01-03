@@ -569,21 +569,25 @@ class OrderService implements OrderServiceInterface
             }
 
             // Create Payment Log for WhatsApp checkout
-            PaymentLog::create([
-                'order_id' => $order->id,
-                'payment_method' => PaymentLog::METHOD_WHATSAPP,
-                'amount' => $totalAmount,
-                'currency' => 'IDR',
-                'status' => PaymentLog::STATUS_PENDING,
-                'metadata' => [
+            $paymentInitIdempotencyKey = "payment:init:order:{$order->id}";
+            PaymentLog::firstOrCreate(
+                ['order_id' => $order->id, 'idempotency_key' => $paymentInitIdempotencyKey],
+                [
                     'request_id' => $order->request_id,
-                    'idempotency_key' => $order->idempotency_key,
-                    'customer_name' => $customerDetails['name'],
-                    'customer_phone' => $customerDetails['phone'],
-                    'initiated_at' => now()->toIso8601String(),
-                    'user_agent' => request()->userAgent(),
-                ],
-            ]);
+                    'payment_method' => PaymentLog::METHOD_WHATSAPP,
+                    'amount' => $totalAmount,
+                    'currency' => 'IDR',
+                    'status' => PaymentLog::STATUS_PENDING,
+                    'metadata' => [
+                        'request_id' => $order->request_id,
+                        'idempotency_key' => $paymentInitIdempotencyKey,
+                        'customer_name' => $customerDetails['name'],
+                        'customer_phone' => $customerDetails['phone'],
+                        'initiated_at' => now()->toIso8601String(),
+                        'user_agent' => request()->userAgent(),
+                    ],
+                ]
+            );
 
             // Load items for message generation
             $order->load('items.product');
@@ -630,7 +634,13 @@ class OrderService implements OrderServiceInterface
                 return;
             }
 
-            $locked->update(['payment_status' => Order::PAYMENT_PAID, 'status' => Order::STATUS_PROCESSING]);
+            $locked->forceFill([
+                'payment_status' => Order::PAYMENT_PAID,
+                'status' => Order::STATUS_PROCESSING,
+                'amount_paid' => (float) ($locked->total_amount ?? 0),
+                'balance_due' => 0,
+                'last_payment_date' => now(),
+            ])->save();
 
             $user = User::whereKey($locked->user_id)->lockForUpdate()->first();
             if (!$user) {
@@ -846,6 +856,20 @@ class OrderService implements OrderServiceInterface
             if ($paymentLog) {
                 /** @phpstan-ignore method.notFound */
                 $paymentLog->confirm($adminUserId, $referenceNumber);
+            }
+
+            $amountPaid = (float) $locked->paymentLogs()
+                ->where('status', PaymentLog::STATUS_CONFIRMED)
+                ->sum('amount');
+
+            $lastPaymentAt = $locked->paymentLogs()
+                ->where('status', PaymentLog::STATUS_CONFIRMED)
+                ->max('confirmed_at');
+
+            $locked->amount_paid = $amountPaid;
+            $locked->balance_due = (float) ($locked->total_amount ?? 0) - $amountPaid;
+            if ($lastPaymentAt) {
+                $locked->last_payment_date = \Carbon\Carbon::parse($lastPaymentAt);
             }
 
             // Complete order BEFORE updating status (award points, update tier)
