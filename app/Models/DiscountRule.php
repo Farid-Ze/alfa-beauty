@@ -150,7 +150,7 @@ class DiscountRule extends Model
 
     public function scopeActive($query)
     {
-        return $query->where('is_active', true);
+        return $query->whereRaw('is_active = true');
     }
 
     public function scopeValid($query)
