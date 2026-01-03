@@ -30,17 +30,19 @@ class HomePage extends Component
         // Eliminates N+1 problem (was 8+ queries, now 1 query)
         // Added caching to reduce database load on homepage
         $this->brands = Cache::remember('homepage_featured_brands', self::BRANDS_CACHE_TTL, function () {
-            return Brand::where('is_featured', true)
+            // IMPORTANT: Use whereRaw for boolean columns in PostgreSQL with EMULATE_PREPARES
+            // Laravel binds booleans as integers (1/0) but PostgreSQL requires true/false
+            return Brand::whereRaw('is_featured = true')
                 ->orderBy('sort_order')
                 ->take(4)
                 ->withCount(['products as product_count' => function ($query) {
-                    $query->where('is_active', true);
+                    $query->whereRaw('is_active = true');
                 }])
                 ->addSelect([
                     'total_stock' => DB::table('products')
                         ->selectRaw('COALESCE(SUM(stock), 0)')
                         ->whereColumn('brand_id', 'brands.id')
-                        ->where('is_active', true)
+                        ->whereRaw('is_active = true')
                 ])
                 ->get();
         });
