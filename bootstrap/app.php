@@ -34,7 +34,10 @@ if (getenv('VERCEL')) {
         putenv('CACHE_STORE=array');
     }
     if (!getenv('SESSION_DRIVER')) {
-        putenv('SESSION_DRIVER=cookie');
+        // IMPORTANT: Use database sessions, NOT cookie
+        // Cookie sessions have 4KB limit which causes session data loss
+        // manifesting as 'Guest' display despite being logged in
+        putenv('SESSION_DRIVER=database');
     }
     if (!getenv('LOG_CHANNEL')) {
         putenv('LOG_CHANNEL=stderr');
