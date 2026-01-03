@@ -132,7 +132,17 @@ class CheckoutPage extends Component
         // Final price refresh to ensure accuracy
         $this->priceChanges = $this->cartService->refreshPrices();
         
-        return $moqValid && $stockValid;
+        // Debug: track validation results
+        $this->debugError = "moq:{$moqValid},stock:{$stockValid}";
+        
+        $result = $moqValid && $stockValid;
+        \Log::info('validateBeforeOrder result', [
+            'moqValid' => $moqValid,
+            'stockValid' => $stockValid,
+            'result' => $result,
+        ]);
+        
+        return $result;
     }
 
     /**
