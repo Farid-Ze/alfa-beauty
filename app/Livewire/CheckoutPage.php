@@ -137,14 +137,26 @@ class CheckoutPage extends Component
      */
     public function placeOrder(OrderService $orderService)
     {
-        \Log::info('placeOrder called', ['user_id' => \Auth::id()]);
+        \Log::info('placeOrder called', [
+            'user_id' => \Auth::id(),
+            'auth_check' => \Auth::check(),
+        ]);
         
         $this->validate();
 
         $cart = $this->cartService->getCart();
+        
+        \Log::info('placeOrder cart state', [
+            'cart_exists' => $cart !== null,
+            'cart_id' => $cart?->id,
+            'cart_user_id' => $cart?->user_id,
+            'cart_session_id' => $cart?->session_id,
+            'items_count' => $cart?->items?->count() ?? 0,
+        ]);
+        
         if (!$cart || $cart->items->isEmpty()) {
-            \Log::warning('placeOrder: Cart is empty');
-            session()->flash('error', 'Keranjang belanja kosong');
+            \Log::warning('placeOrder: Cart is empty or null');
+            session()->flash('error', 'Keranjang belanja kosong. Silakan tambahkan produk terlebih dahulu.');
             return;
         }
 

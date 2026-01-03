@@ -40,10 +40,37 @@ class CartService
         }
 
         if (Auth::check()) {
+            // First try to get user's cart
             $this->cart = Cart::with(['items.product.brand', 'items.product.priceTiers'])
                 ->where('user_id', Auth::id())
                 ->latest()
                 ->first();
+            
+            // If no user cart, check for guest cart that needs to be migrated
+            if (!$this->cart) {
+                $sessionId = Cookie::get(self::COOKIE_NAME);
+                if ($sessionId) {
+                    $guestCart = Cart::with(['items.product.brand', 'items.product.priceTiers'])
+                        ->where('session_id', $sessionId)
+                        ->whereNull('user_id')
+                        ->latest()
+                        ->first();
+                    
+                    if ($guestCart) {
+                        // Migrate guest cart to logged-in user
+                        $guestCart->update([
+                            'user_id' => Auth::id(),
+                            'session_id' => null, // Clear session_id after migration
+                        ]);
+                        Log::info('CartService: Migrated guest cart to user', [
+                            'cart_id' => $guestCart->id,
+                            'user_id' => Auth::id(),
+                            'items_count' => $guestCart->items->count(),
+                        ]);
+                        $this->cart = $guestCart;
+                    }
+                }
+            }
         } else {
             $sessionId = Cookie::get(self::COOKIE_NAME);
             if ($sessionId) {
