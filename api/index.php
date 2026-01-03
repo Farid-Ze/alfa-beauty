@@ -132,6 +132,26 @@ try {
     failBoot($requestId, 'make_http_kernel_failed', $e);
 }
 
+// VERCEL FIX: Laravel 12 serverless requires explicit provider registration
+// The Application::configure() pattern may not fully register providers on cold start
+try {
+    // Ensure config is loaded
+    $app->make('config');
+    
+    // Force register core framework providers if not already registered
+    if (!$app->bound('view')) {
+        $app->register(\Illuminate\View\ViewServiceProvider::class);
+    }
+    if (!$app->bound('files')) {
+        $app->register(\Illuminate\Filesystem\FilesystemServiceProvider::class);
+    }
+    if (!$app->bound('session')) {
+        $app->register(\Illuminate\Session\SessionServiceProvider::class);
+    }
+} catch (\Throwable $e) {
+    failBoot($requestId, 'provider_registration_failed', $e);
+}
+
 try {
     $request = Illuminate\Http\Request::capture();
 
