@@ -210,13 +210,13 @@ class CheckoutPage extends Component
             $this->cartService->clearCart();
             $this->dispatch('cart-updated');
 
-            // Use JavaScript redirect for maximum compatibility with serverless
-            $successUrl = route('checkout.success', ['order' => $order->id]);
+            // Flash success message with order number
+            session()->flash('success', 'Pesanan #' . $order->order_number . ' berhasil dibuat!');
+
+            // Redirect to orders page (checkout success page has routing issues on Vercel)
+            $successUrl = route('orders');
             
-            // Dispatch event for Alpine.js fallback listener
-            $this->dispatch('checkout-success', url: $successUrl);
-            
-            // Primary redirect via JS injection
+            // Primary redirect via JS injection for serverless compatibility
             $this->js("window.location.href = '" . $successUrl . "'");
 
         } catch (\Exception $e) {
