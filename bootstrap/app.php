@@ -5,6 +5,42 @@ use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
+/**
+ * Vercel Serverless Configuration
+ * 
+ * Vercel has a read-only filesystem except /tmp.
+ * We need to configure Laravel to use /tmp for all writable paths
+ * BEFORE the Application is created.
+ */
+if (getenv('VERCEL')) {
+    // Set cache/compiled paths to /tmp for serverless
+    $_ENV['VIEW_COMPILED_PATH'] = '/tmp/views';
+    $_ENV['APP_SERVICES_CACHE'] = '/tmp/services.php';
+    $_ENV['APP_PACKAGES_CACHE'] = '/tmp/packages.php';
+    $_ENV['APP_CONFIG_CACHE'] = '/tmp/config.php';
+    $_ENV['APP_ROUTES_CACHE'] = '/tmp/routes.php';
+    $_ENV['APP_EVENTS_CACHE'] = '/tmp/events.php';
+    
+    // Ensure /tmp directories exist
+    $tmpDirs = ['/tmp/views', '/tmp/storage', '/tmp/storage/framework', '/tmp/storage/framework/views'];
+    foreach ($tmpDirs as $dir) {
+        if (!is_dir($dir)) {
+            @mkdir($dir, 0777, true);
+        }
+    }
+    
+    // Set fallback environment variables for serverless-safe drivers
+    if (!getenv('CACHE_STORE')) {
+        putenv('CACHE_STORE=array');
+    }
+    if (!getenv('SESSION_DRIVER')) {
+        putenv('SESSION_DRIVER=cookie');
+    }
+    if (!getenv('LOG_CHANNEL')) {
+        putenv('LOG_CHANNEL=stderr');
+    }
+}
+
 $app = Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
         web: __DIR__.'/../routes/web.php',
