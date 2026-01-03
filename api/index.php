@@ -1,17 +1,21 @@
 <?php
 
 /**
- * Vercel Serverless Entry Point for Laravel
- * Simplified production-ready version
+ * Vercel Serverless Entry Point for Laravel 12
+ * 
+ * Uses Laravel 12's handleRequest() method for proper application bootstrapping.
+ * This is the correct pattern that ensures all service providers are registered.
  */
 
 declare(strict_types=1);
+
+use Illuminate\Foundation\Application;
+use Illuminate\Http\Request;
 
 define('LARAVEL_START', microtime(true));
 
 /**
  * Minimal, safe request correlation even before Laravel boots.
- * - Mirrors our in-app request correlation, but works for early bootstrap failures.
  */
 $requestId = $_SERVER['HTTP_X_REQUEST_ID']
     ?? $_SERVER['HTTP_X_VERCEL_ID']
@@ -24,9 +28,8 @@ if (!headers_sent()) {
 
 /**
  * Ensure writable storage exists on Vercel (read-only FS except /tmp).
- * Laravel will use /tmp/storage when VERCEL is set (see bootstrap/app.php).
  */
-function ensureVercelStorage(string $requestId): void
+function ensureVercelStorage(): void
 {
     if (!getenv('VERCEL')) {
         return;
@@ -38,18 +41,15 @@ function ensureVercelStorage(string $requestId): void
         $base . '/app',
         $base . '/framework',
         $base . '/framework/cache',
+        $base . '/framework/cache/data',
         $base . '/framework/sessions',
         $base . '/framework/views',
         $base . '/logs',
     ];
 
     foreach ($paths as $path) {
-        if (is_dir($path)) {
-            continue;
-        }
-
-        if (!@mkdir($path, 0777, true) && !is_dir($path)) {
-            error_log("[vercel][storage] failed mkdir {$path} request_id={$requestId}");
+        if (!is_dir($path)) {
+            @mkdir($path, 0777, true);
         }
     }
 }
@@ -86,6 +86,7 @@ function failBoot(string $requestId, string $reason, ?\Throwable $e = null): nev
     exit(0);
 }
 
+// Set up error handlers
 set_exception_handler(function (\Throwable $e) use ($requestId): void {
     failBoot($requestId, 'uncaught_exception', $e);
 });
@@ -110,59 +111,34 @@ register_shutdown_function(function () use ($requestId): void {
     ));
 });
 
-ensureVercelStorage($requestId);
+// Ensure storage directories exist for Vercel
+ensureVercelStorage();
 
 // Common root-cause: missing APP_KEY in production environment.
-// Keep response generic, but log a helpful reason to stderr.
 if (!getenv('APP_KEY')) {
     failBoot($requestId, 'missing_app_key');
 }
 
+// Register the Composer autoloader
 require __DIR__ . '/../vendor/autoload.php';
 
+// Determine if the application is in maintenance mode
+if (file_exists($maintenance = __DIR__ . '/../storage/framework/maintenance.php')) {
+    require $maintenance;
+}
+
 try {
+    // Bootstrap Laravel and handle the request using Laravel 12's proper method
+    /** @var Application $app */
     $app = require_once __DIR__ . '/../bootstrap/app.php';
-} catch (\Throwable $e) {
-    failBoot($requestId, 'bootstrap_app_failed', $e);
-}
-
-try {
-    $kernel = $app->make(Illuminate\Contracts\Http\Kernel::class);
-} catch (\Throwable $e) {
-    failBoot($requestId, 'make_http_kernel_failed', $e);
-}
-
-// VERCEL FIX: Laravel 12 serverless requires explicit provider registration
-// The Application::configure() pattern may not fully register providers on cold start
-try {
-    // Ensure config is loaded
-    $app->make('config');
     
-    // Force register core framework providers if not already registered
-    if (!$app->bound('view')) {
-        $app->register(\Illuminate\View\ViewServiceProvider::class);
-    }
-    if (!$app->bound('files')) {
-        $app->register(\Illuminate\Filesystem\FilesystemServiceProvider::class);
-    }
-    if (!$app->bound('session')) {
-        $app->register(\Illuminate\Session\SessionServiceProvider::class);
-    }
-} catch (\Throwable $e) {
-    failBoot($requestId, 'provider_registration_failed', $e);
-}
-
-try {
-    $request = Illuminate\Http\Request::capture();
-
-    // Ensure Laravel sees a request_id even if middleware is bypassed due to early exceptions.
+    // Capture request and inject request_id for traceability
+    $request = Request::capture();
     $request->attributes->set('request_id', $requestId);
-
-    $response = $kernel->handle($request);
+    
+    // Use Laravel 12's handleRequest() which properly bootstraps all providers
+    $app->handleRequest($request);
+    
 } catch (\Throwable $e) {
-    failBoot($requestId, 'kernel_handle_failed', $e);
+    failBoot($requestId, 'app_handle_failed', $e);
 }
-
-$response->send();
-
-$kernel->terminate($request, $response);
