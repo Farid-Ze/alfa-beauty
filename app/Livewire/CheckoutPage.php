@@ -62,40 +62,56 @@ class CheckoutPage extends Component
      */
     protected function validateStockBeforeCheckout(): bool
     {
-        $this->stockErrors = $this->cartService->validateStock();
-        
-        if (!empty($this->stockErrors)) {
-            $productNames = collect($this->stockErrors)->pluck('product_name')->join(', ');
-            session()->flash('error', __('checkout.stock_error', ['products' => $productNames]));
+        try {
+            $this->stockErrors = $this->cartService->validateStock();
+            
+            if (!empty($this->stockErrors)) {
+                $productNames = collect($this->stockErrors)->pluck('product_name')->join(', ');
+                session()->flash('error', __('checkout.stock_error', ['products' => $productNames]));
+                \Log::info('Checkout validation failed: stock errors', ['errors' => $this->stockErrors]);
+                return false;
+            }
+            
+            return true;
+        } catch (\Exception $e) {
+            \Log::error('Stock validation exception', ['error' => $e->getMessage()]);
+            session()->flash('error', 'Terjadi kesalahan saat validasi stok. Silakan coba lagi.');
             return false;
         }
-        
-        return true;
     }
 
     /**
      * Validate MOQ and order increments before checkout.
      * Auto-fixes invalid quantities and notifies user.
+     * Returns true after auto-fix (allows checkout to proceed).
      */
     protected function validateMOQBeforeCheckout(): bool
     {
-        // Get violations and auto-fix them
-        $this->moqViolations = $this->cartService->validateMOQ(true);
-        
-        if (!empty($this->moqViolations)) {
-            $productNames = collect($this->moqViolations)->pluck('product_name')->join(', ');
-            session()->flash('warning', __('checkout.moq_adjusted', ['products' => $productNames]));
+        try {
+            // Get violations and auto-fix them
+            $this->moqViolations = $this->cartService->validateMOQ(true);
             
-            // Refresh prices after quantity adjustment
-            $this->priceChanges = array_merge(
-                $this->priceChanges, 
-                $this->cartService->refreshPrices()
-            );
+            if (!empty($this->moqViolations)) {
+                $productNames = collect($this->moqViolations)->pluck('product_name')->join(', ');
+                session()->flash('warning', __('checkout.moq_adjusted', ['products' => $productNames]));
+                \Log::info('MOQ adjusted during checkout', ['products' => $productNames]);
+                
+                // Refresh prices after quantity adjustment
+                $this->priceChanges = array_merge(
+                    $this->priceChanges, 
+                    $this->cartService->refreshPrices()
+                );
+                
+                // After auto-fix, still allow checkout to proceed
+                // The quantities have been corrected, so we return true
+            }
             
+            return true;
+        } catch (\Exception $e) {
+            \Log::error('MOQ validation exception', ['error' => $e->getMessage()]);
+            session()->flash('error', 'Terjadi kesalahan saat validasi pesanan. Silakan coba lagi.');
             return false;
         }
-        
-        return true;
     }
 
     /**
@@ -121,15 +137,21 @@ class CheckoutPage extends Component
      */
     public function placeOrder(OrderService $orderService)
     {
+        \Log::info('placeOrder called', ['user_id' => \Auth::id()]);
+        
         $this->validate();
 
         $cart = $this->cartService->getCart();
         if (!$cart || $cart->items->isEmpty()) {
-            return redirect('/');
+            \Log::warning('placeOrder: Cart is empty');
+            session()->flash('error', 'Keranjang belanja kosong');
+            return;
         }
 
         // Comprehensive validation: MOQ, stock, and price refresh
         if (!$this->validateBeforeOrder()) {
+            \Log::info('placeOrder: validateBeforeOrder failed');
+            // Error message already set by validation methods
             return;
         }
 
@@ -190,15 +212,21 @@ class CheckoutPage extends Component
      */
     public function checkoutViaWhatsApp(OrderService $orderService)
     {
+        \Log::info('checkoutViaWhatsApp called', ['user_id' => \Auth::id()]);
+        
         $this->validate();
 
         $cart = $this->cartService->getCart();
         if (!$cart || $cart->items->isEmpty()) {
-            return redirect('/');
+            \Log::warning('checkoutViaWhatsApp: Cart is empty');
+            session()->flash('error', 'Keranjang belanja kosong');
+            return;
         }
 
         // Comprehensive validation: MOQ, stock, and price refresh
         if (!$this->validateBeforeOrder()) {
+            \Log::info('checkoutViaWhatsApp: validateBeforeOrder failed');
+            // Error message already set by validation methods
             return;
         }
 
