@@ -279,22 +279,23 @@ class CheckoutPage extends Component
             $this->cartService->clearCart();
             $this->dispatch('cart-updated');
 
-            // Use JavaScript redirect for maximum compatibility with serverless
-            $successUrl = route('checkout.success', ['order' => $result['order']->id]);
+            // Flash success message with order number
+            session()->flash('success', 'Pesanan #' . $result['order']->order_number . ' berhasil dibuat! Silakan hubungi kami via WhatsApp.');
+
+            // Redirect to orders page (checkout success page has routing issues on Vercel)
+            $successUrl = route('orders');
             
-            // Dispatch event for Alpine.js fallback listener
-            $this->dispatch('checkout-success', url: $successUrl);
-            
-            // Primary redirect via JS injection
+            // Primary redirect via JS injection for serverless compatibility
             $this->js("window.location.href = '" . $successUrl . "'");
 
         } catch (\Exception $e) {
+            $this->debugError = 'WhatsApp: ' . $e->getMessage();
             \Illuminate\Support\Facades\Log::error('Checkout via WhatsApp failed', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
                 'user_id' => Auth::id(),
             ]);
-            session()->flash('error', __('checkout.whatsapp_error'));
+            session()->flash('error', 'Error: ' . $e->getMessage());
         }
     }
 
