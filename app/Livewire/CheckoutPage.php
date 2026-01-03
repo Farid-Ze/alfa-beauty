@@ -163,8 +163,8 @@ class CheckoutPage extends Component
             $this->cartService->clearCart();
             $this->dispatch('cart-updated');
 
-            // Livewire 3: Use redirect() for full page redirect
-            return redirect()->route('checkout.success', ['order' => $order->id]);
+            // Livewire 3: Redirect without return for wire:click actions
+            $this->redirect(route('checkout.success', ['order' => $order->id]), navigate: false);
 
         } catch (\Exception $e) {
             \Illuminate\Support\Facades\Log::error('Checkout placeOrder failed', [
@@ -219,8 +219,8 @@ class CheckoutPage extends Component
             $this->cartService->clearCart();
             $this->dispatch('cart-updated');
 
-            // Redirect to success page which will show WhatsApp button
-            return redirect()->route('checkout.success', ['order' => $result['order']->id]);
+            // Livewire 3: Redirect without return for wire:click actions
+            $this->redirect(route('checkout.success', ['order' => $result['order']->id]), navigate: false);
 
         } catch (\Exception $e) {
             \Illuminate\Support\Facades\Log::error('Checkout via WhatsApp failed', [
