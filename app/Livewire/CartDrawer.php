@@ -69,7 +69,17 @@ class CartDrawer extends Component
             if ($item && $item->product) {
                 // Respect product's order_increment (default to 1)
                 $increment = $item->product->order_increment ?? 1;
-                $this->updateQuantity($itemId, $item->quantity + $increment);
+                $maxQty = $item->product->stock ?? PHP_INT_MAX;
+                $newQty = $item->quantity + $increment;
+                
+                // Don't exceed available stock
+                if ($newQty <= $maxQty) {
+                    $this->updateQuantity($itemId, $newQty);
+                } else {
+                    // Notify user stock limit reached
+                    session()->flash('error', __('cart.stock_limit_reached', ['stock' => $maxQty]));
+                    $this->dispatch('cart-updated');
+                }
             } else {
                 // Product was deleted - remove item from cart
                 $this->removeItem($itemId);

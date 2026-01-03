@@ -77,13 +77,19 @@ class ProductDetailPage extends Component
     {
         $product = $this->getProduct();
         $minQty = $product?->min_order_qty ?? 1;
+        $maxQty = $product?->stock ?? PHP_INT_MAX;
         $increment = $product?->order_increment ?? 1;
         
         $qty = max($minQty, (int) $value);
         
+        // Limit to available stock
+        $qty = min($qty, $maxQty);
+        
         // Round to nearest increment
         if ($increment > 1) {
             $qty = (int) ceil(($qty - $minQty) / $increment) * $increment + $minQty;
+            // After rounding, ensure still within stock
+            $qty = min($qty, $maxQty);
         }
         
         $this->quantity = $qty;
@@ -162,14 +168,21 @@ class ProductDetailPage extends Component
     }
 
     /**
-     * Increment quantity by order increment.
+     * Increment quantity by order increment (respecting stock limit).
      */
     public function incrementQuantity()
     {
         $product = $this->getProduct();
         $increment = $product?->order_increment ?? 1;
-        $this->quantity += $increment;
-        $this->updatePricing();
+        $maxQty = $product?->stock ?? PHP_INT_MAX;
+        
+        $newQty = $this->quantity + $increment;
+        
+        // Don't exceed available stock
+        if ($newQty <= $maxQty) {
+            $this->quantity = $newQty;
+            $this->updatePricing();
+        }
     }
 
     /**

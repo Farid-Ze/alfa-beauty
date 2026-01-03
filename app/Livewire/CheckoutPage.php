@@ -146,19 +146,25 @@ class CheckoutPage extends Component
 
             $order = $orderService->createFromCart($cart, $customerDetails, Auth::id(), $idempotencyKey, $requestId);
 
-            // Trigger point calculation & tier upgrade
-            // NOTE: In production, this should be called after payment confirmation
-            // For demo/MVP, we simulate immediate payment success
+            // Trigger point calculation & tier upgrade (non-blocking)
+            // If this fails, order is still valid - just log the error
             if (Auth::check()) {
-                $orderService->completeOrder($order);
+                try {
+                    $orderService->completeOrder($order);
+                } catch (\Exception $e) {
+                    \Illuminate\Support\Facades\Log::warning('Order completion (loyalty) failed, but order was created', [
+                        'order_id' => $order->id,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
             }
 
             // Clear Cart and Dispatch
             $this->cartService->clearCart();
             $this->dispatch('cart-updated');
 
-            // Livewire 3: Use redirectRoute with navigate:false for full page redirect
-            return $this->redirectRoute('checkout.success', ['order' => $order->id], navigate: false);
+            // Livewire 3: Use redirect() for full page redirect
+            return redirect()->route('checkout.success', ['order' => $order->id]);
 
         } catch (\Exception $e) {
             \Illuminate\Support\Facades\Log::error('Checkout placeOrder failed', [
@@ -204,17 +210,17 @@ class CheckoutPage extends Component
 
             $result = $orderService->createWhatsAppOrder($cart, $customerDetails, Auth::id(), $idempotencyKey, $requestId);
 
-            // Store order ID in session for reference
+            // Store order ID and WhatsApp URL in session for success page
             session()->put('whatsapp_order_id', $result['order']->id);
             session()->put('whatsapp_order_number', $result['order']->order_number);
+            session()->put('whatsapp_url', $result['whatsapp_url']);
 
             // Clear Cart
             $this->cartService->clearCart();
             $this->dispatch('cart-updated');
 
-            // Livewire 3 best practice: Use $this->js() for external URL redirect
-            $whatsappUrl = $result['whatsapp_url'];
-            $this->js('window.location.href = ' . json_encode($whatsappUrl) . ';');
+            // Redirect to success page which will show WhatsApp button
+            return redirect()->route('checkout.success', ['order' => $result['order']->id]);
 
         } catch (\Exception $e) {
             \Illuminate\Support\Facades\Log::error('Checkout via WhatsApp failed', [
