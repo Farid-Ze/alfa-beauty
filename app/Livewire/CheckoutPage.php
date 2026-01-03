@@ -20,6 +20,7 @@ class CheckoutPage extends Component
     public array $stockErrors = [];
     public array $priceChanges = [];
     public array $moqViolations = [];
+    public string $debugError = ''; // Debug: expose exception messages
 
     protected CartService $cartService;
 
@@ -74,8 +75,9 @@ class CheckoutPage extends Component
             
             return true;
         } catch (\Exception $e) {
-            \Log::error('Stock validation exception', ['error' => $e->getMessage()]);
-            session()->flash('error', 'Terjadi kesalahan saat validasi stok. Silakan coba lagi.');
+            $this->debugError = 'Stock: ' . $e->getMessage();
+            \Log::error('Stock validation exception', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+            session()->flash('error', 'Error: ' . $e->getMessage());
             return false;
         }
     }
@@ -108,8 +110,9 @@ class CheckoutPage extends Component
             
             return true;
         } catch (\Exception $e) {
-            \Log::error('MOQ validation exception', ['error' => $e->getMessage()]);
-            session()->flash('error', 'Terjadi kesalahan saat validasi pesanan. Silakan coba lagi.');
+            $this->debugError = 'MOQ: ' . $e->getMessage();
+            \Log::error('MOQ validation exception', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+            session()->flash('error', 'Error: ' . $e->getMessage());
             return false;
         }
     }
