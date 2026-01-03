@@ -165,6 +165,11 @@ class CheckoutPage extends Component
 
             // Use JavaScript redirect for maximum compatibility with serverless
             $successUrl = route('checkout.success', ['order' => $order->id]);
+            
+            // Dispatch event for Alpine.js fallback listener
+            $this->dispatch('checkout-success', url: $successUrl);
+            
+            // Primary redirect via JS injection
             $this->js("window.location.href = '" . $successUrl . "'");
 
         } catch (\Exception $e) {
@@ -222,6 +227,11 @@ class CheckoutPage extends Component
 
             // Use JavaScript redirect for maximum compatibility with serverless
             $successUrl = route('checkout.success', ['order' => $result['order']->id]);
+            
+            // Dispatch event for Alpine.js fallback listener
+            $this->dispatch('checkout-success', url: $successUrl);
+            
+            // Primary redirect via JS injection
             $this->js("window.location.href = '" . $successUrl . "'");
 
         } catch (\Exception $e) {

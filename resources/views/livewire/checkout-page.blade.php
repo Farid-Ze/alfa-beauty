@@ -1,4 +1,6 @@
-<div>
+<div x-data="{ redirecting: false }" 
+     x-on:checkout-success.window="redirecting = true; window.location.href = $event.detail.url"
+     :class="{ 'opacity-50 pointer-events-none': redirecting }">
     <!-- Page Hero -->
     <section class="page-hero">
         <h1>{{ __('checkout.checkout') }}</h1>
