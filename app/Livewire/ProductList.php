@@ -19,7 +19,7 @@ class ProductList extends Component
     public function render()
     {
         $products = Product::with(['brand', 'priceTiers'])
-            ->where('is_featured', true)
+            ->whereRaw('is_featured = true')
             ->limit(4)
             ->get();
 

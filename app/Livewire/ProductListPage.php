@@ -62,7 +62,7 @@ class ProductListPage extends Component
     {
         return Cache::remember('product_list_brands', self::FILTER_CACHE_TTL, function () {
             return Brand::whereHas('products', function ($query) {
-                $query->where('is_active', true);
+                $query->whereRaw('is_active = true');
             })->orderBy('name')->get();
         });
     }
@@ -76,7 +76,7 @@ class ProductListPage extends Component
     {
         return Cache::remember('product_list_categories', self::FILTER_CACHE_TTL, function () {
             return Category::whereHas('products', function ($query) {
-                $query->where('is_active', true);
+                $query->whereRaw('is_active = true');
             })->orderBy('name')->get();
         });
     }
@@ -190,7 +190,7 @@ class ProductListPage extends Component
         }
 
         // Only active/in-stock logic if needed? For B2B, usually show all but mark OOS.
-        $query->where('is_active', true);
+        $query->whereRaw('is_active = true');
 
         $products = $query->paginate($this->perPage);
         
