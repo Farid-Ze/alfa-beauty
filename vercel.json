@@ -4,8 +4,8 @@
     "regions": [
         "sin1"
     ],
-    "installCommand": "composer install --no-dev --optimize-autoloader && npm install",
-    "buildCommand": "php artisan package:discover --ansi && php artisan config:clear && php artisan view:clear && npm run build",
+    "installCommand": "npm install",
+    "buildCommand": "npm run build",
     "outputDirectory": "public",
     "functions": {
         "api/**/*.php": {
