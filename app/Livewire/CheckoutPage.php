@@ -220,12 +220,13 @@ class CheckoutPage extends Component
             $this->js("window.location.href = '" . $successUrl . "'");
 
         } catch (\Exception $e) {
+            $this->debugError = 'OrderCreate: ' . $e->getMessage();
             \Illuminate\Support\Facades\Log::error('Checkout placeOrder failed', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
                 'user_id' => Auth::id(),
             ]);
-            session()->flash('error', __('checkout.order_error'));
+            session()->flash('error', 'Error: ' . $e->getMessage());
         }
     }
 
