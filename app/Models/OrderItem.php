@@ -48,6 +48,8 @@ class OrderItem extends Model
         'tax_amount',
         'subtotal_before_tax',
         'batch_allocations',
+        'price_locked_at',
+        'pricing_metadata',
     ];
 
     protected $casts = [
@@ -61,6 +63,8 @@ class OrderItem extends Model
         'tax_amount' => 'float',
         'batch_allocations' => 'array',
         'pricing_meta' => 'array',
+        'pricing_metadata' => 'array',
+        'price_locked_at' => 'datetime',
     ];
 
     public function order()

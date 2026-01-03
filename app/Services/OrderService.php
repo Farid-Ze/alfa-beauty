@@ -328,6 +328,9 @@ class OrderService implements OrderServiceInterface
                     'pricing_meta' => $lineItem['pricing_meta'] ?? null,
                     'total_price' => $lineItem['line_total'],
                     'batch_allocations' => $allocations, // Store FEFO allocations for BPOM
+                    // GOVERNANCE: Price snapshot isolation
+                    'price_locked_at' => now(),
+                    'pricing_metadata' => $lineItem['pricing_meta'] ?? null,
                 ]);
             }
 
@@ -557,6 +560,9 @@ class OrderService implements OrderServiceInterface
                     'pricing_meta' => $lineItem['pricing_meta'] ?? null,
                     'total_price' => $lineItem['line_total'],
                     'batch_allocations' => $allocations, // Store FEFO allocations for BPOM
+                    // GOVERNANCE: Price snapshot isolation
+                    'price_locked_at' => now(),
+                    'pricing_metadata' => $lineItem['pricing_meta'] ?? null,
                 ]);
             }
 

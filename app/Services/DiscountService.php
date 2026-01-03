@@ -21,9 +21,17 @@ use Illuminate\Support\Facades\Log;
  * - Buy X Get Y promotions
  * - Bundle pricing
  * - Stackable vs non-stackable discounts
+ * 
+ * GOVERNANCE:
+ * - All discount applications are logged to AuditEvent for traceability
+ * - Idempotency enforced via idempotency_key on audit events
  */
 class DiscountService
 {
+    public function __construct(
+        protected readonly AuditEventService $auditEventService
+    ) {}
+
     /**
      * Get all applicable discounts for a user's cart/order.
      */
@@ -332,6 +340,25 @@ class DiscountService
             $order->recalculateTotals();
             $order->save();
             
+            // Governance: Log discount application for audit trail
+            if (!empty($discountBreakdown)) {
+                $this->auditEventService->record(
+                    action: 'discount.applied',
+                    entityType: Order::class,
+                    entityId: $order->id,
+                    meta: [
+                        'order_number' => $order->order_number,
+                        'user_id' => $user->id,
+                        'discounts' => $discountBreakdown,
+                        'total_discount' => $result['total_discount'],
+                        'order_total_before' => $orderTotal,
+                        'order_total_after' => $order->total_amount,
+                    ],
+                    idempotencyKey: "discount:order:{$order->id}",
+                    requestId: request()?->attributes?->get('request_id'),
+                );
+            }
+            
             return $order;
         } catch (\Exception $e) {
             Log::error('DiscountService::applyDiscountsToOrder failed', [
@@ -411,6 +438,24 @@ class DiscountService
             ]]);
             $order->recalculateTotals();
             $order->save();
+            
+            // Governance: Log promo code application for audit trail
+            $this->auditEventService->record(
+                action: 'discount.promo_code_applied',
+                entityType: Order::class,
+                entityId: $order->id,
+                meta: [
+                    'order_number' => $order->order_number,
+                    'user_id' => $order->user_id,
+                    'promo_code' => $code,
+                    'discount_id' => $discount->id,
+                    'discount_amount' => $discountAmount,
+                    'order_total_before' => $orderTotal,
+                    'order_total_after' => $order->total_amount,
+                ],
+                idempotencyKey: "promo:{$order->id}:{$code}",
+                requestId: request()?->attributes?->get('request_id'),
+            );
             
             return [
                 'success' => true,
