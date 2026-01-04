@@ -574,6 +574,7 @@ class OrderService implements OrderServiceInterface
                 ['order_id' => $order->id, 'idempotency_key' => $paymentInitIdempotencyKey],
                 [
                     'request_id' => $order->request_id,
+                    'method' => PaymentLog::METHOD_WHATSAPP, // Required for NOT NULL constraint
                     'payment_method' => PaymentLog::METHOD_WHATSAPP,
                     'amount' => $totalAmount,
                     'currency' => 'IDR',

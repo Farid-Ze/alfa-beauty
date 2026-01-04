@@ -21,7 +21,8 @@ class PaymentLog extends Model
         'order_id',
         'request_id',
         'idempotency_key',
-        'payment_method',
+        'method', // Database column name
+        'payment_method', // Alternative column name
         'provider',
         'amount',
         'currency',
