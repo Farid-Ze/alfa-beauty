@@ -15,7 +15,7 @@ class PointTransaction extends Model
         'order_id',
         'request_id',
         'idempotency_key',
-        'amount',
+        'points', // Changed from 'amount' to match database schema
         'type', // 'earn', 'redeem', 'adjust', 'purchase', 'bonus', 'review'
         'description',
         'balance_after', // Balance after this transaction

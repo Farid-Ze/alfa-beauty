@@ -240,7 +240,7 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
             $payload = [
                 'user_id' => $lockedUser->id,
                 'type' => $type,
-                'amount' => $points,
+                'points' => $points,
                 'order_id' => $orderId,
                 'description' => $description ?? "Earned {$points} points",
             ];
@@ -320,7 +320,7 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
             $payload = [
                 'user_id' => $lockedUser->id,
                 'type' => $type,
-                'amount' => -$points, // Negative for spend
+                'points' => -$points, // Negative for spend
                 'order_id' => $orderId,
                 'description' => "Spent {$points} points",
             ];

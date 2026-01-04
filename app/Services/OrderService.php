@@ -667,7 +667,7 @@ class OrderService implements OrderServiceInterface
 
                     $txData = [
                         'order_id' => $locked->id,
-                        'amount' => $earnedPoints,
+                        'points' => $earnedPoints,
                         'type' => 'earn',
                         'description' => "Order #{$locked->order_number}",
                     ];
@@ -969,7 +969,7 @@ class OrderService implements OrderServiceInterface
 
                 $txData = [
                     'order_id' => $order->id,
-                    'amount' => $earnedPoints,
+                    'points' => $earnedPoints,
                     'type' => 'earn',
                     'description' => "Order #{$order->order_number}",
                 ];
