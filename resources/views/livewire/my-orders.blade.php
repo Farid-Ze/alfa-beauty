@@ -63,8 +63,23 @@
 
             {{-- Pagination --}}
             @if($orders->hasPages())
-                <div class="pagination-wrapper" style="margin-top: 2rem;">
-                    {{ $orders->links() }}
+                <div class="pagination-wrapper" style="margin-top: 2rem; display: flex; justify-content: space-between; align-items: center;">
+                    <span class="pagination-info" style="color: var(--gray-500); font-size: 0.875rem;">
+                        Menampilkan {{ $orders->firstItem() }} - {{ $orders->lastItem() }} dari {{ $orders->total() }} pesanan
+                    </span>
+                    <div class="pagination-nav" style="display: flex; gap: 0.5rem;">
+                        @if($orders->onFirstPage())
+                            <span class="pagination-btn pagination-btn-disabled" style="padding: 0.5rem 1rem; border: 1px solid var(--gray-200); border-radius: var(--radius-sm); color: var(--gray-300); cursor: not-allowed;">← Sebelumnya</span>
+                        @else
+                            <a href="{{ $orders->previousPageUrl() }}" class="pagination-btn" style="padding: 0.5rem 1rem; border: 1px solid var(--gray-200); border-radius: var(--radius-sm); color: var(--black); text-decoration: none; transition: background 0.2s;" onmouseover="this.style.background='var(--gray-100)'" onmouseout="this.style.background='transparent'">← Sebelumnya</a>
+                        @endif
+                        
+                        @if($orders->hasMorePages())
+                            <a href="{{ $orders->nextPageUrl() }}" class="pagination-btn" style="padding: 0.5rem 1rem; border: 1px solid var(--gray-200); border-radius: var(--radius-sm); color: var(--black); text-decoration: none; transition: background 0.2s;" onmouseover="this.style.background='var(--gray-100)'" onmouseout="this.style.background='transparent'">Selanjutnya →</a>
+                        @else
+                            <span class="pagination-btn pagination-btn-disabled" style="padding: 0.5rem 1rem; border: 1px solid var(--gray-200); border-radius: var(--radius-sm); color: var(--gray-300); cursor: not-allowed;">Selanjutnya →</span>
+                        @endif
+                    </div>
                 </div>
             @endif
         @endif
