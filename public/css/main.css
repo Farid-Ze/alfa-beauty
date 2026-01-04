@@ -3809,6 +3809,7 @@ textarea.form-input {
 .cart-item-image {
     flex-shrink: 0;
     align-self: stretch;
+    position: relative;
 }
 
 .cart-item-image img {
@@ -3817,6 +3818,19 @@ textarea.form-input {
     min-height: 80px;
     object-fit: cover;
     background: var(--gray-100);
+}
+
+/* Discount Badge in Cart */
+.cart-item-badge {
+    position: absolute;
+    bottom: 4px;
+    left: 4px;
+    background: var(--green);
+    color: var(--white);
+    font-size: 0.65rem;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
 }
 
 .cart-item-placeholder {
