@@ -15,6 +15,10 @@
     },
     "routes": [
         {
+            "src": "/proposal/(.*)",
+            "dest": "/proposal/$1"
+        },
+        {
             "src": "/build/(.*)",
             "dest": "/build/$1"
         },
