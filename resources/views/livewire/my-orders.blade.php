@@ -63,23 +63,34 @@
 
             {{-- Pagination --}}
             @if($orders->hasPages())
-                <div class="pagination-wrapper" style="margin-top: 2rem; display: flex; justify-content: space-between; align-items: center;">
-                    <span class="pagination-info" style="color: var(--gray-500); font-size: 0.875rem;">
-                        Menampilkan {{ $orders->firstItem() }} - {{ $orders->lastItem() }} dari {{ $orders->total() }} pesanan
+                <div class="orders-pagination">
+                    <span class="orders-pagination-info">
+                        Menampilkan {{ $orders->firstItem() }}-{{ $orders->lastItem() }} dari {{ $orders->total() }} pesanan
                     </span>
-                    <div class="pagination-nav" style="display: flex; gap: 0.5rem;">
+                    <nav class="orders-pagination-nav">
+                        {{-- Previous --}}
                         @if($orders->onFirstPage())
-                            <span class="pagination-btn pagination-btn-disabled" style="padding: 0.5rem 1rem; border: 1px solid var(--gray-200); border-radius: var(--radius-sm); color: var(--gray-300); cursor: not-allowed;">← Sebelumnya</span>
+                            <span class="orders-pagination-btn orders-pagination-btn--disabled">←</span>
                         @else
-                            <a href="{{ $orders->previousPageUrl() }}" class="pagination-btn" style="padding: 0.5rem 1rem; border: 1px solid var(--gray-200); border-radius: var(--radius-sm); color: var(--black); text-decoration: none; transition: background 0.2s;" onmouseover="this.style.background='var(--gray-100)'" onmouseout="this.style.background='transparent'">← Sebelumnya</a>
+                            <a href="{{ $orders->previousPageUrl() }}" class="orders-pagination-btn">←</a>
                         @endif
                         
+                        {{-- Page Numbers --}}
+                        @foreach($orders->getUrlRange(1, $orders->lastPage()) as $page => $url)
+                            @if($page == $orders->currentPage())
+                                <span class="orders-pagination-btn orders-pagination-btn--active">{{ $page }}</span>
+                            @else
+                                <a href="{{ $url }}" class="orders-pagination-btn">{{ $page }}</a>
+                            @endif
+                        @endforeach
+                        
+                        {{-- Next --}}
                         @if($orders->hasMorePages())
-                            <a href="{{ $orders->nextPageUrl() }}" class="pagination-btn" style="padding: 0.5rem 1rem; border: 1px solid var(--gray-200); border-radius: var(--radius-sm); color: var(--black); text-decoration: none; transition: background 0.2s;" onmouseover="this.style.background='var(--gray-100)'" onmouseout="this.style.background='transparent'">Selanjutnya →</a>
+                            <a href="{{ $orders->nextPageUrl() }}" class="orders-pagination-btn">→</a>
                         @else
-                            <span class="pagination-btn pagination-btn-disabled" style="padding: 0.5rem 1rem; border: 1px solid var(--gray-200); border-radius: var(--radius-sm); color: var(--gray-300); cursor: not-allowed;">Selanjutnya →</span>
+                            <span class="orders-pagination-btn orders-pagination-btn--disabled">→</span>
                         @endif
-                    </div>
+                    </nav>
                 </div>
             @endif
         @endif

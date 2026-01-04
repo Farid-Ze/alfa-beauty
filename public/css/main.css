@@ -4060,6 +4060,64 @@ textarea.form-input {
     gap: 4px;
 }
 
+/* --- Orders Pagination --- */
+.orders-pagination {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: var(--space-xl);
+    padding-top: var(--space-md);
+    border-top: 1px solid var(--gray-200);
+}
+
+.orders-pagination-info {
+    font-family: var(--font-body);
+    font-size: 0.8rem;
+    color: var(--gray-500);
+}
+
+.orders-pagination-nav {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.orders-pagination-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 36px;
+    height: 36px;
+    padding: 0 10px;
+    font-family: var(--font-body);
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--black);
+    background: var(--white);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-sm);
+    text-decoration: none;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.orders-pagination-btn:hover {
+    background: var(--gray-100);
+    border-color: var(--gray-300);
+}
+
+.orders-pagination-btn--active {
+    background: var(--black);
+    color: var(--white);
+    border-color: var(--black);
+}
+
+.orders-pagination-btn--disabled {
+    color: var(--gray-300);
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
 /* ============================================================
    11. RESPONSIVE
    Consolidated media queries: 1200px → 1024px → 768px → 600px → 480px → 430px → 400px → 360px
