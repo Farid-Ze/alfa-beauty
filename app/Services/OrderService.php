@@ -810,8 +810,6 @@ class OrderService implements OrderServiceInterface
             try {
                 $locked->paymentLogs()->update([
                     'status' => PaymentLog::STATUS_CANCELLED,
-                    'metadata->cancelled_at' => now()->toIso8601String(),
-                    'metadata->cancelled_reason' => $reasonCode,
                 ]);
             } catch (\Throwable $e) {
                 Log::warning('PaymentLog cancel update failed', [
