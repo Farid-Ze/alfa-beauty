@@ -55,4 +55,15 @@ class OrderResource extends Resource
             'edit' => EditOrder::route('/{record}/edit'),
         ];
     }
+
+    public static function getNavigationBadge(): ?string
+    {
+        $count = static::getModel()::where('payment_status', 'pending')->count();
+        return $count > 0 ? (string) $count : null;
+    }
+
+    public static function getNavigationBadgeColor(): string|array|null
+    {
+        return 'warning';
+    }
 }
