@@ -154,6 +154,7 @@ Security note: if secrets are ever printed in logs or terminals, rotate Supabase
 2. **Version bump** - Update `?v=X.X` di `app.blade.php` setelah CSS changes
 3. **Language fallback** - Jika key tidak ada di ID, akan fallback ke EN
 4. **Cookie persistence** - Language preference disimpan 1 tahun di cookie
+5. **PostgreSQL Boolean** - Gunakan `whereRaw('column = true')` untuk boolean comparisons, bukan `where('column', true)`. PostgreSQL menolak `= 1` untuk boolean.
 
 ---
 
