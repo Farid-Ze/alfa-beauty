@@ -106,12 +106,13 @@ php artisan test --list-tests --testsuite=Feature | Select-String '::' | Measure
 | **Backend** | PHP + Laravel | 12.x |
 | **Frontend** | Livewire + Alpine.js | 3.x |
 | **Admin Panel** | Filament | ^4.3 |
-| **Database** | SQLite (default) / PostgreSQL (Supabase) | lihat `config/database.php` |
-| **Styling** | Vanilla CSS (ITCSS) | 8,425 LOC |
-| **API** | RESTful + Sanctum | `/api/v1/*` + `X-API-Version: v1` |
+| **Database** | PostgreSQL (Supabase) | Production |
+| **Session** | Database driver | Serverless-safe |
+| **Styling** | Vanilla CSS (ITCSS) | 8,500+ LOC |
+| **API** | RESTful + Sanctum | `/api/v1/*` |
 | **Deployment** | Vercel (Serverless) | - |
 
-**Frontend Tooling:** Tailwind CSS ^4.0 + Vite ^7.0
+**Frontend Tooling:** Vite ^7.0
 
 ### System Architecture Diagram
 
@@ -125,24 +126,25 @@ flowchart TB
         CD[CartDrawer]
     end
 
-    subgraph Services["Business Logic (2,790 LOC)"]
-        CS[CartService<br/>593 LOC]
-        OS[OrderService<br/>547 LOC]
-        PS[PricingService<br/>415 LOC]
-        IS[InventoryService<br/>330 LOC]
-        DS[DiscountService<br/>437 LOC]
-        SS[ShippingService<br/>260 LOC]
-        TS[TaxService<br/>208 LOC]
+    subgraph Services["Business Logic (10 Services)"]
+        CS[CartService]
+        OS[OrderService]
+        PS[PricingService]
+        IS[InventoryService]
+        DS[DiscountService]
+        SS[ShippingService]
+        TS[TaxService]
+        RS[ReturnService]
     end
 
-    subgraph Models["Data Layer (25 Models)"]
+    subgraph Models["Data Layer (26 Models)"]
         User
         Product
         Order
         BatchInventory
         CustomerPriceList
         DiscountRule
-        Supplier
+        AuditEvent
     end
 
     subgraph Admin["Admin Panel (Filament v4)"]
@@ -308,25 +310,26 @@ Example:
 ```mermaid
 graph TB
     subgraph "Livewire Components"
-        Checkout[CheckoutPage<br/>242 LOC]
-        Cart[CartDrawer<br/>116 LOC]
-        PDP[ProductDetailPage<br/>209 LOC]
-        Home[HomePage<br/>85 LOC]
+        Checkout[CheckoutPage]
+        Cart[CartDrawer]
+        PDP[ProductDetailPage]
+        Home[HomePage]
     end
 
-    subgraph "Services (2,790 LOC)"
-        CS[CartService<br/>593 LOC]
-        OS[OrderService<br/>547 LOC]
-        PS[PricingService<br/>415 LOC]
-        IS[InventoryService<br/>330 LOC]
-        DS[DiscountService<br/>437 LOC]
-        SS[ShippingService<br/>260 LOC]
-        TS[TaxService<br/>208 LOC]
+    subgraph "Services (10 total)"
+        CS[CartService]
+        OS[OrderService]
+        PS[PricingService]
+        IS[InventoryService]
+        DS[DiscountService]
+        SS[ShippingService]
+        TS[TaxService]
+        RS[ReturnService]
     end
 
     subgraph "External"
         WA[WhatsApp API]
-        Notif[Email/Database<br/>Notifications]
+        Notif[Notifications]
     end
 
     Checkout --> OS
@@ -452,58 +455,59 @@ erDiagram
     OrderItem ||--o{ BatchInventory : allocated_from
 ```
 
-### Model Summary (25 Models)
+### Model Summary (26 Models)
 
-| Model | LOC | Key Features |
-|-------|-----|--------------|
-| [User](app/app/Models/User.php) | 247 | B2B attrs, points, tier, credit terms, `addPoints()`, `spendPoints()`, `updateTier()` |
-| [Product](app/app/Models/Product.php) | 88 | BPOM, pricing, stock, weight, UoM, `priceTiers()`, `batches()` |
-| [Order](app/app/Models/Order.php) | 125 | WhatsApp message generation, status constants, tax columns |
-| [BatchInventory](app/app/Models/BatchInventory.php) | 198 | FEFO, expiry tracking, supplier link, `reduceStock()`, scopes |
-| [CustomerPriceList](app/app/Models/CustomerPriceList.php) | 114 | B2B pricing rules, validity periods |
-| [CustomerPaymentTerm](app/app/Models/CustomerPaymentTerm.php) | 125 | NET30/NET60 credit, `canUseCredit()` |
-| [CustomerOrderSetting](app/app/Models/CustomerOrderSetting.php) | 150 | Per-customer MOQ, credit limits, free shipping rules |
-| [ProductPriceTier](app/app/Models/ProductPriceTier.php) | 72 | Volume discounts, `calculateUnitPrice()` |
-| [ProductMoqOverride](app/app/Models/ProductMoqOverride.php) | 130 | Customer/tier-specific MOQ overrides |
-| [DiscountRule](app/app/Models/DiscountRule.php) | 250 | Flexible discounts: percentage, fixed, Buy X Get Y, bundle |
-| [OrderDiscount](app/app/Models/OrderDiscount.php) | 100 | Tracks applied discounts with calculation details |
-| [OrderReturn](app/app/Models/OrderReturn.php) | 180 | Return requests with status workflow |
-| [ReturnItem](app/app/Models/ReturnItem.php) | 120 | Individual return line items with restocking |
-| [OrderCancellation](app/app/Models/OrderCancellation.php) | 100 | Order void with refund tracking |
-| [Supplier](app/app/Models/Supplier.php) | 70 | Vendor management for batch tracking |
-| [UserLoyaltyPeriod](app/app/Models/UserLoyaltyPeriod.php) | 160 | Period-based tier tracking (yearly/quarterly) |
-| [Review](app/app/Models/Review.php) | 172 | Verified buyer, +50 points, `approve()` |
-| [PaymentLog](app/app/Models/PaymentLog.php) | 126 | Tax compliance, soft deletes |
-| [LoyaltyTier](app/app/Models/LoyaltyTier.php) | 50 | Tier configuration with period type |
-| [PointTransaction](app/app/Models/PointTransaction.php) | 31 | Points audit trail |
-| [Cart](app/app/Models/Cart.php) | 24 | Session/user based |
-| [CartItem](app/app/Models/CartItem.php) | 64 | Product eager loading, `price_at_add` |
-| [Category](app/app/Models/Category.php) | 29 | Self-referential hierarchy |
-| [Brand](app/app/Models/Brand.php) | 30 | PHPDoc for dynamic properties |
-| [OrderItem](app/app/Models/OrderItem.php) | 80 | Batch allocations JSON, tax columns |
+| Model | Key Features |
+|-------|--------------|
+| [User](app/app/Models/User.php) | B2B attrs, points, tier, credit terms, `addPoints()`, `updateTier()` |
+| [Product](app/app/Models/Product.php) | BPOM, pricing, stock, weight, UoM, `priceTiers()`, `batches()` |
+| [Order](app/app/Models/Order.php) | WhatsApp message generation, status constants, tax columns |
+| [BatchInventory](app/app/Models/BatchInventory.php) | FEFO, expiry tracking, supplier link, `reduceStock()` |
+| [CustomerPriceList](app/app/Models/CustomerPriceList.php) | B2B pricing rules, validity periods |
+| [CustomerPaymentTerm](app/app/Models/CustomerPaymentTerm.php) | NET30/NET60 credit, `canUseCredit()` |
+| [CustomerOrderSetting](app/app/Models/CustomerOrderSetting.php) | Per-customer MOQ, credit limits, free shipping |
+| [ProductPriceTier](app/app/Models/ProductPriceTier.php) | Volume discounts, `calculateUnitPrice()` |
+| [ProductMoqOverride](app/app/Models/ProductMoqOverride.php) | Customer/tier-specific MOQ overrides |
+| [DiscountRule](app/app/Models/DiscountRule.php) | Flexible discounts: percentage, fixed, Buy X Get Y, bundle |
+| [OrderDiscount](app/app/Models/OrderDiscount.php) | Tracks applied discounts per order |
+| [OrderReturn](app/app/Models/OrderReturn.php) | Return requests with status workflow |
+| [ReturnItem](app/app/Models/ReturnItem.php) | Individual return line items |
+| [OrderCancellation](app/app/Models/OrderCancellation.php) | Order void with refund tracking |
+| [Supplier](app/app/Models/Supplier.php) | Vendor management for batch tracking |
+| [UserLoyaltyPeriod](app/app/Models/UserLoyaltyPeriod.php) | Period-based tier tracking |
+| [Review](app/app/Models/Review.php) | Verified buyer, +50 points, `approve()` |
+| [PaymentLog](app/app/Models/PaymentLog.php) | Tax compliance, soft deletes, idempotency |
+| [LoyaltyTier](app/app/Models/LoyaltyTier.php) | Tier configuration with period type |
+| [PointTransaction](app/app/Models/PointTransaction.php) | Points audit trail |
+| [Cart](app/app/Models/Cart.php) | Session/user based |
+| [CartItem](app/app/Models/CartItem.php) | Product eager loading, `price_at_add` |
+| [Category](app/app/Models/Category.php) | Self-referential hierarchy |
+| [Brand](app/app/Models/Brand.php) | Brand management |
+| [OrderItem](app/app/Models/OrderItem.php) | Batch allocations JSON, tax columns |
+| [AuditEvent](app/app/Models/AuditEvent.php) | Audit logging for compliance |
 
 ---
 
 ## Livewire Components
 
-| Component | LOC | Key Features |
-|-----------|-----|--------------|
-| [CheckoutPage](app/app/Livewire/CheckoutPage.php) | 193 | WhatsApp + standard checkout, stock validation, B2B savings display |
-| [ProductDetailPage](app/app/Livewire/ProductDetailPage.php) | 152 | Volume pricing display, dynamic price updates |
-| [ProductListPage](app/app/Livewire/ProductListPage.php) | 120 | Filters, pagination, search |
-| [ReviewForm](app/app/Livewire/ReviewForm.php) | 97 | Star rating, verified buyer check |
-| [CartDrawer](app/app/Livewire/CartDrawer.php) | 76 | Slide-out cart, quantity updates |
-| [ProductReviews](app/app/Livewire/ProductReviews.php) | 65 | Display approved reviews |
-| [BrandDetail](app/app/Livewire/BrandDetail.php) | 57 | Brand products, filtering |
-| [BuyItAgain](app/app/Livewire/BuyItAgain.php) | 57 | Repeat purchase suggestions |
-| [RegisterPage](app/app/Livewire/RegisterPage.php) | 56 | User registration form |
-| [LoginPage](app/app/Livewire/LoginPage.php) | 35 | Authentication form |
-| [HomePage](app/app/Livewire/HomePage.php) | 34 | Featured products, hero section |
-| [OrderSuccess](app/app/Livewire/OrderSuccess.php) | 31 | Order confirmation page |
-| [ProductCard](app/app/Livewire/ProductCard.php) | 24 | Reusable product card |
-| [ProductList](app/app/Livewire/ProductList.php) | 24 | Products grid |
-| [MyOrders](app/app/Livewire/MyOrders.php) | 22 | Order history |
-| [CartCounter](app/app/Livewire/CartCounter.php) | 18 | Header cart badge |
+| Component | Key Features |
+|-----------|--------------|
+| [CheckoutPage](app/app/Livewire/CheckoutPage.php) | WhatsApp + standard checkout, stock/MOQ validation, B2B savings |
+| [ProductDetailPage](app/app/Livewire/ProductDetailPage.php) | Volume pricing display, dynamic price updates, quantity controls |
+| [ProductListPage](app/app/Livewire/ProductListPage.php) | Filters, pagination, search, clearFilters() |
+| [ReviewForm](app/app/Livewire/ReviewForm.php) | Star rating, verified buyer check |
+| [CartDrawer](app/app/Livewire/CartDrawer.php) | Slide-out cart, quantity updates, B2B discount badges |
+| [ProductReviews](app/app/Livewire/ProductReviews.php) | Display approved reviews |
+| [BrandDetail](app/app/Livewire/BrandDetail.php) | Brand products with filtering |
+| [BuyItAgain](app/app/Livewire/BuyItAgain.php) | Repeat purchase suggestions |
+| [RegisterPage](app/app/Livewire/RegisterPage.php) | User registration form |
+| [LoginPage](app/app/Livewire/LoginPage.php) | Authentication form |
+| [HomePage](app/app/Livewire/HomePage.php) | Featured products, hero section, stats |
+| [OrderSuccess](app/app/Livewire/OrderSuccess.php) | Order confirmation with ownership verification |
+| [ProductCard](app/app/Livewire/ProductCard.php) | Reusable product card with OOS badge |
+| [ProductList](app/app/Livewire/ProductList.php) | Products grid |
+| [MyOrders](app/app/Livewire/MyOrders.php) | Order history with custom pagination |
+| [CartCounter](app/app/Livewire/CartCounter.php) | Header cart badge |
 
 ### Routing Structure
 
@@ -743,22 +747,22 @@ $prices = $service->getBulkPrices($products, $user);
 
 ## 📊 File Statistics
 
-| Category | Count | Total LOC |
-|----------|-------|-----------|
-| PHP Models in app/Models/ | 25 files | - |
-| PHP Services in app/Services/ | 7 files | 2,790 LOC |
-| Livewire Components | 16 files | - |
-| Blade Templates (Livewire) | 16 files | - |
-| Migration Files | 35 files | - |
-| Language Files (ID + EN) | 26 files | - |
-| CSS Files (main.css) | 1 file | 8,425 lines |
-| Tests (Feature + Unit) | 37 files | 288 tests (Unit 39 / Feature 249) |
-| Filament Resources | 9 resources | 400+ |
-| Notifications | 3 files | 203 |
-| Seeders | 7 files | 500+ |
+| Category | Count | Notes |
+|----------|-------|-------|
+| PHP Models | 26 files | `app/app/Models` |
+| PHP Services | 10 files | `app/app/Services` |
+| Livewire Components | 16 files | `app/app/Livewire` |
+| Blade Templates | 16 files | `resources/views/livewire` |
+| Migration Files | 50 files | `database/migrations` |
+| Language Files | 26 files | ID + EN, 13 per locale |
+| CSS Files | 1 file | `main.css` (8,500+ lines) |
+| Tests | 37 files | 288 tests (Unit 39 / Feature 249) |
+| Filament Resources | 9 resources | `app/Filament/Admin/Resources` |
+| Notifications | 3 files | Queueable |
+| Seeders | 7 files | `database/seeders` |
 | API Controllers | 6 files | `app/Http/Controllers/Api/V1` |
-| Cron Jobs | 3 files | 130+ |
-| **TOTAL (first-party)** | **317 files** | LOC tidak dihitung |
+| Cron Jobs | 3 files | `api/cron` |
+| **TOTAL (first-party)** | **~330+ files** | - |
 
 ---
 
@@ -884,74 +888,54 @@ TaxService.formatForEFaktur() outputs:
 
 ---
 
-## 🆕 Latest Session Updates (January 1, 2026 - Session 2)
+## 🆕 Latest Updates (January 3-4, 2026)
 
-### Frontend Integration Issues Fixed
+### Session & Authentication Fixes
 
 | Issue | Fix Applied |
 |-------|-------------|
-| Missing `reviews.php` translations | Created `lang/en/reviews.php` and `lang/id/reviews.php` with 19 keys |
-| Checkout route not protected | Added `middleware('auth')` to `/checkout` |
-| Order success route not protected | Added `middleware('auth')` + ownership verification |
-| `toggle-cart` event duplication | Removed unused `$isOpen` and `toggle()` from CartDrawer (Alpine.js handles) |
-| Invalid `$set()` syntax in filters | Created `clearFilters()` method in ProductListPage |
-| Hardcoded strings in BuyItAgain | Replaced with `__('orders.buy_again')` translation keys |
-| Inline onclick JS in mobile filter | Replaced with Alpine.js `x-data` pattern |
-| Hardcoded `/products` href | Changed to `route('products.index')` |
-| CartCounter DI in render() | Refactored to use `boot()` method pattern |
-| Auth logout PHPStan warning | Changed to `\Illuminate\Support\Facades\Auth::logout()` |
+| Session loss after checkout | Changed `SESSION_DRIVER` from cookie to database |
+| Serverless session compatibility | Created `sessions` table migration |
+| PostgreSQL boolean queries | Fixed `where` to `whereRaw('column = true')` in Models |
+| Checkout silent failures | Added try-catch + logging to validation methods |
+| Order success flash loss | Passed success via URL query params instead of session |
 
-### New Migrations (1 added)
+### New Migrations (January 3-4)
 
 | Migration | Purpose |
 |-----------|---------|
-| `2026_01_01_100000_create_reviews_table.php` | Reviews table for product testimonials |
+| `2026_01_02_000001` | Idempotency columns for orders |
+| `2026_01_02_000002` | Pricing trace columns for order_items |
+| `2026_01_02_000010` | Point transactions integrity |
+| `2026_01_03_000001` | Audit events table |
+| `2026_01_03_000020-062` | Reviews/loyalty/returns integrity |
+| `2026_01_04_000001` | Sessions table for database driver |
 
-### New Translation Files (2 added)
+### Translation Keys Added
 
-| File | Keys | Purpose |
-|------|------|---------|
-| `lang/en/reviews.php` | 19 | Review form, status, bonus info, list labels |
-| `lang/id/reviews.php` | 19 | Indonesian translations for reviews |
+| File | Keys Added |
+|------|------------|
+| `lang/id/nav.php` | `home` → "Beranda" |
+| `lang/id/orders.php` | `pending_payment` → "Menunggu Pembayaran" |
+| `lang/id/products.php` | `out_of_stock` → "Stok Habis" |
+| `lang/en/*.php` | English equivalents |
 
-### New Unit Tests (5 files, 39 tests)
-
-| Test File | Tests | Purpose |
-|-----------|-------|---------|
-| `ProductTest.php` | 8 | Product model relationships, attributes, price tiers |
-| `UserTest.php` | 8 | User model, loyalty tier, cart/reviews relationships |
-| `OrderTest.php` | 6 | Order model, user relationship, order number |
-| `LoyaltyTierTest.php` | 7 | Tier configuration, min spend, slugs |
-| `ReviewTest.php` | 10 | Review model, verified buyer, approval, scopes |
-
-### Model Relationship Additions
-
-| Model | New Relationships |
-|-------|-------------------|
-| `User` | `cart()` hasOne, `reviews()` hasMany |
-| `Product` | `reviews()` hasMany, `approvedReviews()` with scope |
-
-### Component Fixes
+### UX Improvements (January 4)
 
 | Component | Fix |
 |-----------|-----|
-| `ReviewForm.php` | Changed `?Order $order` to `?int $orderId` (Livewire hydration) |
-| `CartDrawer.php` | Removed unused `$isOpen`, `toggle()` method |
-| `CartCounter.php` | Moved DI from `render()` to `boot()` |
-| `ProductListPage.php` | Added `clearFilters()` method |
-| `OrderSuccess.php` | Added order ownership verification (`abort(403)`) |
+| Product Card | OOS badge + disabled Quick Add button |
+| Cart Drawer | Discount badge positioned inside product image |
+| My Orders | Custom pagination with page numbers |
+| toast-notifications | Error type shows X icon (not info icon) |
 
-### View Fixes
+### Code Cleanup for Handover
 
-| View | Fix |
-|------|-----|
-| `product-reviews.blade.php` | Moved `<style>` inside root `<div>` |
-| `review-form.blade.php` | Moved `<style>` inside root `<div>` |
-| `product-list-page.blade.php` | Fixed filter toggle Alpine.js, clearFilters button |
-| `cart-drawer.blade.php` | Changed hardcoded href to `route()` |
-| `buy-it-again.blade.php` | Replaced hardcoded strings with translations |
+- Removed 14 debug/temp files (test_db.php, .env.debug, SQL scripts, etc.)
+- Removed `$debugError` property from CheckoutPage.php
+- Updated DEVELOPER_NOTES.md with PostgreSQL boolean compatibility note
 
 ---
 
-*Dokumen ini dibuat berdasarkan analisis mendalam 230+ file pada 1 Januari 2026.*
+*Dokumen ini diperbarui pada 4 Januari 2026 berdasarkan analisis 330+ file.*
 *Last updated: January 2, 2026 - Refreshed counts, service LOC, endpoints, migrations, and test inventory.*
