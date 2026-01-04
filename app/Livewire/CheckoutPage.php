@@ -20,7 +20,7 @@ class CheckoutPage extends Component
     public array $stockErrors = [];
     public array $priceChanges = [];
     public array $moqViolations = [];
-    public string $debugError = ''; // Debug: expose exception messages
+
 
     protected CartService $cartService;
 
@@ -75,7 +75,7 @@ class CheckoutPage extends Component
             
             return true;
         } catch (\Exception $e) {
-            $this->debugError = 'Stock: ' . $e->getMessage();
+
             \Log::error('Stock validation exception', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
             session()->flash('error', 'Error: ' . $e->getMessage());
             return false;
@@ -110,7 +110,7 @@ class CheckoutPage extends Component
             
             return true;
         } catch (\Exception $e) {
-            $this->debugError = 'MOQ: ' . $e->getMessage();
+
             \Log::error('MOQ validation exception', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
             session()->flash('error', 'Error: ' . $e->getMessage());
             return false;
@@ -132,8 +132,7 @@ class CheckoutPage extends Component
         // Final price refresh to ensure accuracy
         $this->priceChanges = $this->cartService->refreshPrices();
         
-        // Debug: track validation results
-        $this->debugError = "moq:{$moqValid},stock:{$stockValid}";
+
         
         $result = $moqValid && $stockValid;
         \Log::info('validateBeforeOrder result', [
@@ -217,7 +216,7 @@ class CheckoutPage extends Component
             $this->js("window.location.href = '" . $successUrl . "'");
 
         } catch (\Exception $e) {
-            $this->debugError = 'OrderCreate: ' . $e->getMessage();
+
             \Illuminate\Support\Facades\Log::error('Checkout placeOrder failed', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
@@ -284,7 +283,7 @@ class CheckoutPage extends Component
             $this->js("window.location.href = '" . $successUrl . "'");
 
         } catch (\Exception $e) {
-            $this->debugError = 'WhatsApp: ' . $e->getMessage();
+
             \Illuminate\Support\Facades\Log::error('Checkout via WhatsApp failed', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
