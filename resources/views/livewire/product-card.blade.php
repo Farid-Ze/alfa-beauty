@@ -22,9 +22,9 @@
             <span class="product-badge product-badge-oos">HABIS</span>
         {{-- B2B Discount Badge --}}
         @elseif($hasDiscount)
-            <span class="cart-item-badge" style="position: absolute; top: 8px; right: 8px;">-{{ $discountPercent }}%</span>
+            <span class="product-badge product-badge-discount">-{{ $discountPercent }}%</span>
         @elseif($hasVolumePricing)
-            <span class="cart-item-badge" style="position: absolute; top: 8px; right: 8px;">Volume</span>
+            <span class="product-badge product-badge-volume">Volume</span>
         @endif
     </a>
     <div class="product-details">

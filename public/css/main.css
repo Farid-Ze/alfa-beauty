@@ -563,6 +563,16 @@ img {
     color: var(--white);
 }
 
+.product-badge-volume {
+    background: var(--black);
+    color: var(--white);
+}
+
+.product-badge-discount {
+    background: var(--green);
+    color: var(--white);
+}
+
 /* NOTE: .btn-block and .btn-lg are defined in AUTH PAGES section */
 
 /* --- Product Cards --- */
