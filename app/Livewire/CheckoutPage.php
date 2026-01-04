@@ -210,11 +210,8 @@ class CheckoutPage extends Component
             $this->cartService->clearCart();
             $this->dispatch('cart-updated');
 
-            // Flash success message with order number
-            session()->flash('success', 'Pesanan #' . $order->order_number . ' berhasil dibuat!');
-
-            // Redirect to orders page (checkout success page has routing issues on Vercel)
-            $successUrl = route('orders');
+            // Redirect to orders page with success param (flash doesn't survive JS redirect)
+            $successUrl = route('orders') . '?order_success=' . urlencode($order->order_number);
             
             // Primary redirect via JS injection for serverless compatibility
             $this->js("window.location.href = '" . $successUrl . "'");
@@ -279,11 +276,9 @@ class CheckoutPage extends Component
             $this->cartService->clearCart();
             $this->dispatch('cart-updated');
 
-            // Flash success message with order number
-            session()->flash('success', 'Pesanan #' . $result['order']->order_number . ' berhasil dibuat! Silakan hubungi kami via WhatsApp.');
-
-            // Redirect to orders page (checkout success page has routing issues on Vercel)
-            $successUrl = route('orders');
+            // Redirect to orders page with success param and WhatsApp URL in session
+            session()->put('whatsapp_url', $result['whatsapp_url']);
+            $successUrl = route('orders') . '?order_success=' . urlencode($result['order']->order_number) . '&via=whatsapp';
             
             // Primary redirect via JS injection for serverless compatibility
             $this->js("window.location.href = '" . $successUrl . "'");
