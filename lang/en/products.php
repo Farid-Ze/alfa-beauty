@@ -27,6 +27,7 @@ return [
     // Product Card
     'add_to_cart' => 'Add to Cart',
     'quick_add' => 'Quick Add',
+    'out_of_stock' => 'Out of Stock',
     'view_product' => 'View Product',
     'featured' => 'Featured',
     'halal' => 'Halal',

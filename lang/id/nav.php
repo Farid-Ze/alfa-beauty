@@ -2,6 +2,7 @@
 
 return [
     // Main Navigation
+    'home' => 'Beranda',
     'products' => 'Produk',
     'brands' => 'Brand',
     'about' => 'Tentang',

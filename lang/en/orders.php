@@ -13,6 +13,7 @@ return [
     
     // Status Labels
     'pending' => 'Pending',
+    'pending_payment' => 'Pending Payment',
     'processing' => 'Processing',
     'shipped' => 'Shipped',
     'delivered' => 'Delivered',

@@ -2,6 +2,7 @@
 
 return [
     // Main Navigation
+    'home' => 'Home',
     'products' => 'Products',
     'brands' => 'Brands',
     'about' => 'About',

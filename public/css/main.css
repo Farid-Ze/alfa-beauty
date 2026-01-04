@@ -534,6 +534,35 @@ img {
     margin-top: auto;
 }
 
+.btn-quick-add-disabled {
+    background: var(--gray-300);
+    color: var(--gray-500);
+    cursor: not-allowed;
+}
+
+/* Out of Stock Product Card */
+.product-out-of-stock .product-image img {
+    opacity: 0.6;
+    filter: grayscale(0.3);
+}
+
+.product-badge {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    padding: 4px 10px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-radius: var(--radius-sm);
+}
+
+.product-badge-oos {
+    background: var(--red);
+    color: var(--white);
+}
+
 /* NOTE: .btn-block and .btn-lg are defined in AUTH PAGES section */
 
 /* --- Product Cards --- */

@@ -13,6 +13,7 @@ return [
     
     // Status Labels
     'pending' => 'Menunggu',
+    'pending_payment' => 'Menunggu Pembayaran',
     'processing' => 'Diproses',
     'shipped' => 'Dikirim',
     'delivered' => 'Terkirim',

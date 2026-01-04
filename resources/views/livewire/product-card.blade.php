@@ -6,8 +6,9 @@
     $hasDiscount = $priceInfo && isset($priceInfo['price']) && $priceInfo['price'] < $originalPrice;
     $discountPercent = $hasDiscount ? round((1 - $displayPrice / $originalPrice) * 100) : 0;
     $hasVolumePricing = $product->has_volume_pricing || ($priceSource === 'volume_tier');
+    $isOutOfStock = !$product->in_stock;
 @endphp
-<article class="product-card">
+<article class="product-card {{ $isOutOfStock ? 'product-out-of-stock' : '' }}">
     <a href="{{ route('products.show', $product->slug) }}" class="product-image">
         <img src="{{ isset($product->images[0]) ? url($product->images[0]) : asset('images/product-color.png') }}" 
              alt="{{ $product->name }}" 
@@ -16,8 +17,11 @@
              height="280"
              decoding="async">
         
-        <!-- B2B Discount Badge -->
-        @if($hasDiscount)
+        {{-- Out of Stock Badge (highest priority) --}}
+        @if($isOutOfStock)
+            <span class="product-badge product-badge-oos">HABIS</span>
+        {{-- B2B Discount Badge --}}
+        @elseif($hasDiscount)
             <span class="cart-item-badge" style="position: absolute; top: 8px; right: 8px;">-{{ $discountPercent }}%</span>
         @elseif($hasVolumePricing)
             <span class="cart-item-badge" style="position: absolute; top: 8px; right: 8px;">Volume</span>
@@ -50,8 +54,14 @@
             @endif
         </div>
     </div>
-    <button class="btn-quick-add" wire:click="addToCart" wire:loading.attr="disabled">
-        <span wire:loading.remove wire:target="addToCart">+ {{ __('products.quick_add') }}</span>
-        <span wire:loading wire:target="addToCart">{{ __('general.loading') }}</span>
-    </button>
+    @if($isOutOfStock)
+        <button class="btn-quick-add btn-quick-add-disabled" disabled>
+            <span>{{ __('products.out_of_stock') }}</span>
+        </button>
+    @else
+        <button class="btn-quick-add" wire:click="addToCart" wire:loading.attr="disabled">
+            <span wire:loading.remove wire:target="addToCart">+ {{ __('products.quick_add') }}</span>
+            <span wire:loading wire:target="addToCart">{{ __('general.loading') }}</span>
+        </button>
+    @endif
 </article>

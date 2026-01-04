@@ -27,6 +27,7 @@ return [
     // Product Card
     'add_to_cart' => 'Tambah ke Keranjang',
     'quick_add' => 'Tambah Cepat',
+    'out_of_stock' => 'Stok Habis',
     'view_product' => 'Lihat Produk',
     'featured' => 'Unggulan',
     'halal' => 'Halal',
