@@ -134,6 +134,7 @@
             <a href="{{ route('products.index') }}" class="nav-link">{{ __('nav.products') }}</a>
             <a href="{{ route('home') }}#brands" class="nav-link">{{ __('nav.brands') }}</a>
             <a href="{{ route('home') }}#about" class="nav-link">{{ __('nav.about') }}</a>
+            <a href="/proposal/" class="nav-link" target="_blank">Proposal</a>
         </div>
         <div class="nav-actions">
             @auth
@@ -179,6 +180,7 @@
                 <a href="{{ route('products.index') }}" @click="mobileOpen = false">{{ __('nav.products') }}</a>
                 <a href="{{ route('home') }}#brands" @click="mobileOpen = false">{{ __('nav.brands') }}</a>
                 <a href="{{ route('home') }}#about" @click="mobileOpen = false">{{ __('nav.about') }}</a>
+                <a href="/proposal/" @click="mobileOpen = false" target="_blank">Proposal</a>
             </div>
             <div class="mobile-drawer-auth">
                 @auth
